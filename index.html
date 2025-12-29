@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Video Downloader</title>
     
     <!-- Подключение библиотек -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -51,6 +52,7 @@
 <body 
     class="h-dvh w-screen overflow-hidden select-none antialiased"
     x-data="downloader"
+    x-init="init()"
     x-cloak
 >
     <!-- Main Layout Container -->
@@ -126,7 +128,7 @@
             <section x-show="state.video && !state.isLoading" x-transition class="space-y-4">
                 <div class="bg-tg-secondary rounded-3xl overflow-hidden shadow-sm ring-1 ring-white/5 relative group">
                     <div class="relative aspect-video bg-black">
-                        <img :src="state.video?.thumbnail" class="w-full h-full object-cover opacity-90 transition-opacity duration-500" alt="Preview">
+                        <img :src="state.video?.thumbnail" class="w-full h-full object-cover opacity-90 transition-opacity duration-500" alt="Preview" loading="lazy">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent"></div>
                         <div class="absolute bottom-0 left-0 right-0 p-4">
                             <div class="flex items-center gap-2 mb-1">
@@ -172,7 +174,7 @@
                             @click="restoreFromHistory(item)"
                             class="w-full bg-tg-secondary/50 hover:bg-tg-secondary rounded-2xl p-2 flex items-center gap-3 transition-all active:scale-[0.98] text-left group"
                         >
-                            <img :src="item.thumbnail" class="w-12 h-12 rounded-xl object-cover bg-black/20 shrink-0" loading="lazy">
+                            <img :src="item.thumbnail" class="w-12 h-12 rounded-xl object-cover bg-black/20 shrink-0" loading="lazy" alt="Thumbnail">
                             <div class="flex-1 min-w-0">
                                 <p class="text-xs font-medium truncate text-tg-text group-hover:text-tg-link transition-colors" x-text="item.title"></p>
                                 <p class="text-[10px] text-tg-hint mt-0.5" x-text="utils.timeAgo(item.time)"></p>
@@ -233,9 +235,10 @@
          */
         const CONFIG = {
             API_BASE: 'https://api.fastsaverapi.com',
-            API_KEY: 'YOUR_API_KEY_HERE', // В продакшене использовать прокси!
+            API_KEY: 'YOUR_API_KEY_HERE', // В продакшене использовать прокси или переменные окружения!
             TIMEOUT: 15000,
-            HISTORY_KEY: 'app_history_v1'
+            HISTORY_KEY: 'app_history_v1',
+            MAX_HISTORY: 20
         };
 
         const PLATFORMS = [
@@ -269,7 +272,7 @@
             syncTheme() {
                 if (!this.isAvailable) return;
                 
-                // Устанавливаем цвета хедера и фона через новые методы
+                // Устанавливаем цвета хедера и фона
                 const bg = this.app.themeParams.bg_color || '#1a1a1a';
                 const secBg = this.app.themeParams.secondary_bg_color || '#2a2a2a';
                 
@@ -278,21 +281,21 @@
                     this.app.setBackgroundColor(bg);
                 } catch(e) { console.warn('TG colors update failed', e); }
 
-                // Принудительно обновляем CSS переменные для Tailwind
+                // Принудительно обновляем CSS переменные
                 const root = document.documentElement;
                 const p = this.app.themeParams;
                 
-                if (p.bg_color) root.style.setProperty('--tg-theme-bg-color', p.bg_color);
-                if (p.secondary_bg_color) root.style.setProperty('--tg-theme-secondary-bg-color', p.secondary_bg_color);
-                if (p.text_color) root.style.setProperty('--tg-theme-text-color', p.text_color);
-                if (p.hint_color) root.style.setProperty('--tg-theme-hint-color', p.hint_color);
-                if (p.button_color) root.style.setProperty('--tg-theme-button-color', p.button_color);
-                if (p.button_text_color) root.style.setProperty('--tg-theme-button-text-color', p.button_text_color);
+                root.style.setProperty('--tg-theme-bg-color', p.bg_color || '#1a1a1a');
+                root.style.setProperty('--tg-theme-secondary-bg-color', p.secondary_bg_color || '#2a2a2a');
+                root.style.setProperty('--tg-theme-text-color', p.text_color || '#ffffff');
+                root.style.setProperty('--tg-theme-hint-color', p.hint_color || '#9ca3af');
+                root.style.setProperty('--tg-theme-link-color', p.link_color || '#3b82f6');
+                root.style.setProperty('--tg-theme-button-color', p.button_color || '#3b82f6');
+                root.style.setProperty('--tg-theme-button-text-color', p.button_text_color || '#ffffff');
             }
 
             getSafeArea() {
                 if (!this.isAvailable) return { top: 0, bottom: 0 };
-                // Используем contentSafeAreaInset для точного позиционирования
                 return this.app.contentSafeAreaInset || { top: 0, bottom: 0 };
             }
 
@@ -315,7 +318,6 @@
                 if (this.isAvailable && this.app.readTextFromClipboard) {
                     this.app.readTextFromClipboard(callback);
                 } else {
-                    // Fallback для браузера
                     navigator.clipboard.readText().then(callback).catch(() => callback(null));
                 }
             }
@@ -330,6 +332,14 @@
 
             onViewportChanged(callback) {
                 if (this.isAvailable) this.app.onEvent('viewportChanged', callback);
+            }
+
+            showConfirm(message, callback) {
+                if (this.isAvailable && this.app.showConfirm) {
+                    this.app.showConfirm(message, callback);
+                } else {
+                    callback(confirm(message));
+                }
             }
         }
 
@@ -392,7 +402,7 @@
             formatDuration(seconds) {
                 if (!seconds) return '';
                 if (typeof seconds === 'string' && seconds.includes(':')) return seconds;
-                const sec = parseInt(seconds);
+                const sec = parseInt(seconds, 10);
                 if (isNaN(sec)) return '';
                 const m = Math.floor(sec / 60);
                 const s = sec % 60;
@@ -406,7 +416,9 @@
                 if (min < 60) return `${min} мин. назад`;
                 const hours = Math.floor(min / 60);
                 if (hours < 24) return `${hours} ч. назад`;
-                return `${Math.floor(hours / 24)} дн. назад`;
+                const days = Math.floor(hours / 24);
+                if (days < 7) return `${days} дн. назад`;
+                return new Date(timestamp).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
             },
 
             isValidUrl(string) {
@@ -414,18 +426,24 @@
                     const url = new URL(string);
                     return url.protocol === 'http:' || url.protocol === 'https:';
                 } catch { return false; }
+            },
+
+            formatSize(bytes) {
+                if (!bytes) return '';
+                const kb = bytes / 1024;
+                if (kb < 1024) return `${Math.round(kb)} KB`;
+                const mb = kb / 1024;
+                return `${Math.round(mb)} MB`;
             }
         };
 
         /**
          * Основной ViewModel приложения для Alpine.js
          */
-        class AppViewModel {
-            constructor() {
-                this.tg = new TelegramAdapter();
-                
-                // Реактивное состояние
-                this.state = {
+        function downloader() {
+            return {
+                tg: new TelegramAdapter(),
+                state: {
                     url: '',
                     error: '',
                     isLoading: false,
@@ -434,219 +452,213 @@
                     video: null,
                     selectedMedia: null,
                     activePlatform: null
-                };
+                },
+                history: StorageService.getHistory(),
+                safeArea: { top: 0, bottom: 0 },
+                toast: { show: false, message: '', type: 'success' },
+                toastTimer: null,
+                constants: { platforms: PLATFORMS },
+                utils: Utils,
 
-                this.history = StorageService.getHistory();
-                this.safeArea = { top: 0, bottom: 0 };
-                this.toast = { show: false, message: '', type: 'success' };
-                this.toastTimer = null;
-                
-                // Константы для шаблона
-                this.constants = { platforms: PLATFORMS };
-                this.utils = Utils;
-            }
+                init() {
+                    this.tg.init();
+                    this.updateLayout();
+                    this.tg.onViewportChanged(() => this.updateLayout());
+                },
 
-            init() {
-                this.tg.init();
-                this.updateLayout();
-                
-                // Подписка на изменение размеров окна
-                this.tg.onViewportChanged(() => this.updateLayout());
-            }
+                updateLayout() {
+                    this.safeArea = this.tg.getSafeArea();
+                },
 
-            updateLayout() {
-                this.safeArea = this.tg.getSafeArea();
-            }
+                handleInput() {
+                    this.analyze();
+                },
 
-            handleInput() {
-                this.analyze();
-            }
-
-            handlePasteOrClear() {
-                if (this.state.url) {
-                    this.resetState();
-                    this.tg.haptic('light');
-                } else {
-                    this.pasteFromClipboard();
-                }
-            }
-
-            resetState() {
-                this.state.url = '';
-                this.state.video = null;
-                this.state.error = '';
-                this.state.activePlatform = null;
-            }
-
-            pasteFromClipboard() {
-                this.tg.haptic('medium');
-                this.tg.readClipboard((text) => {
-                    if (text && Utils.isValidUrl(text)) {
-                        this.state.url = text.trim();
-                        this.analyze();
+                handlePasteOrClear() {
+                    if (this.state.url) {
+                        this.resetState();
+                        this.tg.haptic('light');
                     } else {
-                        this.showToast('Буфер обмена пуст или содержит не ссылку', 'error');
-                        this.tg.haptic('error');
+                        this.pasteFromClipboard();
                     }
-                });
-            }
+                },
 
-            async analyze() {
-                const url = this.state.url.trim();
-                
-                this.state.error = '';
-                this.state.video = null;
-                this.state.selectedMedia = null;
-
-                if (!url) {
+                resetState() {
+                    this.state.url = '';
+                    this.state.video = null;
+                    this.state.error = '';
                     this.state.activePlatform = null;
-                    return;
-                }
+                },
 
-                if (!Utils.isValidUrl(url)) {
-                    this.state.error = 'Некорректная ссылка';
-                    this.tg.haptic('error');
-                    return;
-                }
+                pasteFromClipboard() {
+                    this.tg.haptic('medium');
+                    this.tg.readClipboard((text) => {
+                        if (text && Utils.isValidUrl(text)) {
+                            this.state.url = text.trim();
+                            this.analyze();
+                        } else {
+                            this.showToast('Буфер обмена пуст или содержит не ссылку', 'error');
+                            this.tg.haptic('error');
+                        }
+                    });
+                },
 
-                const platform = PLATFORMS.find(p => p.re.test(url));
-                this.state.activePlatform = platform ? platform.id : null;
-
-                if (!platform) {
-                    this.state.error = 'Платформа не поддерживается';
-                    this.tg.haptic('error');
-                    return;
-                }
-
-                this.state.isLoading = true;
-                this.tg.haptic('light');
-
-                try {
-                    const result = await ApiService.fetchVideoInfo(url);
+                async analyze() {
+                    const url = this.state.url.trim();
                     
-                    const medias = (result.medias || []).filter(m => m.url);
-                    if (!medias.length) throw new Error('Ссылки не найдены');
+                    this.state.error = '';
+                    this.state.video = null;
+                    this.state.selectedMedia = null;
 
-                    this.state.video = {
-                        id: crypto.randomUUID(),
-                        title: result.title || 'Video',
-                        author: result.author || 'Unknown',
-                        duration: Utils.formatDuration(result.duration),
-                        thumbnail: result.thumbnail,
-                        medias: medias,
-                        sourceUrl: url
+                    if (!url) {
+                        this.state.activePlatform = null;
+                        return;
+                    }
+
+                    if (!Utils.isValidUrl(url)) {
+                        this.state.error = 'Некорректная ссылка';
+                        this.tg.haptic('error');
+                        return;
+                    }
+
+                    const platform = PLATFORMS.find(p => p.re.test(url));
+                    this.state.activePlatform = platform ? platform.id : null;
+
+                    if (!platform) {
+                        this.state.error = 'Платформа не поддерживается';
+                        this.tg.haptic('error');
+                        return;
+                    }
+
+                    this.state.isLoading = true;
+                    this.tg.haptic('light');
+
+                    try {
+                        const result = await ApiService.fetchVideoInfo(url);
+                        
+                        const medias = (result.medias || []).filter(m => m.url).map(m => ({
+                            ...m,
+                            formattedSize: Utils.formatSize(m.size)
+                        }));
+                        if (!medias.length) throw new Error('Ссылки не найдены');
+
+                        this.state.video = {
+                            id: crypto.randomUUID(),
+                            title: result.title || 'Video',
+                            author: result.author || 'Unknown',
+                            duration: Utils.formatDuration(result.duration),
+                            thumbnail: result.thumbnail,
+                            medias,
+                            sourceUrl: url
+                        };
+
+                        // Умный выбор качества: предпочтение видео со звуком, наивысшее качество
+                        this.state.selectedMedia = medias
+                            .filter(m => m.type === 'video' && !m.no_audio)
+                            .sort((a, b) => (b.quality?.match(/\d+/)?.[0] || 0) - (a.quality?.match(/\d+/)?.[0] || 0))[0] 
+                            || medias[0];
+
+                        this.tg.haptic('success');
+
+                    } catch (e) {
+                        this.state.error = e.name === 'AbortError' ? 'Превышено время ожидания' : (e.message || 'Ошибка загрузки данных');
+                        this.tg.haptic('error');
+                    } finally {
+                        this.state.isLoading = false;
+                    }
+                },
+
+                selectMedia(media) {
+                    this.state.selectedMedia = media;
+                    this.tg.haptic('selection');
+                },
+
+                async download() {
+                    if (!this.canDownload) return;
+
+                    this.state.isDownloading = true;
+                    this.state.progress = 5;
+                    this.tg.haptic('medium');
+
+                    try {
+                        // Эмуляция прогресса
+                        const progressInterval = setInterval(() => {
+                            if (this.state.progress < 90) {
+                                this.state.progress += Math.floor(Math.random() * 10) + 5;
+                            }
+                        }, 300);
+
+                        // Открываем ссылку
+                        this.tg.openLink(this.state.selectedMedia.url);
+
+                        // Ждем немного для UX
+                        await new Promise(resolve => setTimeout(resolve, 1500));
+                        clearInterval(progressInterval);
+                        this.state.progress = 100;
+
+                        this.addToHistory();
+                        this.showToast('Загрузка началась', 'success');
+                        this.tg.haptic('success');
+
+                    } catch (e) {
+                        this.showToast('Ошибка при открытии ссылки', 'error');
+                        this.tg.haptic('error');
+                    } finally {
+                        setTimeout(() => {
+                            this.state.isDownloading = false;
+                            this.state.progress = 0;
+                        }, 1000);
+                    }
+                },
+
+                addToHistory() {
+                    const newItem = {
+                        id: this.state.video.id,
+                        title: this.state.video.title,
+                        thumbnail: this.state.video.thumbnail,
+                        url: this.state.video.sourceUrl,
+                        time: Date.now()
                     };
 
-                    // Умный выбор качества (видео со звуком)
-                    this.state.selectedMedia = medias.find(m => m.type === 'video' && !m.no_audio) || medias[0];
-                    this.tg.haptic('success');
+                    this.history = [newItem, ...this.history.filter(h => h.url !== newItem.url)].slice(0, CONFIG.MAX_HISTORY);
+                    StorageService.saveHistory(this.history);
+                },
 
-                } catch (e) {
-                    this.state.error = e.name === 'AbortError' ? 'Превышено время ожидания' : 'Ошибка загрузки данных';
-                    this.tg.haptic('error');
-                } finally {
-                    this.state.isLoading = false;
-                }
-            }
+                restoreFromHistory(item) {
+                    this.state.url = item.url;
+                    this.analyze();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    this.tg.haptic('light');
+                },
 
-            selectMedia(media) {
-                this.state.selectedMedia = media;
-                this.tg.haptic('selection');
-            }
-
-            async download() {
-                if (!this.canDownload) return;
-
-                this.state.isDownloading = true;
-                this.state.progress = 5;
-                this.tg.haptic('medium');
-
-                try {
-                    // Эмуляция прогресса для UX
-                    const interval = setInterval(() => {
-                        if (this.state.progress < 90) {
-                            this.state.progress += Math.floor(Math.random() * 10);
+                clearHistory() {
+                    this.tg.haptic('medium');
+                    this.tg.showConfirm('Очистить историю?', (ok) => {
+                        if (ok) {
+                            this.history = [];
+                            StorageService.saveHistory([]);
+                            this.showToast('История очищена', 'success');
                         }
-                    }, 200);
-
-                    this.tg.openLink(this.state.selectedMedia.url);
-
-                    await new Promise(r => setTimeout(r, 1000));
-                    clearInterval(interval);
-                    this.state.progress = 100;
-
-                    this.addToHistory();
-                    this.showToast('Загрузка началась');
-                    this.tg.haptic('success');
-
-                } catch (e) {
-                    this.showToast('Ошибка при открытии ссылки', 'error');
-                } finally {
-                    setTimeout(() => {
-                        this.state.isDownloading = false;
-                        this.state.progress = 0;
-                    }, 1000);
-                }
-            }
-
-            addToHistory() {
-                const newItem = {
-                    id: this.state.video.id,
-                    title: this.state.video.title,
-                    thumbnail: this.state.video.thumbnail,
-                    url: this.state.video.sourceUrl,
-                    time: Date.now()
-                };
-
-                this.history = [newItem, ...this.history.filter(h => h.url !== newItem.url)].slice(0, 15);
-                StorageService.saveHistory(this.history);
-            }
-
-            restoreFromHistory(item) {
-                this.state.url = item.url;
-                this.analyze();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-
-            clearHistory() {
-                this.tg.haptic('medium');
-                // Используем нативный confirm если возможно, или браузерный
-                if (this.tg.app?.showConfirm) {
-                    this.tg.app.showConfirm('Очистить историю?', (ok) => {
-                        if (ok) this._performClear();
                     });
-                } else if (confirm('Очистить историю?')) {
-                    this._performClear();
+                },
+
+                showToast(message, type = 'success') {
+                    if (this.toastTimer) clearTimeout(this.toastTimer);
+                    this.toast = { show: true, message, type };
+                    this.toastTimer = setTimeout(() => this.toast.show = false, 3000);
+                },
+
+                get canDownload() {
+                    return !!this.state.video && !!this.state.selectedMedia && !this.state.isDownloading && !this.state.isLoading;
+                },
+
+                get buttonText() {
+                    if (this.state.isDownloading) return 'Загрузка...';
+                    if (!this.state.video) return 'Вставьте ссылку';
+                    return `Скачать ${this.state.selectedMedia?.quality || 'HD'}`;
                 }
-            }
-
-            _performClear() {
-                this.history = [];
-                StorageService.saveHistory([]);
-            }
-
-            showToast(message, type = 'success') {
-                if (this.toastTimer) clearTimeout(this.toastTimer);
-                this.toast = { show: true, message, type };
-                this.toastTimer = setTimeout(() => this.toast.show = false, 3000);
-            }
-
-            // Getters for template logic
-            get canDownload() {
-                return this.state.video && this.state.selectedMedia && !this.state.isDownloading;
-            }
-
-            get buttonText() {
-                if (this.state.isDownloading) return 'Загрузка...';
-                if (!this.state.video) return 'Вставьте ссылку';
-                return `Скачать ${this.state.selectedMedia?.quality || ''}`;
-            }
+            };
         }
-
-        // Регистрация компонента в Alpine
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('downloader', () => new AppViewModel());
-        });
     </script>
 </body>
 </html>
