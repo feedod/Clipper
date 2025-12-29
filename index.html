@@ -10,65 +10,52 @@
     <title>Clipper - Скачивание видео</title>
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
 
-    <style type="text/tailwindcss">
+    <style>
         /**
          * ==========================================
          * ПЕРЕМЕННЫЕ ТЕМЫ TELEGRAM
          * ==========================================
          */
-        @layer base {
-            :root {
-                --tg-theme-bg-color: #1a1a1a;
-                --tg-theme-text-color: #ffffff;
-                --tg-theme-hint-color: #7d7d7d;
-                --tg-theme-link-color: #5eaaef;
-                --tg-theme-button-color: #5eaaef;
-                --tg-theme-button-text-color: #ffffff;
-                --tg-theme-secondary-bg-color: #2a2a2a;
+        :root {
+            --tg-theme-bg-color: #1a1a1a;
+            --tg-theme-text-color: #ffffff;
+            --tg-theme-hint-color: #7d7d7d;
+            --tg-theme-link-color: #5eaaef;
+            --tg-theme-button-color: #5eaaef;
+            --tg-theme-button-text-color: #ffffff;
+            --tg-theme-secondary-bg-color: #2a2a2a;
 
-                /* Цвета для Tailwind */
-                --color-tg-bg: var(--tg-theme-bg-color, #1a1a1a);
-                --color-tg-text: var(--tg-theme-text-color, #ffffff);
-                --color-tg-hint: var(--tg-theme-hint-color, #7d7d7d);
-                --color-tg-link: var(--tg-theme-link-color, #5eaaef);
-                --color-tg-btn: var(--tg-theme-button-color, #5eaaef);
-                --color-tg-btn-text: var(--tg-theme-button-text-color, #ffffff);
-                --color-tg-secondary: var(--tg-theme-secondary-bg-color, #2a2a2a);
-            }
-
-            /* Сброс стилей */
-            * {
-                -webkit-tap-highlight-color: transparent;
-            }
-
-            html, body {
-                margin: 0;
-                padding: 0;
-                width: 100%;
-                height: 100%;
-            }
-
-            body {
-                @apply bg-tg-bg text-tg-text min-h-dvh select-none antialiased overflow-x-hidden;
-            }
+            --color-tg-bg: var(--tg-theme-bg-color);
+            --color-tg-text: var(--tg-theme-text-color);
+            --color-tg-hint: var(--tg-theme-hint-color);
+            --color-tg-link: var(--tg-theme-link-color);
+            --color-tg-btn: var(--tg-theme-button-color);
+            --color-tg-btn-text: var(--tg-theme-button-text-color);
+            --color-tg-secondary: var(--tg-theme-secondary-bg-color);
         }
 
         /**
          * ==========================================
-         * УТИЛИТЫ
+         * СБРОС И БАЗОВЫЕ СТИЛИ
          * ==========================================
          */
-        @theme {
-            --color-tg-bg: var(--tg-theme-bg-color, #1a1a1a);
-            --color-tg-text: var(--tg-theme-text-color, #ffffff);
-            --color-tg-hint: var(--tg-theme-hint-color, #7d7d7d);
-            --color-tg-link: var(--tg-theme-link-color, #5eaaef);
-            --color-tg-btn: var(--tg-theme-button-color, #5eaaef);
-            --color-tg-btn-text: var(--tg-theme-button-text-color, #ffffff);
-            --color-tg-secondary: var(--tg-theme-secondary-bg-color, #2a2a2a);
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            background-color: var(--color-tg-bg);
+            color: var(--color-tg-text);
         }
 
         /**
@@ -76,8 +63,6 @@
          * СКРЫТИЕ СКРОЛЛБАРОВ
          * ==========================================
          */
-        
-        /* Скроллбар главного контента - Safari iOS */
         main::-webkit-scrollbar {
             display: none;
         }
@@ -119,99 +104,101 @@
             }
         }
 
-        .shimmer-animation {
-            animation: shimmer 2s infinite;
-            background: linear-gradient(
-                90deg,
-                rgba(255, 255, 255, 0),
-                rgba(255, 255, 255, 0.2),
-                rgba(255, 255, 255, 0)
-            );
-            background-size: 1000px 100%;
-        }
-
         /**
          * ==========================================
-         * УЛУЧШЕННЫЙ ФОКУС ДЛЯ ДОСТУПНОСТИ
+         * КОМПОНЕНТНЫЕ КЛАССЫ
          * ==========================================
          */
-        @layer components {
-            .focus-ring {
-                @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-tg-bg focus:ring-tg-btn;
-            }
-
-            .glass-effect {
-                @apply bg-white/5 backdrop-blur-xl border border-white/10;
-            }
-
-            .glass-effect-lg {
-                @apply bg-white/10 backdrop-blur-2xl border border-white/20;
-            }
-
-            .button-base {
-                @apply transition-all duration-200 active:scale-[0.98] focus:outline-none;
-            }
-
-            .button-primary {
-                @apply bg-gradient-to-r from-tg-btn to-tg-btn/80 text-tg-btn-text shadow-lg shadow-tg-btn/50 hover:shadow-xl hover:shadow-tg-btn/60;
-            }
-
-            .button-secondary {
-                @apply glass-effect text-tg-text hover:bg-white/10;
-            }
-
-            .input-field {
-                @apply px-4 py-3.5 pr-12 rounded-2xl bg-white/5 backdrop-blur-xl text-tg-text placeholder-tg-hint text-base outline-none border-2 border-white/10 transition-all duration-300 focus:border-tg-btn/50 focus:bg-white/10 focus:ring-2 focus:ring-tg-btn/30;
-            }
-
-            .card-glass {
-                @apply rounded-2xl glass-effect p-4;
-            }
-
-            .section-title {
-                @apply text-xs text-tg-hint uppercase tracking-widest font-semibold px-1;
-            }
-
-            .icon-button {
-                @apply p-2 rounded-lg transition-all duration-200 hover:bg-white/10 active:scale-90 focus:outline-none focus:ring-2 focus:ring-tg-btn/50;
-            }
-        }
-
-        /**
-         * ==========================================
-         * СПЕЦИАЛЬНЫЕ ЭФФЕКТЫ
-         * ==========================================
-         */
-        .group:focus-within .focus-glow {
+        .focus-glow {
             box-shadow: inset 0 0 20px rgba(94, 170, 239, 0.1);
         }
 
-        .blur-glass {
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-effect-lg {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .button-primary {
+            background: linear-gradient(to right, var(--color-tg-btn), rgba(94, 170, 239, 0.8));
+            color: var(--color-tg-btn-text);
+            box-shadow: 0 20px 25px -5px rgba(94, 170, 239, 0.5);
+        }
+
+        .button-primary:hover {
+            box-shadow: 0 25px 35px -5px rgba(94, 170, 239, 0.6);
+        }
+
+        .button-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--color-tg-text);
+        }
+
+        .button-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .input-field {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            color: var(--color-tg-text);
+            transition: all 0.3s ease;
+        }
+
+        .input-field::placeholder {
+            color: var(--color-tg-hint);
+        }
+
+        .input-field:focus {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(94, 170, 239, 0.5);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(94, 170, 239, 0.2);
+        }
+
+        .icon-button {
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .icon-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .icon-button:active {
+            transform: scale(0.9);
+        }
+
+        .section-title {
+            font-size: 0.75rem;
+            color: var(--color-tg-hint);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 600;
         }
 
         /**
          * ==========================================
-         * АДАПТИВНОСТЬ ДЛЯ РАЗЛИЧНЫХ УСТРОЙСТВ
+         * АДАПТИВНОСТЬ
          * ==========================================
          */
         @media (max-width: 320px) {
             main {
-                @apply px-3 pt-2 pb-4;
-            }
-        }
-
-        @media (max-width: 640px) {
-            .grid-4-cols {
-                @apply grid-cols-4;
-            }
-        }
-
-        @media (min-width: 768px) {
-            /* Планшеты и больше */
-            .max-w-tablet {
-                @apply max-w-2xl mx-auto;
+                padding: 0.75rem;
             }
         }
     </style>
@@ -220,9 +207,10 @@
 <body 
     x-data="AppManager.init()"
     @:init="initializeTelegramApp()"
+    class="min-h-screen select-none antialiased overflow-x-hidden"
 >
     <!-- Основной контейнер -->
-    <div class="min-h-dvh flex flex-col" :style="{paddingTop: safeAreaTop + 'px', paddingBottom: safeAreaBottom + 'px'}">
+    <div class="min-h-screen flex flex-col" :style="{paddingTop: safeAreaTop + 'px', paddingBottom: safeAreaBottom + 'px'}">
         
         <!-- Основное содержимое -->
         <main class="flex-1 px-4 pt-4 pb-6 space-y-5 overflow-y-auto">
@@ -236,7 +224,7 @@
                         x-model="url"
                         @input.debounce.400ms="analyzeVideo()"
                         @paste="pasteFromClipboard"
-                        class="input-field w-full"
+                        class="input-field w-full px-4 py-3.5 pr-12 rounded-2xl text-base"
                         placeholder="Вставьте ссылку на видео..."
                         inputmode="url"
                         autocomplete="off"
@@ -250,12 +238,13 @@
                     <button 
                         @click="pasteFromClipboard()"
                         @keydown.space.enter="pasteFromClipboard()"
-                        class="absolute right-3 top-1/2 -translate-y-1/2 icon-button"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 icon-button focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-tg-bg"
                         type="button"
                         title="Вставить из буфера обмена"
                         aria-label="Вставить из буфера обмена"
+                        style="color: var(--color-tg-hint); --tw-ring-color: var(--color-tg-btn);"
                     >
-                        <svg class="w-5 h-5 text-tg-hint hover:text-tg-text transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 hover:text-white transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
                         </svg>
                     </button>
@@ -279,13 +268,14 @@
 
             <!-- Секция платформ -->
             <section class="space-y-3">
-                <p class="section-title">Платформы</p>
-                <div class="grid-4-cols grid gap-2.5">
+                <p class="section-title px-1">Платформы</p>
+                <div class="grid grid-cols-4 gap-2.5">
                     <template x-for="platform in platforms" :key="platform.id">
                         <button 
                             @click="selectPlatform(platform.id)"
-                            class="group relative py-4 px-2 rounded-2xl glass-effect flex flex-col items-center gap-2 transition-all duration-300 hover:bg-white/10 button-base focus:ring-2 focus:ring-tg-btn/50"
-                            :class="activePlatform === platform.id && 'ring-2 ring-tg-btn bg-white/10'"
+                            class="group relative py-4 px-2 rounded-2xl glass-effect flex flex-col items-center gap-2 transition-all duration-300 hover:bg-white/10 active:scale-95 focus:outline-none focus:ring-2"
+                            :class="activePlatform === platform.id && 'ring-2 ring-offset-2 ring-offset-tg-bg bg-white/10'"
+                            style="--tw-ring-color: var(--color-tg-btn);"
                             type="button"
                             :aria-pressed="activePlatform === platform.id"
                             :title="platform.name"
@@ -305,10 +295,10 @@
                 <div class="flex flex-col items-center gap-4">
                     <!-- Спиннер анимация -->
                     <div class="relative w-12 h-12">
-                        <div class="absolute inset-0 rounded-full bg-gradient-to-r from-tg-btn/50 via-tg-btn/30 to-tg-btn/50 animate-spin"></div>
-                        <div class="absolute inset-1 rounded-full bg-tg-bg"></div>
+                        <div class="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500/50 via-blue-500/30 to-blue-500/50 animate-spin" style="background: linear-gradient(to right, rgba(94, 170, 239, 0.5), rgba(94, 170, 239, 0.3), rgba(94, 170, 239, 0.5));"></div>
+                        <div class="absolute inset-1 rounded-full" style="background-color: var(--color-tg-bg);"></div>
                     </div>
-                    <p class="text-sm text-tg-hint font-medium">Получаем информацию...</p>
+                    <p class="text-sm font-medium" style="color: var(--color-tg-hint);">Получаем информацию...</p>
                 </div>
             </section>
 
@@ -325,8 +315,9 @@
                         <p class="text-sm text-red-300/70 mt-1" x-text="analysisError"></p>
                         <button 
                             @click="analyzeVideo()"
-                            class="text-sm text-tg-link font-semibold mt-3 hover:opacity-80 transition-opacity"
+                            class="text-sm font-semibold mt-3 hover:opacity-80 transition-opacity"
                             type="button"
+                            style="color: var(--color-tg-link);"
                         >
                             Повторить попытку →
                         </button>
@@ -369,8 +360,9 @@
                     <template x-for="media in video.medias" :key="media.url">
                         <button 
                             @click="selectMedia(media)"
-                            class="shrink-0 px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-200 button-base focus-ring"
+                            class="shrink-0 px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-200 active:scale-95 focus:outline-none focus:ring-2"
                             :class="selectedMedia?.url === media.url ? 'button-primary' : 'button-secondary'"
+                            style="--tw-ring-color: var(--color-tg-btn); --tw-ring-offset-color: var(--color-tg-bg);"
                             x-text="formatMediaLabel(media)"
                             type="button"
                             :aria-selected="selectedMedia?.url === media.url"
@@ -381,13 +373,13 @@
                 <!-- Прогресс загрузки -->
                 <div x-show="downloadProgress > 0 && isDownloading" x-transition class="mt-4 space-y-2">
                     <div class="flex justify-between items-center text-sm">
-                        <span class="text-tg-hint font-medium">Загрузка</span>
-                        <span class="font-bold text-tg-btn" x-text="`${downloadProgress}%`"></span>
+                        <span class="font-medium" style="color: var(--color-tg-hint);">Загрузка</span>
+                        <span class="font-bold" :style="{color: 'var(--color-tg-btn)'};" x-text="`${downloadProgress}%`"></span>
                     </div>
                     <div class="h-2 glass-effect rounded-full overflow-hidden">
                         <div 
-                            class="h-full bg-gradient-to-r from-tg-btn to-tg-btn/60 transition-all duration-300 ease-out rounded-full" 
-                            :style="`width: ${downloadProgress}%`"
+                            class="h-full transition-all duration-300 ease-out rounded-full" 
+                            :style="{width: downloadProgress + '%', background: 'linear-gradient(to right, var(--color-tg-btn), rgba(94, 170, 239, 0.6))'}"
                         ></div>
                     </div>
                 </div>
@@ -399,8 +391,9 @@
                     <p class="section-title">История</p>
                     <button 
                         @click="clearHistory()"
-                        class="text-xs text-tg-link font-semibold hover:opacity-80 transition-opacity focus:outline-none"
+                        class="text-xs font-semibold hover:opacity-80 transition-opacity focus:outline-none"
                         type="button"
+                        style="color: var(--color-tg-link);"
                     >
                         Очистить
                     </button>
@@ -409,8 +402,9 @@
                     <template x-for="historyItem in history" :key="historyItem.id">
                         <button 
                             @click="loadFromHistory(historyItem)"
-                            class="w-full group rounded-2xl glass-effect p-3 flex items-center gap-3 transition-all duration-200 hover:bg-white/10 button-base focus-ring"
+                            class="w-full group rounded-2xl glass-effect p-3 flex items-center gap-3 transition-all duration-200 hover:bg-white/10 active:scale-95 focus:outline-none focus:ring-2"
                             type="button"
+                            style="--tw-ring-color: var(--color-tg-btn);"
                         >
                             <!-- Миниатюра истории -->
                             <img 
@@ -422,7 +416,7 @@
                             >
                             <div class="flex-1 min-w-0 text-left">
                                 <p class="text-sm font-semibold truncate" x-text="historyItem.title"></p>
-                                <p class="text-xs text-tg-hint mt-0.5" x-text="formatTimeAgo(historyItem.timestamp)"></p>
+                                <p class="text-xs mt-0.5" x-text="formatTimeAgo(historyItem.timestamp)" style="color: var(--color-tg-hint);"></p>
                             </div>
                         </button>
                     </template>
@@ -431,14 +425,15 @@
         </main>
 
         <!-- Кнопка скачивания -->
-        <div class="shrink-0 px-4 py-4 bg-gradient-to-t from-tg-bg via-tg-bg/80 to-transparent pointer-events-none">
+        <div class="shrink-0 px-4 py-4 pointer-events-none" style="background: linear-gradient(to top, var(--color-tg-bg), rgba(26, 26, 26, 0.8), transparent);">
             <button 
                 @click="downloadVideo()"
                 :disabled="!video || !selectedMedia || isDownloading"
-                class="w-full pointer-events-auto py-3.5 rounded-2xl font-bold flex items-center justify-center gap-2.5 button-base focus-ring"
+                class="w-full pointer-events-auto py-3.5 rounded-2xl font-bold flex items-center justify-center gap-2.5 transition-all duration-200 active:scale-95 focus:outline-none focus:ring-2"
                 :class="video && selectedMedia && !isDownloading 
                     ? 'button-primary' 
                     : 'button-secondary'"
+                style="--tw-ring-color: var(--color-tg-btn);"
                 type="button"
             >
                 <!-- Иконка загрузки/стрелка -->
@@ -655,7 +650,6 @@
                     this.webApp.disableVerticalSwipes?.();
                     this.webApp.enableClosingConfirmation?.();
                     
-                    // Установка цветов темы
                     this.webApp.setHeaderColor?.('secondary_bg_color');
                     this.webApp.setBackgroundColor?.('secondary_bg_color');
                     
@@ -685,7 +679,7 @@
             }
 
             /**
-             * Открыть ссылку в Telegram или браузере
+             * Открыть ссылку
              * @param {string} url - URL для открытия
              */
             static openLink(url) {
@@ -699,7 +693,7 @@
             /**
              * Показать подтверждение
              * @param {string} message - Текст сообщения
-             * @returns {Promise<boolean>} Результат подтверждения
+             * @returns {Promise<boolean>}
              */
             static async showConfirm(message) {
                 return new Promise(resolve => {
@@ -712,7 +706,7 @@
             }
 
             /**
-             * Вибрация обратной связи
+             * Вибрация
              * @param {string} type - Тип: light, medium, heavy
              */
             static hapticFeedback(type = 'light') {
@@ -732,8 +726,8 @@
             }
 
             /**
-             * Слушать события Telegram
-             * @param {string} event - Название события
+             * Слушать события
+             * @param {string} event - Событие
              * @param {Function} callback - Функция обратного вызова
              */
             static addEventListener(event, callback) {
@@ -745,14 +739,10 @@
 
         /**
          * ==========================================
-         * КЛАСС: ГЛАВНЫЙ МЕНЕДЖЕР ПРИЛОЖЕНИЯ
+         * ГЛАВНЫЙ МЕНЕДЖЕР ПРИЛОЖЕНИЯ
          * ==========================================
          */
         class AppManager {
-            /**
-             * Инициализировать данные приложения
-             * @returns {Object} Состояние приложения
-             */
             static init() {
                 return {
                     // === СОСТОЯНИЕ ===
@@ -801,7 +791,7 @@
                         }
                     ],
 
-                    // === TOAST УВЕДОМЛЕНИЕ ===
+                    // === TOAST ===
                     toast: {
                         isVisible: false,
                         message: '',
@@ -809,17 +799,15 @@
                     },
 
                     /**
-                     * Инициализировать Telegram Web App
+                     * Инициализация
                      */
                     initializeTelegramApp() {
                         TelegramManager.initialize();
                         
-                        // Установить отступы безопасной области
                         const insets = TelegramManager.getSafeAreaInsets();
                         this.safeAreaTop = insets.top;
                         this.safeAreaBottom = insets.bottom;
 
-                        // Слушать изменения viewport
                         TelegramManager.addEventListener('viewportChanged', () => {
                             const newInsets = TelegramManager.getSafeAreaInsets();
                             this.safeAreaTop = newInsets.top;
@@ -828,7 +816,7 @@
                     },
 
                     /**
-                     * Вставить URL из буфера обмена
+                     * Вставить из буфера обмена
                      */
                     async pasteFromClipboard() {
                         TelegramManager.hapticFeedback('light');
@@ -850,7 +838,6 @@
 
                     /**
                      * Выбрать платформу
-                     * @param {string} platformId - ID платформы
                      */
                     selectPlatform(platformId) {
                         this.activePlatform = this.activePlatform === platformId ? null : platformId;
@@ -858,10 +845,9 @@
                     },
 
                     /**
-                     * Проверить и проанализировать URL видео
+                     * Анализировать видео
                      */
                     async analyzeVideo() {
-                        // Сбросить предыдущие ошибки
                         this.urlError = '';
                         this.analysisError = '';
                         this.video = null;
@@ -869,20 +855,17 @@
 
                         const trimmedUrl = this.url.trim();
 
-                        // Проверка пустого URL
                         if (!trimmedUrl) {
                             this.activePlatform = null;
                             return;
                         }
 
-                        // Проверка корректности URL
                         if (!this.isValidUrl(trimmedUrl)) {
                             this.urlError = 'Пожалуйста, введите корректную ссылку';
                             this.activePlatform = null;
                             return;
                         }
 
-                        // Определение платформы
                         const platform = this.detectPlatform(trimmedUrl);
                         this.activePlatform = platform?.id || null;
 
@@ -891,18 +874,15 @@
                             return;
                         }
 
-                        // Начало анализа
                         this.isLoading = true;
 
                         try {
                             const videoData = await APIManager.fetchVideo(trimmedUrl);
 
-                            // Проверка наличия медиафайлов
                             if (!videoData.medias || videoData.medias.length === 0) {
                                 throw new Error('Для этого видео нет доступных форматов');
                             }
 
-                            // Создание объекта видео
                             this.video = {
                                 id: crypto.randomUUID(),
                                 title: videoData.title,
@@ -913,7 +893,6 @@
                                 sourceUrl: trimmedUrl
                             };
 
-                            // Автоматический выбор видео высокого качества
                             const videoMedia = this.video.medias.find(m => m.type === 'video');
                             this.selectedMedia = videoMedia || this.video.medias[0];
 
@@ -927,9 +906,7 @@
                     },
 
                     /**
-                     * Проверить корректность URL
-                     * @param {string} urlString - Строка URL
-                     * @returns {boolean} Результат проверки
+                     * Проверить URL
                      */
                     isValidUrl(urlString) {
                         try {
@@ -941,17 +918,14 @@
                     },
 
                     /**
-                     * Определить платформу по URL
-                     * @param {string} url - URL видео
-                     * @returns {Object|null} Объект платформы или null
+                     * Определить платформу
                      */
                     detectPlatform(url) {
                         return this.platforms.find(p => p.regex.test(url)) || null;
                     },
 
                     /**
-                     * Выбрать качество видео
-                     * @param {Object} media - Объект медиа
+                     * Выбрать медиа
                      */
                     selectMedia(media) {
                         this.selectedMedia = media;
@@ -959,9 +933,7 @@
                     },
 
                     /**
-                     * Форматировать метку качества видео
-                     * @param {Object} media - Объект медиа
-                     * @returns {string} Отформатированная строка
+                     * Форматировать метку медиа
                      */
                     formatMediaLabel(media) {
                         if (!media) return 'Скачать';
@@ -986,8 +958,7 @@
                     },
 
                     /**
-                     * Получить текст для кнопки скачивания
-                     * @returns {string} Текст кнопки
+                     * Текст кнопки
                      */
                     getDownloadButtonText() {
                         if (this.isDownloading) return 'Загрузка...';
@@ -1015,10 +986,8 @@
                                 throw new Error('Ссылка на скачивание недоступна');
                             }
 
-                            // Открыть ссылку для скачивания
                             TelegramManager.openLink(downloadUrl);
 
-                            // Имитация прогресса загрузки
                             const progressInterval = setInterval(() => {
                                 const increment = Math.floor(Math.random() * 20) + 10;
                                 this.downloadProgress = Math.min(95, this.downloadProgress + increment);
@@ -1028,11 +997,9 @@
                                 }
                             }, 150);
 
-                            // Ожидание перед завершением
                             await new Promise(resolve => setTimeout(resolve, 2000));
                             this.downloadProgress = 100;
 
-                            // Сохранить в историю
                             const historyItem = {
                                 id: this.video.id,
                                 title: this.video.title,
@@ -1044,7 +1011,6 @@
                             HistoryManager.save(historyItem);
                             this.history = HistoryManager.load();
 
-                            // Показать успешное уведомление
                             ToastManager.show('✓ Загрузка началась!', true);
                             TelegramManager.notificationFeedback('success');
                         } catch (error) {
@@ -1053,7 +1019,6 @@
                         } finally {
                             this.isDownloading = false;
                             
-                            // Сбросить прогресс через секунду
                             setTimeout(() => {
                                 this.downloadProgress = 0;
                             }, 1000);
@@ -1061,8 +1026,7 @@
                     },
 
                     /**
-                     * Загрузить видео из истории
-                     * @param {Object} historyItem - Элемент истории
+                     * Загрузить из истории
                      */
                     async loadFromHistory(historyItem) {
                         this.url = historyItem.url;
@@ -1071,9 +1035,7 @@
                     },
 
                     /**
-                     * Форматировать время давности
-                     * @param {number} timestamp - Временная метка
-                     * @returns {string} Отформатированная строка времени
+                     * Форматировать время
                      */
                     formatTimeAgo(timestamp) {
                         const seconds = Math.floor((Date.now() - timestamp) / 1000);
@@ -1090,7 +1052,7 @@
                     },
 
                     /**
-                     * Очистить историю с подтверждением
+                     * Очистить историю
                      */
                     async clearHistory() {
                         const confirmed = await TelegramManager.showConfirm(
@@ -1108,9 +1070,7 @@
             }
         }
 
-        // Инициализация Alpine при загрузке
         document.addEventListener('alpine:init', () => {
-            // Установка нового хранилища для приложения (опционально)
             Alpine.store('app', {
                 toast: {
                     isVisible: false,
@@ -1120,6 +1080,5 @@
             });
         });
     </script>
-</head>
-
+</body>
 </html>
