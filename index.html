@@ -3,10 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="format-detection" content="telephone=no">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
@@ -24,8 +20,7 @@
 </head>
 <body 
     class="bg-tg-bg text-tg-text min-h-dvh select-none overscroll-none touch-manipulation antialiased"
-    x-data="app"
->
+    x-data="app">
     <div class="min-h-dvh flex flex-col" :style="`padding-top: ${safeAreaTop}px`">
         <main class="flex-1 px-4 pt-4 pb-4 space-y-5 overflow-y-auto">
             <section>
@@ -41,8 +36,7 @@
                         autocomplete="off"
                         autocorrect="off"
                         autocapitalize="off"
-                        spellcheck="false"
-                    >
+                        spellcheck="false">
                     <button 
                         @click="paste"
                         class="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 rounded-xl active:scale-90 transition-transform duration-150"
