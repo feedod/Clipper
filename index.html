@@ -1,1 +1,547 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
+    <style type="text/tailwindcss">
+        @theme {
+            --color-tg-bg: var(--tg-theme-bg-color, #1a1a1a);
+            --color-tg-text: var(--tg-theme-text-color, #ffffff);
+            --color-tg-hint: var(--tg-theme-hint-color, #7d7d7d);
+            --color-tg-link: var(--tg-theme-link-color, #5eaaef);
+            --color-tg-btn: var(--tg-theme-button-color, #5eaaef);
+            --color-tg-btn-text: var(--tg-theme-button-text-color, #ffffff);
+            --color-tg-secondary: var(--tg-theme-secondary-bg-color, #2a2a2a);
+        }
+    </style>
+</head>
+<body 
+    class="bg-tg-bg text-tg-text min-h-dvh select-none overscroll-none touch-manipulation antialiased"
+    x-data="app"
+>
+    <div class="min-h-dvh flex flex-col" :style="`padding-top: ${safeAreaTop}px`">
+        <main class="flex-1 px-4 pt-4 pb-4 space-y-5 overflow-y-auto">
+            <section>
+                <div class="relative">
+                    <input 
+                        type="url" 
+                        x-model="url"
+                        @input.debounce.400ms="analyze"
+                        class="w-full px-4 py-4 pr-12 rounded-2xl bg-tg-secondary text-tg-text placeholder-tg-hint text-base outline-none border-2 transition-colors duration-200"
+                        :class="url ? 'border-tg-btn' : 'border-transparent'"
+                        placeholder="Вставьте ссылку на видео..."
+                        inputmode="url"
+                        autocomplete="off"
+                        autocorrect="off"
+                        autocapitalize="off"
+                        spellcheck="false"
+                    >
+                    <button 
+                        @click="paste"
+                        class="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 rounded-xl active:scale-90 transition-transform duration-150"
+                        type="button"
+                    >
+                        <svg class="w-5 h-5 text-tg-hint" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+                        </svg>
+                    </button>
+                </div>
+                <p 
+                    x-show="urlError" 
+                    x-text="urlError" 
+                    x-transition
+                    class="text-red-400 text-sm mt-2 px-1"
+                ></p>
+            </section>
 
+            <section>
+                <p class="text-xs text-tg-hint uppercase tracking-wider mb-3 px-1 font-medium">Платформы</p>
+                <div class="grid grid-cols-4 gap-2.5">
+                    <template x-for="p in platforms" :key="p.id">
+                        <div 
+                            class="bg-tg-secondary rounded-2xl p-3 flex flex-col items-center gap-2 transition-all duration-200"
+                            :class="active === p.id && 'ring-2 ring-tg-btn'"
+                        >
+                            <div class="w-10 h-10 rounded-xl flex items-center justify-center" :style="`background: ${p.bg}`">
+                                <span x-html="p.svg" class="w-5 h-5 text-white"></span>
+                            </div>
+                            <span class="text-[11px] font-medium" x-text="p.name"></span>
+                        </div>
+                    </template>
+                </div>
+            </section>
+
+            <section x-show="loading" x-transition class="py-8">
+                <div class="flex flex-col items-center gap-4">
+                    <div class="w-12 h-12 rounded-full border-[3px] border-tg-secondary border-t-tg-btn animate-spin"></div>
+                    <p class="text-sm text-tg-hint">Получаем информацию...</p>
+                </div>
+            </section>
+
+            <section x-show="error && !loading" x-transition>
+                <div class="bg-red-500/10 rounded-2xl p-4 flex items-start gap-3">
+                    <div class="w-9 h-9 rounded-full bg-red-500/20 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-red-400 font-medium text-sm">Ошибка</p>
+                        <p class="text-sm text-tg-hint mt-0.5" x-text="error"></p>
+                        <button @click="analyze" class="text-sm text-tg-link font-medium mt-2" type="button">Повторить</button>
+                    </div>
+                </div>
+            </section>
+
+            <section x-show="video && !loading && !error" x-transition>
+                <div class="rounded-3xl overflow-hidden bg-black/50">
+                    <div class="relative aspect-video">
+                        <img :src="video?.thumbnail" class="w-full h-full object-cover" alt="" loading="lazy" decoding="async">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30"></div>
+                        <div class="absolute bottom-0 left-0 right-0 p-4">
+                            <p class="text-white font-semibold text-sm line-clamp-2" x-text="video?.title"></p>
+                            <p class="text-white/60 text-xs mt-1" x-text="video?.author"></p>
+                        </div>
+                        <div x-show="video?.duration" class="absolute top-3 right-3 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-lg">
+                            <span class="text-white text-xs font-medium" x-text="video?.duration"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 mt-4 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                    <template x-for="m in video?.medias" :key="m.url">
+                        <button 
+                            @click="selectedMedia = m; haptic()"
+                            class="shrink-0 px-4 py-2.5 rounded-xl text-sm font-semibold active:scale-95 transition-transform duration-150"
+                            :class="selectedMedia?.url === m.url ? 'bg-tg-btn text-tg-btn-text' : 'bg-tg-secondary text-tg-text'"
+                            x-text="formatMediaLabel(m)"
+                            type="button"
+                        ></button>
+                    </template>
+                </div>
+
+                <div x-show="progress > 0" x-transition class="mt-4">
+                    <div class="flex justify-between text-sm mb-1.5">
+                        <span class="text-tg-hint">Загрузка</span>
+                        <span class="font-semibold" x-text="`${progress}%`"></span>
+                    </div>
+                    <div class="h-1.5 bg-tg-secondary rounded-full overflow-hidden">
+                        <div 
+                            class="h-full bg-tg-btn rounded-full transition-all duration-200 ease-out" 
+                            :style="`width: ${progress}%`"
+                        ></div>
+                    </div>
+                </div>
+            </section>
+
+            <section x-show="history.length" x-transition>
+                <div class="flex items-center justify-between mb-3 px-1">
+                    <p class="text-xs text-tg-hint uppercase tracking-wider font-medium">История</p>
+                    <button @click="clearHistory" class="text-xs text-tg-link font-medium" type="button">Очистить</button>
+                </div>
+                <div class="space-y-2">
+                    <template x-for="h in history" :key="h.id">
+                        <div 
+                            @click="url = h.url; analyze()"
+                            class="bg-tg-secondary rounded-2xl p-3 flex items-center gap-3 active:scale-[0.98] transition-transform cursor-pointer"
+                        >
+                            <img :src="h.thumbnail" class="w-12 h-12 rounded-xl object-cover" alt="" loading="lazy" decoding="async">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium truncate" x-text="h.title"></p>
+                                <p class="text-xs text-tg-hint mt-0.5" x-text="timeAgo(h.time)"></p>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </section>
+        </main>
+
+        <div 
+            class="shrink-0 p-4 bg-gradient-to-t from-tg-bg via-tg-bg to-transparent pt-6"
+            :style="`padding-bottom: max(1rem, ${safeAreaBottom}px)`"
+        >
+            <button 
+                @click="download"
+                :disabled="!video || !selectedMedia || downloading"
+                class="w-full py-4 rounded-2xl font-semibold flex items-center justify-center gap-2 transition-all duration-200 active:scale-[0.98] disabled:active:scale-100"
+                :class="video && selectedMedia && !downloading ? 'bg-tg-btn text-tg-btn-text' : 'bg-tg-secondary text-tg-hint'"
+                type="button"
+            >
+                <template x-if="downloading">
+                    <div class="w-5 h-5 rounded-full border-2 border-current border-t-transparent animate-spin opacity-80"></div>
+                </template>
+                <template x-if="!downloading">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                    </svg>
+                </template>
+                <span x-text="getButtonText()"></span>
+            </button>
+        </div>
+
+        <div 
+            x-show="toast.show" 
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 translate-y-4"
+            x-transition:enter-end="opacity-100 translate-y-0"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            class="fixed bottom-28 inset-x-4 z-50"
+            :style="`margin-bottom: ${safeAreaBottom}px`"
+        >
+            <div class="bg-tg-secondary rounded-2xl p-4 flex items-center gap-3 shadow-xl">
+                <div :class="toast.ok ? 'bg-green-500/20' : 'bg-red-500/20'" class="w-9 h-9 rounded-full flex items-center justify-center shrink-0">
+                    <svg x-show="toast.ok" class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    </svg>
+                    <svg x-show="!toast.ok" class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                    </svg>
+                </div>
+                <p class="text-sm font-medium flex-1" x-text="toast.msg"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://api.fastsaverapi.com';
+        const API_KEY = 'YOUR_API_KEY_HERE';
+
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('app', () => ({
+                url: '',
+                urlError: '',
+                active: null,
+                loading: false,
+                error: '',
+                video: null,
+                selectedMedia: null,
+                downloading: false,
+                progress: 0,
+                history: [],
+                toast: { show: false, msg: '', ok: true },
+                tg: null,
+                safeAreaTop: 0,
+                safeAreaBottom: 0,
+
+                platforms: [
+                    { 
+                        id: 'ig', 
+                        name: 'Instagram', 
+                        bg: 'linear-gradient(45deg,#f09433,#dc2743,#bc1888)', 
+                        re: [/instagram\.com/i], 
+                        svg: '<svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 2c2.717 0 3.056.01 4.122.06 1.065.05 1.79.217 2.428.465.66.254 1.216.598 1.772 1.153.509.5.902 1.105 1.153 1.772.247.637.415 1.363.465 2.428.047 1.066.06 1.405.06 4.122 0 2.717-.01 3.056-.06 4.122-.05 1.065-.218 1.79-.465 2.428a4.883 4.883 0 01-1.153 1.772c-.5.508-1.105.902-1.772 1.153-.637.247-1.363.415-2.428.465-1.066.047-1.405.06-4.122.06-2.717 0-3.056-.01-4.122-.06-1.065-.05-1.79-.218-2.428-.465a4.89 4.89 0 01-1.772-1.153 4.904 4.904 0 01-1.153-1.772c-.248-.637-.415-1.363-.465-2.428C2.013 15.056 2 14.717 2 12c0-2.717.01-3.056.06-4.122.05-1.066.217-1.79.465-2.428a4.88 4.88 0 011.153-1.772A4.897 4.897 0 015.45 2.525c.638-.248 1.362-.415 2.428-.465C8.944 2.013 9.283 2 12 2zm0 5a5 5 0 100 10 5 5 0 000-10zm6.5-.25a1.25 1.25 0 10-2.5 0 1.25 1.25 0 002.5 0zM12 9a3 3 0 110 6 3 3 0 010-6z"/></svg>' 
+                    },
+                    { 
+                        id: 'tt', 
+                        name: 'TikTok', 
+                        bg: '#000000', 
+                        re: [/tiktok\.com/i, /vm\.tiktok/i], 
+                        svg: '<svg fill="currentColor" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/></svg>' 
+                    },
+                    { 
+                        id: 'yt', 
+                        name: 'YouTube', 
+                        bg: '#dc2626', 
+                        re: [/youtube\.com/i, /youtu\.be/i], 
+                        svg: '<svg fill="currentColor" viewBox="0 0 24 24"><path d="M23.5 6.19a3.02 3.02 0 00-2.12-2.14C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.38.5A3.02 3.02 0 00.5 6.19C0 8.07 0 12 0 12s0 3.93.5 5.81a3.02 3.02 0 002.12 2.14c1.88.5 9.38.5 9.38.5s7.5 0 9.38-.5a3.02 3.02 0 002.12-2.14C24 15.93 24 12 24 12s0-3.93-.5-5.81zM9.55 15.57V8.43L15.82 12l-6.27 3.57z"/></svg>' 
+                    },
+                    { 
+                        id: 'x', 
+                        name: 'X', 
+                        bg: '#000000', 
+                        re: [/twitter\.com/i, /x\.com/i], 
+                        svg: '<svg fill="currentColor" viewBox="0 0 24 24"><path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.66l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25h6.83l4.71 6.23zm-1.16 17.52h1.83L7.08 4.13H5.12z"/></svg>' 
+                    }
+                ],
+
+                init() {
+                    this.tg = window.Telegram?.WebApp;
+                    
+                    if (this.tg) {
+                        this.tg.ready();
+                        this.tg.expand();
+                        
+                        if (this.tg.requestFullscreen) {
+                            this.tg.requestFullscreen();
+                        }
+                        
+                        if (this.tg.disableVerticalSwipes) {
+                            this.tg.disableVerticalSwipes();
+                        }
+                        
+                        if (this.tg.enableClosingConfirmation) {
+                            this.tg.enableClosingConfirmation();
+                        }
+                        
+                        if (this.tg.setHeaderColor) {
+                            this.tg.setHeaderColor('secondary_bg_color');
+                        }
+                        
+                        if (this.tg.setBackgroundColor) {
+                            this.tg.setBackgroundColor('secondary_bg_color');
+                        }
+
+                        this.updateSafeAreas();
+                        
+                        if (this.tg.onEvent) {
+                            this.tg.onEvent('viewportChanged', () => this.updateSafeAreas());
+                            this.tg.onEvent('fullscreenChanged', () => this.updateSafeAreas());
+                        }
+                    }
+                    
+                    this.loadHistory();
+                },
+
+                updateSafeAreas() {
+                    if (this.tg) {
+                        this.safeAreaTop = (this.tg.safeAreaInset?.top || 0) + (this.tg.contentSafeAreaInset?.top || 0);
+                        this.safeAreaBottom = (this.tg.safeAreaInset?.bottom || 0) + (this.tg.contentSafeAreaInset?.bottom || 0);
+                    }
+                },
+
+                loadHistory() {
+                    try {
+                        this.history = JSON.parse(localStorage.getItem('vh') || '[]');
+                    } catch {
+                        this.history = [];
+                    }
+                },
+
+                saveHistory() {
+                    try {
+                        localStorage.setItem('vh', JSON.stringify(this.history));
+                    } catch {}
+                },
+
+                haptic(type = 'light') {
+                    if (this.tg?.HapticFeedback?.impactOccurred) {
+                        this.tg.HapticFeedback.impactOccurred(type);
+                    }
+                },
+
+                notify(type = 'success') {
+                    if (this.tg?.HapticFeedback?.notificationOccurred) {
+                        this.tg.HapticFeedback.notificationOccurred(type);
+                    }
+                },
+
+                showToast(msg, ok = true) {
+                    this.toast = { show: true, msg, ok };
+                    setTimeout(() => this.toast.show = false, 2500);
+                },
+
+                detectPlatform(url) {
+                    for (const p of this.platforms) {
+                        if (p.re.some(r => r.test(url))) return p.id;
+                    }
+                    return null;
+                },
+
+                isValidUrl(string) {
+                    try {
+                        const url = new URL(string);
+                        return url.protocol === 'http:' || url.protocol === 'https:';
+                    } catch {
+                        return false;
+                    }
+                },
+
+                async paste() {
+                    this.haptic();
+                    try {
+                        const text = await navigator.clipboard.readText();
+                        if (text) {
+                            this.url = text.trim();
+                            this.analyze();
+                        }
+                    } catch {
+                        this.showToast('Нет доступа к буферу обмена', false);
+                        this.notify('error');
+                    }
+                },
+
+                async analyze() {
+                    this.error = '';
+                    this.urlError = '';
+                    this.video = null;
+                    this.selectedMedia = null;
+
+                    const trimmedUrl = this.url.trim();
+                    
+                    if (!trimmedUrl) {
+                        this.active = null;
+                        return;
+                    }
+
+                    if (!this.isValidUrl(trimmedUrl)) {
+                        this.urlError = 'Некорректная ссылка';
+                        return;
+                    }
+
+                    const platform = this.detectPlatform(trimmedUrl);
+                    this.active = platform;
+                    this.loading = true;
+
+                    try {
+                        const response = await fetch(`${API_BASE}/v1/fetch?url=${encodeURIComponent(trimmedUrl)}`, {
+                            method: 'GET',
+                            headers: {
+                                'x-api-key': API_KEY,
+                                'Accept': 'application/json'
+                            }
+                        });
+
+                        if (!response.ok) {
+                            const errorData = await response.json().catch(() => ({}));
+                            throw new Error(errorData.message || `Ошибка сервера: ${response.status}`);
+                        }
+
+                        const data = await response.json();
+
+                        if (!data.result) {
+                            throw new Error('Не удалось получить данные о видео');
+                        }
+
+                        this.video = {
+                            id: crypto.randomUUID(),
+                            title: data.result.title || 'Без названия',
+                            author: data.result.author || '',
+                            duration: data.result.duration || '',
+                            thumbnail: data.result.thumbnail || '',
+                            medias: data.result.medias || [],
+                            sourceUrl: trimmedUrl
+                        };
+
+                        if (this.video.medias.length > 0) {
+                            const videoMedia = this.video.medias.find(m => m.type === 'video');
+                            this.selectedMedia = videoMedia || this.video.medias[0];
+                        }
+
+                        this.notify('success');
+                    } catch (e) {
+                        this.error = e?.message || 'Не удалось получить информацию о видео';
+                        this.notify('error');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                formatMediaLabel(media) {
+                    if (!media) return '';
+                    
+                    const parts = [];
+                    
+                    if (media.quality) {
+                        parts.push(media.quality);
+                    }
+                    
+                    if (media.extension) {
+                        parts.push(media.extension.toUpperCase());
+                    }
+                    
+                    if (media.formattedSize) {
+                        parts.push(media.formattedSize);
+                    }
+                    
+                    return parts.join(' • ') || media.type || 'Скачать';
+                },
+
+                getButtonText() {
+                    if (this.downloading) return 'Загрузка...';
+                    if (!this.video) return 'Вставьте ссылку';
+                    if (!this.selectedMedia) return 'Выберите качество';
+                    return 'Скачать';
+                },
+
+                async download() {
+                    if (!this.video || !this.selectedMedia || this.downloading) return;
+
+                    this.downloading = true;
+                    this.progress = 0;
+                    this.haptic('medium');
+
+                    try {
+                        const downloadUrl = this.selectedMedia.url;
+                        
+                        if (this.tg?.openLink) {
+                            this.tg.openLink(downloadUrl);
+                        } else {
+                            window.open(downloadUrl, '_blank');
+                        }
+
+                        const progressInterval = setInterval(() => {
+                            const increment = Math.floor(Math.random() * 15) + 5;
+                            this.progress = Math.min(100, this.progress + increment);
+                            
+                            if (this.progress >= 100) {
+                                clearInterval(progressInterval);
+                            }
+                        }, 100);
+
+                        await new Promise(resolve => setTimeout(resolve, 1500));
+
+                        const historyItem = { 
+                            id: this.video.id, 
+                            title: this.video.title, 
+                            thumbnail: this.video.thumbnail, 
+                            url: this.video.sourceUrl,
+                            time: Date.now() 
+                        };
+                        
+                        this.history = [historyItem, ...this.history.filter(h => h.url !== historyItem.url).slice(0, 7)];
+                        this.saveHistory();
+
+                        this.showToast('Загрузка началась!');
+                        this.notify('success');
+                    } catch {
+                        this.showToast('Ошибка при загрузке', false);
+                        this.notify('error');
+                    } finally {
+                        this.downloading = false;
+                        this.progress = 0;
+                    }
+                },
+
+                clearHistory() {
+                    const clear = () => {
+                        this.history = [];
+                        this.saveHistory();
+                        this.haptic('medium');
+                        this.showToast('История очищена');
+                    };
+
+                    if (this.tg?.showConfirm) {
+                        this.tg.showConfirm('Очистить всю историю загрузок?', confirmed => {
+                            if (confirmed) clear();
+                        });
+                    } else {
+                        clear();
+                    }
+                },
+
+                timeAgo(timestamp) {
+                    const diff = Date.now() - timestamp;
+                    const seconds = Math.floor(diff / 1000);
+                    const minutes = Math.floor(seconds / 60);
+                    const hours = Math.floor(minutes / 60);
+                    const days = Math.floor(hours / 24);
+
+                    if (seconds < 60) return 'Только что';
+                    if (minutes < 60) return `${minutes} мин назад`;
+                    if (hours < 24) return `${hours} ч назад`;
+                    return `${days} дн назад`;
+                }
+            }));
+        });
+    </script>
+</body>
+</html>
