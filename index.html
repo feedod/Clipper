@@ -234,8 +234,6 @@
          * Конфигурация и Константы
          */
         const CONFIG = {
-            API_BASE: 'https://api.fastsaverapi.com',
-            API_KEY: 'YOUR_API_KEY_HERE', // В продакшене использовать прокси или переменные окружения!
             TIMEOUT: 15000,
             HISTORY_KEY: 'app_history_v1',
             MAX_HISTORY: 20
@@ -344,39 +342,6 @@
         }
 
         /**
-         * Сервис для работы с API
-         */
-        class ApiService {
-            static async fetchVideoInfo(url) {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), CONFIG.TIMEOUT);
-
-                try {
-                    const response = await fetch(`${CONFIG.API_BASE}/v1/fetch?url=${encodeURIComponent(url)}`, {
-                        method: 'GET',
-                        headers: {
-                            'x-api-key': CONFIG.API_KEY,
-                            'Accept': 'application/json'
-                        },
-                        signal: controller.signal
-                    });
-
-                    clearTimeout(timeoutId);
-
-                    if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-                    
-                    const data = await response.json();
-                    if (!data.result) throw new Error('No data received');
-                    
-                    return data.result;
-                } catch (error) {
-                    clearTimeout(timeoutId);
-                    throw error;
-                }
-            }
-        }
-
-        /**
          * Сервис для работы с локальным хранилищем
          */
         class StorageService {
@@ -436,6 +401,124 @@
                 return `${Math.round(mb)} MB`;
             }
         };
+
+        /**
+         * Адаптированная логика загрузки видео (клиентская версия backend кода)
+         * Поскольку это клиент, используем fetch для scraping. Может быть ограничено CORS - для производства используйте прокси.
+         */
+        class ApiService {
+            static async fetchVideoInfo(url) {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), CONFIG.TIMEOUT);
+
+                try {
+                    let result;
+                    if (url.match(/(instagram\.com|instagr\.am)/i)) {
+                        result = await this.fetchInstagram(url);
+                    } else if (url.match(/(tiktok\.com|vm\.tiktok)/i)) {
+                        result = await this.fetchTikTok(url);
+                    } else if (url.match(/(youtube\.com|youtu\.be)/i)) {
+                        result = await this.fetchYouTube(url);
+                    } else {
+                        throw new Error('Unsupported platform');
+                    }
+
+                    clearTimeout(timeoutId);
+                    return result;
+                } catch (error) {
+                    clearTimeout(timeoutId);
+                    throw error;
+                }
+            }
+
+            static async fetchInstagram(url) {
+                const splitUrl = url.split('/');
+                const igCode = splitUrl[4];
+                const apiUrl = `https://www.instagram.com/p/${igCode}/?__a=1&__d=dis`;
+
+                const response = await fetch(apiUrl, { signal: new AbortController().signal });
+                if (!response.ok) throw new Error(`Instagram error: ${response.status}`);
+
+                const json = await response.json();
+                if (!json.graphql) throw new Error('Invalid Instagram response');
+
+                const { shortcode_media: media } = json.graphql;
+                const { __typename: postType, display_url: thumbnail, edge_media_to_caption } = media;
+
+                const caption = edge_media_to_caption.edges[0]?.node.text || '';
+                const { username: author, full_name } = media.owner;
+
+                let medias = [];
+                if (postType === 'GraphImage') {
+                    medias.push({ url: thumbnail, type: 'image', quality: 'HD' });
+                } else if (postType === 'GraphVideo') {
+                    medias.push({ url: media.video_url, type: 'video', quality: 'HD' });
+                } else if (postType === 'GraphSidecar') {
+                    for (const child of media.edge_sidecar_to_children.edges) {
+                        const { is_video, display_url, video_url } = child.node;
+                        medias.push({
+                            url: is_video ? video_url : display_url,
+                            type: is_video ? 'video' : 'image',
+                            quality: 'HD'
+                        });
+                    }
+                } else {
+                    throw new Error('Unsupported Instagram post type');
+                }
+
+                return {
+                    title: caption || 'Instagram Post',
+                    author: `${full_name} (@${author})`,
+                    thumbnail,
+                    duration: media.video_duration || null,
+                    medias
+                };
+            }
+
+            static async fetchTikTok(url) {
+                // Для клиентской стороны используем публичный API или scraping. Здесь простой пример с fetch (может требовать прокси для CORS)
+                // Замените на надежный API, например, https://www.tikwm.com/api/
+                const apiUrl = `https://www.tikwm.com/api/?url=${encodeURIComponent(url)}&hd=1`;
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error(`TikTok error: ${response.status}`);
+
+                const data = await response.json();
+                if (data.code !== 0) throw new Error('Invalid TikTok response');
+
+                const { title, cover: thumbnail, duration, author } = data.data;
+                const medias = [{ url: data.data.play, type: 'video', quality: 'HD' }];
+
+                return {
+                    title: title || 'TikTok Video',
+                    author: author.nickname || 'Unknown',
+                    thumbnail,
+                    duration,
+                    medias
+                };
+            }
+
+            static async fetchYouTube(url) {
+                // Для клиентской стороны используем публичный API, например, noembed или pytube-like. Здесь пример с noembed для meta, но для ссылок нужен сервер.
+                // Полная реализация требует серверной стороны. Здесь симуляция.
+                const videoId = url.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/)?.[1];
+                if (!videoId) throw new Error('Invalid YouTube URL');
+
+                const metaUrl = `https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`;
+                const metaResponse = await fetch(metaUrl);
+                const meta = await metaResponse.json();
+
+                // Для ссылок на скачивание используйте внешний сервис или сервер (здесь placeholder)
+                const medias = [{ url: `https://example.com/download/youtube/${videoId}`, type: 'video', quality: 'HD' }];
+
+                return {
+                    title: meta.title || 'YouTube Video',
+                    author: meta.author_name || 'Unknown',
+                    thumbnail: meta.thumbnail_url,
+                    duration: null, // Нужно парсить отдельно
+                    medias
+                };
+            }
+        }
 
         /**
          * Основной ViewModel приложения для Alpine.js
