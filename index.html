@@ -3,420 +3,183 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#1a1a1a">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Clipper">
-    <title>Clipper - Скачивание видео</title>
+    <title>Video Downloader</title>
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
-
-    <style>
-        /**
-         * ==========================================
-         * ПЕРЕМЕННЫЕ ТЕМЫ TELEGRAM
-         * ==========================================
-         */
-        :root {
-            --tg-theme-bg-color: #1a1a1a;
-            --tg-theme-text-color: #ffffff;
-            --tg-theme-hint-color: #7d7d7d;
-            --tg-theme-link-color: #5eaaef;
-            --tg-theme-button-color: #5eaaef;
-            --tg-theme-button-text-color: #ffffff;
-            --tg-theme-secondary-bg-color: #2a2a2a;
-
-            --color-tg-bg: var(--tg-theme-bg-color);
-            --color-tg-text: var(--tg-theme-text-color);
-            --color-tg-hint: var(--tg-theme-hint-color);
-            --color-tg-link: var(--tg-theme-link-color);
-            --color-tg-btn: var(--tg-theme-button-color);
-            --color-tg-btn-text: var(--tg-theme-button-text-color);
-            --color-tg-secondary: var(--tg-theme-secondary-bg-color);
+    
+    <style type="text/tailwindcss">
+        @theme {
+            --color-tg-bg: var(--tg-theme-bg-color, #1a1a1a);
+            --color-tg-text: var(--tg-theme-text-color, #ffffff);
+            --color-tg-hint: var(--tg-theme-hint-color, #9ca3af);
+            --color-tg-link: var(--tg-theme-link-color, #3b82f6);
+            --color-tg-btn: var(--tg-theme-button-color, #3b82f6);
+            --color-tg-btn-text: var(--tg-theme-button-text-color, #ffffff);
+            --color-tg-secondary: var(--tg-theme-secondary-bg-color, #2a2a2a);
+            --color-tg-header: var(--tg-theme-header-bg-color, #1a1a1a);
         }
-
-        /**
-         * ==========================================
-         * СБРОС И БАЗОВЫЕ СТИЛИ
-         * ==========================================
-         */
-        * {
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-        }
-
-        body {
-            background-color: var(--color-tg-bg);
-            color: var(--color-tg-text);
-        }
-
-        /**
-         * ==========================================
-         * СКРЫТИЕ СКРОЛЛБАРОВ
-         * ==========================================
-         */
-        main::-webkit-scrollbar {
+        
+        [x-cloak] { display: none !important; }
+        
+        /* Скрытие скроллбара для чистого вида */
+        .no-scrollbar::-webkit-scrollbar {
             display: none;
         }
-
-        main {
+        .no-scrollbar {
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
 
-        /* Стилизация скроллбара для качеств видео */
-        .quality-scroll::-webkit-scrollbar {
-            height: 4px;
-        }
-
-        .quality-scroll::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .quality-scroll::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-        }
-
-        .quality-scroll::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        /**
-         * ==========================================
-         * АНИМАЦИИ
-         * ==========================================
-         */
-        @keyframes shimmer {
-            0% {
-                background-position: -1000px 0;
-            }
-            100% {
-                background-position: 1000px 0;
-            }
-        }
-
-        /**
-         * ==========================================
-         * КОМПОНЕНТНЫЕ КЛАССЫ
-         * ==========================================
-         */
-        .focus-glow {
-            box-shadow: inset 0 0 20px rgba(94, 170, 239, 0.1);
-        }
-
-        .glass-effect {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .glass-effect-lg {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .button-primary {
-            background: linear-gradient(to right, var(--color-tg-btn), rgba(94, 170, 239, 0.8));
-            color: var(--color-tg-btn-text);
-            box-shadow: 0 20px 25px -5px rgba(94, 170, 239, 0.5);
-        }
-
-        .button-primary:hover {
-            box-shadow: 0 25px 35px -5px rgba(94, 170, 239, 0.6);
-        }
-
-        .button-secondary {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: var(--color-tg-text);
-        }
-
-        .button-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .input-field {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            color: var(--color-tg-text);
-            transition: all 0.3s ease;
-        }
-
-        .input-field::placeholder {
-            color: var(--color-tg-hint);
-        }
-
-        .input-field:focus {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(94, 170, 239, 0.5);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(94, 170, 239, 0.2);
-        }
-
-        .icon-button {
-            padding: 0.5rem;
-            border-radius: 0.5rem;
-            transition: all 0.2s ease;
-        }
-
-        .icon-button:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .icon-button:active {
-            transform: scale(0.9);
-        }
-
-        .section-title {
-            font-size: 0.75rem;
-            color: var(--color-tg-hint);
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            font-weight: 600;
-        }
-
-        /**
-         * ==========================================
-         * АДАПТИВНОСТЬ
-         * ==========================================
-         */
-        @media (max-width: 320px) {
-            main {
-                padding: 0.75rem;
-            }
+        body {
+            background-color: var(--tg-theme-bg-color, #1a1a1a);
         }
     </style>
 </head>
-
 <body 
-    x-data="AppManager.init()"
-    @:init="initializeTelegramApp()"
-    class="min-h-screen select-none antialiased overflow-x-hidden"
+    class="bg-tg-bg text-tg-text h-dvh w-screen overflow-hidden select-none antialiased"
+    x-data="app"
+    x-cloak
 >
-    <!-- Основной контейнер -->
-    <div class="min-h-screen flex flex-col" :style="{paddingTop: safeAreaTop + 'px', paddingBottom: safeAreaBottom + 'px'}">
-        
-        <!-- Основное содержимое -->
-        <main class="flex-1 px-4 pt-4 pb-6 space-y-5 overflow-y-auto">
+    <!-- Основной контейнер с отступами Safe Area -->
+    <div 
+        class="flex flex-col h-full relative" 
+        :style="{ 
+            paddingTop: `${safeAreaTop}px`, 
+            paddingBottom: `${safeAreaBottom}px` 
+        }"
+    >
+        <!-- Скроллящаяся область контента -->
+        <main class="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-6 no-scrollbar overscroll-contain">
             
-            <!-- Секция ввода URL -->
-            <section class="space-y-3">
+            <!-- Секция ввода -->
+            <section class="space-y-2">
                 <div class="relative group">
-                    <!-- Поле ввода с Liquid Glass дизайном -->
                     <input 
                         type="url" 
                         x-model="url"
-                        @input.debounce.400ms="analyzeVideo()"
-                        @paste="pasteFromClipboard"
-                        class="input-field w-full px-4 py-3.5 pr-12 rounded-2xl text-base"
-                        placeholder="Вставьте ссылку на видео..."
+                        @input.debounce.500ms="analyze"
+                        class="w-full pl-4 pr-12 py-4 rounded-2xl bg-tg-secondary text-tg-text placeholder-tg-hint text-base outline-none border-2 transition-all duration-200"
+                        :class="urlError ? 'border-red-500/50 focus:border-red-500' : (url ? 'border-tg-btn' : 'border-transparent focus:border-tg-btn/50')"
+                        placeholder="Вставьте ссылку..."
                         inputmode="url"
                         autocomplete="off"
-                        autocorrect="off"
-                        autocapitalize="off"
-                        spellcheck="false"
-                        aria-label="URL видео"
                     >
-                    
-                    <!-- Кнопка вставить из буфера обмена -->
                     <button 
-                        @click="pasteFromClipboard()"
-                        @keydown.space.enter="pasteFromClipboard()"
-                        class="absolute right-3 top-1/2 -translate-y-1/2 icon-button focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-tg-bg"
+                        @click="handlePasteOrClear"
+                        class="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-xl text-tg-hint hover:text-tg-text active:scale-90 transition-all"
                         type="button"
-                        title="Вставить из буфера обмена"
-                        aria-label="Вставить из буфера обмена"
-                        style="color: var(--color-tg-hint); --tw-ring-color: var(--color-tg-btn);"
                     >
-                        <svg class="w-5 h-5 hover:text-white transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
-                        </svg>
+                        <!-- Иконка крестика (если есть текст) -->
+                        <svg x-show="url" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                        <!-- Иконка вставки (если пусто) -->
+                        <svg x-show="!url" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                     </button>
-
-                    <!-- Подсвечивание при фокусе -->
-                    <div class="focus-glow absolute inset-0 rounded-2xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
                 </div>
-
-                <!-- Сообщение об ошибке URL -->
-                <p 
-                    x-show="urlError" 
-                    x-text="urlError"
-                    x-transition:enter="transition ease-out duration-200"
-                    x-transition:leave="transition ease-in duration-150"
-                    class="text-red-400 text-sm px-1 flex items-center gap-2"
-                >
-                    <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-                    <span x-text="urlError"></span>
-                </p>
+                <p x-show="urlError" x-text="urlError" x-transition class="text-red-400 text-xs px-2 font-medium"></p>
             </section>
 
-            <!-- Секция платформ -->
-            <section class="space-y-3">
-                <p class="section-title px-1">Платформы</p>
-                <div class="grid grid-cols-4 gap-2.5">
-                    <template x-for="platform in platforms" :key="platform.id">
-                        <button 
-                            @click="selectPlatform(platform.id)"
-                            class="group relative py-4 px-2 rounded-2xl glass-effect flex flex-col items-center gap-2 transition-all duration-300 hover:bg-white/10 active:scale-95 focus:outline-none focus:ring-2"
-                            :class="activePlatform === platform.id && 'ring-2 ring-offset-2 ring-offset-tg-bg bg-white/10'"
-                            style="--tw-ring-color: var(--color-tg-btn);"
-                            type="button"
-                            :aria-pressed="activePlatform === platform.id"
-                            :title="platform.name"
-                        >
-                            <!-- Платформа значок -->
-                            <div class="w-9 h-9 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110" :style="{background: platform.gradient}">
-                                <span x-html="platform.svg" class="w-5 h-5"></span>
-                            </div>
-                            <span class="text-[10px] font-semibold text-center line-clamp-1" x-text="platform.name"></span>
-                        </button>
-                    </template>
-                </div>
-            </section>
-
-            <!-- Статус загрузки -->
-            <section x-show="isLoading" x-transition class="py-8">
-                <div class="flex flex-col items-center gap-4">
-                    <!-- Спиннер анимация -->
-                    <div class="relative w-12 h-12">
-                        <div class="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500/50 via-blue-500/30 to-blue-500/50 animate-spin" style="background: linear-gradient(to right, rgba(94, 170, 239, 0.5), rgba(94, 170, 239, 0.3), rgba(94, 170, 239, 0.5));"></div>
-                        <div class="absolute inset-1 rounded-full" style="background-color: var(--color-tg-bg);"></div>
-                    </div>
-                    <p class="text-sm font-medium" style="color: var(--color-tg-hint);">Получаем информацию...</p>
-                </div>
-            </section>
-
-            <!-- Сообщение об ошибке анализа -->
-            <section x-show="analysisError && !isLoading" x-transition>
-                <div class="rounded-2xl bg-gradient-to-br from-red-500/10 to-red-600/5 backdrop-blur-md border border-red-500/20 p-4 flex items-start gap-3">
-                    <div class="w-9 h-9 rounded-lg bg-red-500/20 flex items-center justify-center shrink-0">
-                        <svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-                        </svg>
-                    </div>
-                    <div class="flex-1">
-                        <p class="text-red-400 font-semibold text-sm">Ошибка анализа</p>
-                        <p class="text-sm text-red-300/70 mt-1" x-text="analysisError"></p>
-                        <button 
-                            @click="analyzeVideo()"
-                            class="text-sm font-semibold mt-3 hover:opacity-80 transition-opacity"
-                            type="button"
-                            style="color: var(--color-tg-link);"
-                        >
-                            Повторить попытку →
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Информация о видео -->
-            <section x-show="video && !isLoading && !analysisError" x-transition>
-                <!-- Миниатюра видео с градиентом -->
-                <div class="rounded-3xl overflow-hidden glass-effect-lg">
-                    <div class="relative aspect-video bg-gradient-to-br from-black/80 via-black/60 to-black/40">
-                        <!-- Изображение миниатюры -->
-                        <img 
-                            :src="video.thumbnail" 
-                            class="w-full h-full object-cover" 
-                            alt="Видео миниатюра"
-                            loading="lazy" 
-                            decoding="async"
-                        >
-                        
-                        <!-- Градиентный оверлей -->
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
-                        
-                        <!-- Информация видео -->
-                        <div class="absolute bottom-0 left-0 right-0 p-4 space-y-1">
-                            <p class="text-white font-bold text-sm line-clamp-2" x-text="video.title"></p>
-                            <p class="text-white/60 text-xs" x-text="video.author"></p>
-                        </div>
-                        
-                        <!-- Длительность видео -->
-                        <div x-show="video.duration" class="absolute top-3 right-3 bg-black/70 backdrop-blur-lg px-2.5 py-1.5 rounded-lg">
-                            <span class="text-white text-xs font-semibold" x-text="video.duration"></span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Выбор качества видео -->
-                <div class="quality-scroll flex gap-2 mt-4 overflow-x-auto pb-2">
-                    <template x-for="media in video.medias" :key="media.url">
-                        <button 
-                            @click="selectMedia(media)"
-                            class="shrink-0 px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-200 active:scale-95 focus:outline-none focus:ring-2"
-                            :class="selectedMedia?.url === media.url ? 'button-primary' : 'button-secondary'"
-                            style="--tw-ring-color: var(--color-tg-btn); --tw-ring-offset-color: var(--color-tg-bg);"
-                            x-text="formatMediaLabel(media)"
-                            type="button"
-                            :aria-selected="selectedMedia?.url === media.url"
-                        ></button>
-                    </template>
-                </div>
-
-                <!-- Прогресс загрузки -->
-                <div x-show="downloadProgress > 0 && isDownloading" x-transition class="mt-4 space-y-2">
-                    <div class="flex justify-between items-center text-sm">
-                        <span class="font-medium" style="color: var(--color-tg-hint);">Загрузка</span>
-                        <span class="font-bold" :style="{color: 'var(--color-tg-btn)'};" x-text="`${downloadProgress}%`"></span>
-                    </div>
-                    <div class="h-2 glass-effect rounded-full overflow-hidden">
+            <!-- Платформы -->
+            <section>
+                <p class="text-xs text-tg-hint uppercase tracking-wider mb-3 px-1 font-bold opacity-70">Поддерживается</p>
+                <div class="grid grid-cols-4 gap-2">
+                    <template x-for="p in platforms" :key="p.id">
                         <div 
-                            class="h-full transition-all duration-300 ease-out rounded-full" 
-                            :style="{width: downloadProgress + '%', background: 'linear-gradient(to right, var(--color-tg-btn), rgba(94, 170, 239, 0.6))'}"
-                        ></div>
+                            class="bg-tg-secondary/50 rounded-2xl p-2.5 flex flex-col items-center gap-2 transition-all duration-200"
+                            :class="active === p.id ? 'bg-tg-secondary ring-2 ring-tg-btn shadow-lg scale-105' : 'opacity-60 grayscale'"
+                        >
+                            <div class="w-8 h-8 rounded-lg flex items-center justify-center shadow-sm" :style="`background: ${p.bg}`">
+                                <span x-html="p.svg" class="w-4 h-4 text-white"></span>
+                            </div>
+                            <span class="text-[10px] font-medium" x-text="p.name"></span>
+                        </div>
+                    </template>
+                </div>
+            </section>
+
+            <!-- Загрузка -->
+            <section x-show="loading" x-transition class="py-6 flex flex-col items-center justify-center gap-3">
+                <div class="w-10 h-10 rounded-full border-4 border-tg-secondary border-t-tg-btn animate-spin"></div>
+                <p class="text-xs text-tg-hint font-medium animate-pulse">Анализируем ссылку...</p>
+            </section>
+
+            <!-- Ошибка -->
+            <section x-show="error && !loading" x-transition>
+                <div class="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 flex gap-3 items-start">
+                    <svg class="w-6 h-6 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <div>
+                        <h3 class="text-red-500 font-semibold text-sm">Ошибка загрузки</h3>
+                        <p class="text-tg-hint text-xs mt-1 leading-relaxed" x-text="error"></p>
+                        <button @click="analyze" class="mt-2 text-xs font-bold text-tg-link uppercase tracking-wide">Повторить</button>
                     </div>
                 </div>
             </section>
 
-            <!-- История загрузок -->
-            <section x-show="history.length > 0" x-transition>
-                <div class="flex items-center justify-between mb-3 px-1">
-                    <p class="section-title">История</p>
-                    <button 
-                        @click="clearHistory()"
-                        class="text-xs font-semibold hover:opacity-80 transition-opacity focus:outline-none"
-                        type="button"
-                        style="color: var(--color-tg-link);"
-                    >
-                        Очистить
-                    </button>
+            <!-- Результат видео -->
+            <section x-show="video && !loading && !error" x-transition class="space-y-4">
+                <!-- Карточка видео -->
+                <div class="bg-tg-secondary rounded-3xl overflow-hidden shadow-sm ring-1 ring-white/5">
+                    <div class="relative aspect-video bg-black">
+                        <img :src="video?.thumbnail" class="w-full h-full object-cover opacity-90" alt="">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent"></div>
+                        
+                        <!-- Инфо о видео -->
+                        <div class="absolute bottom-0 left-0 right-0 p-4">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="px-2 py-0.5 rounded-md bg-white/20 backdrop-blur-md text-[10px] font-bold text-white" x-text="video?.duration || 'VIDEO'"></span>
+                            </div>
+                            <h3 class="text-white font-semibold text-sm line-clamp-2 leading-tight" x-text="video?.title"></h3>
+                            <p class="text-white/60 text-xs mt-1" x-text="video?.author"></p>
+                        </div>
+                    </div>
                 </div>
-                <div class="space-y-2.5">
-                    <template x-for="historyItem in history" :key="historyItem.id">
-                        <button 
-                            @click="loadFromHistory(historyItem)"
-                            class="w-full group rounded-2xl glass-effect p-3 flex items-center gap-3 transition-all duration-200 hover:bg-white/10 active:scale-95 focus:outline-none focus:ring-2"
-                            type="button"
-                            style="--tw-ring-color: var(--color-tg-btn);"
-                        >
-                            <!-- Миниатюра истории -->
-                            <img 
-                                :src="historyItem.thumbnail" 
-                                class="w-12 h-12 rounded-lg object-cover shrink-0 group-hover:scale-110 transition-transform" 
-                                alt="История видео"
-                                loading="lazy" 
-                                decoding="async"
+
+                <!-- Выбор качества -->
+                <div>
+                    <p class="text-xs text-tg-hint uppercase tracking-wider mb-2 px-1 font-bold opacity-70">Качество</p>
+                    <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                        <template x-for="m in video?.medias" :key="m.url">
+                            <button 
+                                @click="selectMedia(m)"
+                                class="shrink-0 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 border"
+                                :class="selectedMedia?.url === m.url 
+                                    ? 'bg-tg-btn border-tg-btn text-tg-btn-text shadow-lg shadow-tg-btn/20' 
+                                    : 'bg-tg-secondary border-transparent text-tg-text hover:bg-tg-secondary/80'"
                             >
-                            <div class="flex-1 min-w-0 text-left">
-                                <p class="text-sm font-semibold truncate" x-text="historyItem.title"></p>
-                                <p class="text-xs mt-0.5" x-text="formatTimeAgo(historyItem.timestamp)" style="color: var(--color-tg-hint);"></p>
+                                <div class="flex flex-col items-center gap-0.5">
+                                    <span x-text="m.quality || 'HD'"></span>
+                                    <span class="text-[9px] opacity-70 font-normal" x-text="m.formattedSize || (m.extension ? m.extension.toUpperCase() : 'MP4')"></span>
+                                </div>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+            </section>
+
+            <!-- История -->
+            <section x-show="history.length > 0" x-transition>
+                <div class="flex items-center justify-between mb-2 px-1">
+                    <p class="text-xs text-tg-hint uppercase tracking-wider font-bold opacity-70">История</p>
+                    <button @click="clearHistory" class="text-xs text-tg-link font-medium active:opacity-60">Очистить</button>
+                </div>
+                <div class="space-y-2">
+                    <template x-for="h in history" :key="h.id">
+                        <button 
+                            @click="restoreFromHistory(h)"
+                            class="w-full bg-tg-secondary/50 hover:bg-tg-secondary rounded-2xl p-2 flex items-center gap-3 transition-colors text-left group"
+                        >
+                            <img :src="h.thumbnail" class="w-12 h-12 rounded-xl object-cover bg-black/20 shrink-0" loading="lazy">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-medium truncate text-tg-text group-hover:text-tg-link transition-colors" x-text="h.title"></p>
+                                <p class="text-[10px] text-tg-hint mt-0.5" x-text="timeAgo(h.time)"></p>
+                            </div>
+                            <div class="w-6 h-6 rounded-full bg-tg-bg flex items-center justify-center text-tg-hint">
+                                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                             </div>
                         </button>
                     </template>
@@ -424,660 +187,407 @@
             </section>
         </main>
 
-        <!-- Кнопка скачивания -->
-        <div class="shrink-0 px-4 py-4 pointer-events-none" style="background: linear-gradient(to top, var(--color-tg-bg), rgba(26, 26, 26, 0.8), transparent);">
+        <!-- Футер с кнопкой -->
+        <div class="shrink-0 p-4 pt-2 bg-gradient-to-t from-tg-bg via-tg-bg to-transparent z-10">
+            <!-- Прогресс бар -->
+            <div x-show="downloading" x-transition class="mb-3">
+                <div class="flex justify-between text-xs mb-1.5 px-1">
+                    <span class="text-tg-hint">Загрузка файла...</span>
+                    <span class="font-bold text-tg-btn" x-text="`${progress}%`"></span>
+                </div>
+                <div class="h-1.5 bg-tg-secondary rounded-full overflow-hidden">
+                    <div class="h-full bg-tg-btn rounded-full transition-all duration-300 ease-out" :style="`width: ${progress}%`"></div>
+                </div>
+            </div>
+
             <button 
-                @click="downloadVideo()"
-                :disabled="!video || !selectedMedia || isDownloading"
-                class="w-full pointer-events-auto py-3.5 rounded-2xl font-bold flex items-center justify-center gap-2.5 transition-all duration-200 active:scale-95 focus:outline-none focus:ring-2"
-                :class="video && selectedMedia && !isDownloading 
-                    ? 'button-primary' 
-                    : 'button-secondary'"
-                style="--tw-ring-color: var(--color-tg-btn);"
-                type="button"
+                @click="download"
+                :disabled="!video || !selectedMedia || downloading"
+                class="w-full py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all duration-200 active:scale-[0.98] disabled:active:scale-100 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-tg-btn/10"
+                :class="video && selectedMedia && !downloading ? 'bg-tg-btn text-tg-btn-text' : 'bg-tg-secondary text-tg-hint'"
             >
-                <!-- Иконка загрузки/стрелка -->
-                <template x-if="isDownloading">
-                    <div class="w-5 h-5 rounded-full border-2 border-current border-t-transparent animate-spin opacity-80"></div>
+                <template x-if="!downloading">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 </template>
-                <template x-if="!isDownloading">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-                    </svg>
-                </template>
-                <span x-text="getDownloadButtonText()"></span>
+                <span x-text="getButtonText()"></span>
             </button>
         </div>
 
-        <!-- Toast уведомление -->
+        <!-- Тост уведомление -->
         <div 
-            x-show="toast.isVisible" 
+            x-show="toast.show" 
             x-transition:enter="transition ease-out duration-300"
-            x-transition:enter-start="opacity-0 translate-y-8 scale-95"
+            x-transition:enter-start="opacity-0 translate-y-8 scale-90"
             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
             x-transition:leave="transition ease-in duration-200"
-            x-transition:leave-start="opacity-100"
-            x-transition:leave-end="opacity-0 translate-y-2"
-            @click="toast.isVisible = false"
-            class="fixed bottom-32 left-4 right-4 z-50 pointer-events-auto"
+            x-transition:leave-start="opacity-100 scale-100"
+            x-transition:leave-end="opacity-0 scale-95"
+            class="fixed top-4 left-4 right-4 z-50 flex justify-center pointer-events-none"
         >
-            <div class="rounded-2xl glass-effect-lg p-4 flex items-center gap-3 shadow-2xl">
-                <!-- Иконка статуса -->
-                <div class="shrink-0">
-                    <template x-if="toast.isSuccess">
-                        <div class="w-5 h-5 rounded-full bg-green-500/30 flex items-center justify-center">
-                            <svg class="w-3.5 h-3.5 text-green-400" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-                            </svg>
-                        </div>
-                    </template>
-                    <template x-if="!toast.isSuccess">
-                        <div class="w-5 h-5 rounded-full bg-red-500/30 flex items-center justify-center">
-                            <svg class="w-3.5 h-3.5 text-red-400" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-                            </svg>
-                        </div>
-                    </template>
-                </div>
-                <p class="text-sm font-medium flex-1" x-text="toast.message"></p>
+            <div class="bg-tg-secondary/90 backdrop-blur-md border border-white/5 shadow-2xl rounded-2xl px-4 py-3 flex items-center gap-3 max-w-sm w-full">
+                <div :class="toast.ok ? 'bg-green-500' : 'bg-red-500'" class="w-2 h-2 rounded-full shrink-0 animate-pulse"></div>
+                <p class="text-sm font-medium text-tg-text" x-text="toast.msg"></p>
             </div>
         </div>
     </div>
 
     <script>
-        /**
-         * ==========================================
-         * КОНФИГУРАЦИЯ ПРИЛОЖЕНИЯ
-         * ==========================================
-         */
-        const API_CONFIG = {
-            baseUrl: 'https://api.fastsaverapi.com',
-            apiKey: 'YOUR_API_KEY_HERE',
-            timeout: 30000
-        };
-
-        /**
-         * ==========================================
-         * КЛАСС: УПРАВЛЕНИЕ API
-         * ==========================================
-         */
-        class APIManager {
-            /**
-             * Получить информацию о видео
-             * @param {string} url - URL видео
-             * @returns {Promise<Object>} Данные видео
-             */
-            static async fetchVideo(url) {
-                try {
-                    const response = await fetch(
-                        `${API_CONFIG.baseUrl}/v1/fetch?url=${encodeURIComponent(url)}`,
-                        {
-                            method: 'GET',
-                            headers: {
-                                'x-api-key': API_CONFIG.apiKey,
-                                'Accept': 'application/json'
-                            },
-                            signal: AbortSignal.timeout(API_CONFIG.timeout)
-                        }
-                    );
-
-                    if (!response.ok) {
-                        const errorData = await response.json().catch(() => ({}));
-                        throw new Error(
-                            errorData.message || 
-                            `Ошибка сервера: ${response.status} ${response.statusText}`
-                        );
-                    }
-
-                    const data = await response.json();
-
-                    if (!data?.result) {
-                        throw new Error('Не удалось получить информацию о видео');
-                    }
-
-                    return {
-                        title: data.result.title || 'Без названия',
-                        author: data.result.author || 'Неизвестный автор',
-                        duration: data.result.duration || '',
-                        thumbnail: data.result.thumbnail || '',
-                        medias: Array.isArray(data.result.medias) ? data.result.medias : []
-                    };
-                } catch (error) {
-                    if (error.name === 'AbortError') {
-                        throw new Error('Превышено время ожидания');
-                    }
-                    throw error;
-                }
-            }
-        }
-
-        /**
-         * ==========================================
-         * КЛАСС: УПРАВЛЕНИЕ ИСТОРИЕЙ
-         * ==========================================
-         */
-        class HistoryManager {
-            static STORAGE_KEY = 'clipper_history';
-            static MAX_ITEMS = 10;
-
-            /**
-             * Загрузить историю из localStorage
-             * @returns {Array} Массив элементов истории
-             */
-            static load() {
-                try {
-                    const saved = localStorage.getItem(this.STORAGE_KEY);
-                    return saved ? JSON.parse(saved) : [];
-                } catch {
-                    return [];
-                }
-            }
-
-            /**
-             * Сохранить элемент в историю
-             * @param {Object} item - Элемент для сохранения
-             */
-            static save(item) {
-                try {
-                    const history = this.load();
-                    const filtered = history.filter(h => h.url !== item.url);
-                    const updated = [item, ...filtered].slice(0, this.MAX_ITEMS);
-                    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(updated));
-                } catch (error) {
-                    console.error('Ошибка при сохранении истории:', error);
-                }
-            }
-
-            /**
-             * Очистить всю историю
-             */
-            static clear() {
-                try {
-                    localStorage.removeItem(this.STORAGE_KEY);
-                } catch (error) {
-                    console.error('Ошибка при удалении истории:', error);
-                }
-            }
-        }
-
-        /**
-         * ==========================================
-         * КЛАСС: УПРАВЛЕНИЕ УВЕДОМЛЕНИЯМИ
-         * ==========================================
-         */
-        class ToastManager {
-            static timeout = null;
-
-            /**
-             * Показать уведомление
-             * @param {string} message - Текст сообщения
-             * @param {boolean} isSuccess - Успех или ошибка
-             */
-            static show(message, isSuccess = true) {
-                if (this.timeout) {
-                    clearTimeout(this.timeout);
-                }
-
-                Alpine.store('app').toast = {
-                    isVisible: true,
-                    message: message || 'Готово',
-                    isSuccess
-                };
-
-                this.timeout = setTimeout(() => {
-                    Alpine.store('app').toast.isVisible = false;
-                }, 3000);
-            }
-        }
-
-        /**
-         * ==========================================
-         * КЛАСС: УПРАВЛЕНИЕ TELEGRAM WEB APP
-         * ==========================================
-         */
-        class TelegramManager {
-            static webApp = window.Telegram?.WebApp;
-
-            /**
-             * Инициализировать Telegram Web App
-             */
-            static initialize() {
-                if (!this.webApp) return false;
-
-                try {
-                    this.webApp.ready();
-                    this.webApp.expand?.();
-                    this.webApp.disableVerticalSwipes?.();
-                    this.webApp.enableClosingConfirmation?.();
-                    
-                    this.webApp.setHeaderColor?.('secondary_bg_color');
-                    this.webApp.setBackgroundColor?.('secondary_bg_color');
-                    
-                    return true;
-                } catch (error) {
-                    console.error('Ошибка инициализации Telegram:', error);
-                    return false;
-                }
-            }
-
-            /**
-             * Получить отступы безопасной области
-             * @returns {Object} Объект с top и bottom отступами
-             */
-            static getSafeAreaInsets() {
-                if (!this.webApp) {
-                    return { top: 0, bottom: 0 };
-                }
-
-                const safeArea = this.webApp.safeAreaInset || {};
-                const contentSafeArea = this.webApp.contentSafeAreaInset || {};
-
-                return {
-                    top: (safeArea.top || 0) + (contentSafeArea.top || 0),
-                    bottom: (safeArea.bottom || 0) + (contentSafeArea.bottom || 0)
-                };
-            }
-
-            /**
-             * Открыть ссылку
-             * @param {string} url - URL для открытия
-             */
-            static openLink(url) {
-                if (this.webApp?.openLink) {
-                    this.webApp.openLink(url);
-                } else {
-                    window.open(url, '_blank');
-                }
-            }
-
-            /**
-             * Показать подтверждение
-             * @param {string} message - Текст сообщения
-             * @returns {Promise<boolean>}
-             */
-            static async showConfirm(message) {
-                return new Promise(resolve => {
-                    if (this.webApp?.showConfirm) {
-                        this.webApp.showConfirm(message, resolve);
-                    } else {
-                        resolve(window.confirm(message));
-                    }
-                });
-            }
-
-            /**
-             * Вибрация
-             * @param {string} type - Тип: light, medium, heavy
-             */
-            static hapticFeedback(type = 'light') {
-                try {
-                    this.webApp?.HapticFeedback?.impactOccurred?.(type);
-                } catch {}
-            }
-
-            /**
-             * Звуковое уведомление
-             * @param {string} type - Тип: success, error
-             */
-            static notificationFeedback(type = 'success') {
-                try {
-                    this.webApp?.HapticFeedback?.notificationOccurred?.(type);
-                } catch {}
-            }
-
-            /**
-             * Слушать события
-             * @param {string} event - Событие
-             * @param {Function} callback - Функция обратного вызова
-             */
-            static addEventListener(event, callback) {
-                if (this.webApp?.onEvent) {
-                    this.webApp.onEvent(event, callback);
-                }
-            }
-        }
-
-        /**
-         * ==========================================
-         * ГЛАВНЫЙ МЕНЕДЖЕР ПРИЛОЖЕНИЯ
-         * ==========================================
-         */
-        class AppManager {
-            static init() {
-                return {
-                    // === СОСТОЯНИЕ ===
-                    url: '',
-                    urlError: '',
-                    activePlatform: null,
-                    isLoading: false,
-                    analysisError: '',
-                    video: null,
-                    selectedMedia: null,
-                    isDownloading: false,
-                    downloadProgress: 0,
-                    history: HistoryManager.load(),
-                    safeAreaTop: 0,
-                    safeAreaBottom: 0,
-
-                    // === ДАННЫЕ ПЛАТФОРМ ===
-                    platforms: [
-                        {
-                            id: 'ig',
-                            name: 'Instagram',
-                            gradient: 'linear-gradient(45deg, #f09433, #dc2743, #bc1888)',
-                            regex: /instagram\.com/i,
-                            svg: '<svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 2c2.717 0 3.056.01 4.122.06 1.065.05 1.79.217 2.428.465.66.254 1.216.598 1.772 1.153.509.5.902 1.105 1.153 1.772.247.637.415 1.363.465 2.428.047 1.066.06 1.405.06 4.122 0 2.717-.01 3.056-.06 4.122-.05 1.065-.218 1.79-.465 2.428a4.883 4.883 0 01-1.153 1.772c-.5.508-1.105.902-1.772 1.153-.637.247-1.363.415-2.428.465-1.066.047-1.405.06-4.122.06-2.717 0-3.056-.01-4.122-.06-1.065-.05-1.79-.218-2.428-.465a4.89 4.89 0 01-1.772-1.153 4.904 4.904 0 01-1.153-1.772c-.248-.637-.415-1.363-.465-2.428C2.013 15.056 2 14.717 2 12c0-2.717.01-3.056.06-4.122.05-1.066.217-1.79.465-2.428a4.88 4.88 0 011.153-1.772A4.897 4.897 0 015.45 2.525c.638-.248 1.362-.415 2.428-.465C8.944 2.013 9.283 2 12 2zm0 5a5 5 0 100 10 5 5 0 000-10zm6.5-.25a1.25 1.25 0 10-2.5 0 1.25 1.25 0 002.5 0zM12 9a3 3 0 110 6 3 3 0 010-6z"/></svg>'
-                        },
-                        {
-                            id: 'tt',
-                            name: 'TikTok',
-                            gradient: '#000000',
-                            regex: /tiktok\.com|vm\.tiktok/i,
-                            svg: '<svg fill="currentColor" viewBox="0 0 24 24"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/></svg>'
-                        },
-                        {
-                            id: 'yt',
-                            name: 'YouTube',
-                            gradient: '#dc2626',
-                            regex: /youtube\.com|youtu\.be/i,
-                            svg: '<svg fill="currentColor" viewBox="0 0 24 24"><path d="M23.5 6.19a3.02 3.02 0 00-2.12-2.14C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.38.5A3.02 3.02 0 00.5 6.19C0 8.07 0 12 0 12s0 3.93.5 5.81a3.02 3.02 0 002.12 2.14c1.88.5 9.38.5 9.38.5s7.5 0 9.38-.5a3.02 3.02 0 002.12-2.14C24 15.93 24 12 24 12s0-3.93-.5-5.81zM9.55 15.57V8.43L15.82 12l-6.27 3.57z"/></svg>'
-                        },
-                        {
-                            id: 'x',
-                            name: 'X / Twitter',
-                            gradient: '#000000',
-                            regex: /twitter\.com|x\.com/i,
-                            svg: '<svg fill="currentColor" viewBox="0 0 24 24"><path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.66l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25h6.83l4.71 6.23zm-1.16 17.52h1.83L7.08 4.13H5.12z"/></svg>'
-                        }
-                    ],
-
-                    // === TOAST ===
-                    toast: {
-                        isVisible: false,
-                        message: '',
-                        isSuccess: true
-                    },
-
-                    /**
-                     * Инициализация
-                     */
-                    initializeTelegramApp() {
-                        TelegramManager.initialize();
-                        
-                        const insets = TelegramManager.getSafeAreaInsets();
-                        this.safeAreaTop = insets.top;
-                        this.safeAreaBottom = insets.bottom;
-
-                        TelegramManager.addEventListener('viewportChanged', () => {
-                            const newInsets = TelegramManager.getSafeAreaInsets();
-                            this.safeAreaTop = newInsets.top;
-                            this.safeAreaBottom = newInsets.bottom;
-                        });
-                    },
-
-                    /**
-                     * Вставить из буфера обмена
-                     */
-                    async pasteFromClipboard() {
-                        TelegramManager.hapticFeedback('light');
-                        
-                        try {
-                            const text = await navigator.clipboard.readText();
-                            
-                            if (!text) {
-                                throw new Error('Буфер обмена пуст');
-                            }
-
-                            this.url = text.trim();
-                            this.analyzeVideo();
-                        } catch (error) {
-                            ToastManager.show('Не удалось получить доступ к буферу обмена', false);
-                            TelegramManager.notificationFeedback('error');
-                        }
-                    },
-
-                    /**
-                     * Выбрать платформу
-                     */
-                    selectPlatform(platformId) {
-                        this.activePlatform = this.activePlatform === platformId ? null : platformId;
-                        TelegramManager.hapticFeedback('light');
-                    },
-
-                    /**
-                     * Анализировать видео
-                     */
-                    async analyzeVideo() {
-                        this.urlError = '';
-                        this.analysisError = '';
-                        this.video = null;
-                        this.selectedMedia = null;
-
-                        const trimmedUrl = this.url.trim();
-
-                        if (!trimmedUrl) {
-                            this.activePlatform = null;
-                            return;
-                        }
-
-                        if (!this.isValidUrl(trimmedUrl)) {
-                            this.urlError = 'Пожалуйста, введите корректную ссылку';
-                            this.activePlatform = null;
-                            return;
-                        }
-
-                        const platform = this.detectPlatform(trimmedUrl);
-                        this.activePlatform = platform?.id || null;
-
-                        if (!platform) {
-                            this.urlError = 'Платформа не поддерживается';
-                            return;
-                        }
-
-                        this.isLoading = true;
-
-                        try {
-                            const videoData = await APIManager.fetchVideo(trimmedUrl);
-
-                            if (!videoData.medias || videoData.medias.length === 0) {
-                                throw new Error('Для этого видео нет доступных форматов');
-                            }
-
-                            this.video = {
-                                id: crypto.randomUUID(),
-                                title: videoData.title,
-                                author: videoData.author,
-                                duration: videoData.duration,
-                                thumbnail: videoData.thumbnail,
-                                medias: videoData.medias,
-                                sourceUrl: trimmedUrl
-                            };
-
-                            const videoMedia = this.video.medias.find(m => m.type === 'video');
-                            this.selectedMedia = videoMedia || this.video.medias[0];
-
-                            TelegramManager.notificationFeedback('success');
-                        } catch (error) {
-                            this.analysisError = error.message || 'Не удалось получить информацию о видео';
-                            TelegramManager.notificationFeedback('error');
-                        } finally {
-                            this.isLoading = false;
-                        }
-                    },
-
-                    /**
-                     * Проверить URL
-                     */
-                    isValidUrl(urlString) {
-                        try {
-                            const url = new URL(urlString);
-                            return /^https?:$/.test(url.protocol);
-                        } catch {
-                            return false;
-                        }
-                    },
-
-                    /**
-                     * Определить платформу
-                     */
-                    detectPlatform(url) {
-                        return this.platforms.find(p => p.regex.test(url)) || null;
-                    },
-
-                    /**
-                     * Выбрать медиа
-                     */
-                    selectMedia(media) {
-                        this.selectedMedia = media;
-                        TelegramManager.hapticFeedback('light');
-                    },
-
-                    /**
-                     * Форматировать метку медиа
-                     */
-                    formatMediaLabel(media) {
-                        if (!media) return 'Скачать';
-
-                        const parts = [];
-
-                        if (media.quality) {
-                            parts.push(media.quality);
-                        }
-
-                        if (media.extension) {
-                            parts.push(media.extension.toUpperCase());
-                        }
-
-                        if (media.formattedSize) {
-                            parts.push(media.formattedSize);
-                        }
-
-                        return parts.length > 0 
-                            ? parts.join(' • ') 
-                            : (media.type || 'Скачать');
-                    },
-
-                    /**
-                     * Текст кнопки
-                     */
-                    getDownloadButtonText() {
-                        if (this.isDownloading) return 'Загрузка...';
-                        if (!this.video) return 'Вставьте ссылку';
-                        if (!this.selectedMedia) return 'Выберите качество';
-                        return 'Скачать';
-                    },
-
-                    /**
-                     * Скачать видео
-                     */
-                    async downloadVideo() {
-                        if (!this.video || !this.selectedMedia || this.isDownloading) {
-                            return;
-                        }
-
-                        this.isDownloading = true;
-                        this.downloadProgress = 0;
-                        TelegramManager.hapticFeedback('medium');
-
-                        try {
-                            const downloadUrl = this.selectedMedia.url;
-
-                            if (!downloadUrl) {
-                                throw new Error('Ссылка на скачивание недоступна');
-                            }
-
-                            TelegramManager.openLink(downloadUrl);
-
-                            const progressInterval = setInterval(() => {
-                                const increment = Math.floor(Math.random() * 20) + 10;
-                                this.downloadProgress = Math.min(95, this.downloadProgress + increment);
-
-                                if (this.downloadProgress >= 95) {
-                                    clearInterval(progressInterval);
-                                }
-                            }, 150);
-
-                            await new Promise(resolve => setTimeout(resolve, 2000));
-                            this.downloadProgress = 100;
-
-                            const historyItem = {
-                                id: this.video.id,
-                                title: this.video.title,
-                                thumbnail: this.video.thumbnail,
-                                url: this.video.sourceUrl,
-                                timestamp: Date.now()
-                            };
-
-                            HistoryManager.save(historyItem);
-                            this.history = HistoryManager.load();
-
-                            ToastManager.show('✓ Загрузка началась!', true);
-                            TelegramManager.notificationFeedback('success');
-                        } catch (error) {
-                            ToastManager.show(error.message || 'Ошибка при загрузке', false);
-                            TelegramManager.notificationFeedback('error');
-                        } finally {
-                            this.isDownloading = false;
-                            
-                            setTimeout(() => {
-                                this.downloadProgress = 0;
-                            }, 1000);
-                        }
-                    },
-
-                    /**
-                     * Загрузить из истории
-                     */
-                    async loadFromHistory(historyItem) {
-                        this.url = historyItem.url;
-                        await this.analyzeVideo();
-                        TelegramManager.hapticFeedback('medium');
-                    },
-
-                    /**
-                     * Форматировать время
-                     */
-                    formatTimeAgo(timestamp) {
-                        const seconds = Math.floor((Date.now() - timestamp) / 1000);
-                        const minutes = Math.floor(seconds / 60);
-                        const hours = Math.floor(minutes / 60);
-                        const days = Math.floor(hours / 24);
-
-                        if (seconds < 60) return 'Только что';
-                        if (minutes < 60) return `${minutes}м назад`;
-                        if (hours < 24) return `${hours}ч назад`;
-                        if (days < 30) return `${days}д назад`;
-                        
-                        return 'Давно';
-                    },
-
-                    /**
-                     * Очистить историю
-                     */
-                    async clearHistory() {
-                        const confirmed = await TelegramManager.showConfirm(
-                            'Вы уверены, что хотите очистить всю историю?'
-                        );
-
-                        if (!confirmed) return;
-
-                        HistoryManager.clear();
-                        this.history = [];
-                        ToastManager.show('История очищена', true);
-                        TelegramManager.hapticFeedback('medium');
-                    }
-                };
-            }
-        }
+        // ВАЖНО: В реальном продакшене используйте прокси-сервер, чтобы скрыть API ключ!
+        const API_BASE = 'https://api.fastsaverapi.com';
+        const API_KEY = 'YOUR_API_KEY_HERE'; 
 
         document.addEventListener('alpine:init', () => {
-            Alpine.store('app', {
-                toast: {
-                    isVisible: false,
-                    message: '',
-                    isSuccess: true
+            Alpine.data('app', () => ({
+                tg: window.Telegram?.WebApp,
+                url: '',
+                urlError: '',
+                active: null,
+                loading: false,
+                error: '',
+                video: null,
+                selectedMedia: null,
+                downloading: false,
+                progress: 0,
+                history: [],
+                toast: { show: false, msg: '', ok: true },
+                toastTimeout: null,
+                safeAreaTop: 0,
+                safeAreaBottom: 0,
+
+                platforms: [
+                    { id: 'ig', name: 'Instagram', bg: 'linear-gradient(45deg,#f09433,#dc2743,#bc1888)', re: /(instagram\.com|instagr\.am)/i, svg: '<svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.069-4.85.069-3.204 0-3.584-.012-4.849-.069-3.225-.149-4.771-1.664-4.919-4.919-.058-1.265-.069-1.644-.069-4.849 0-3.204.012-3.584.069-4.849.149-3.225 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>' },
+                    { id: 'tt', name: 'TikTok', bg: '#000000', re: /(tiktok\.com|vm\.tiktok)/i, svg: '<svg fill="currentColor" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93v6.16c0 2.52-1.12 4.84-2.9 6.37-1.77 1.52-4.15 2.36-6.55 2.26-1.95-.1-3.8-.69-5.38-1.73-1.58-1.04-2.8-2.47-3.51-4.23-.72-1.76-.79-3.71-.21-5.5.58-1.79 1.73-3.37 3.29-4.5 1.56-1.13 3.49-1.72 5.43-1.66v4.21c-.97-.07-1.92.25-2.66.89-.74.64-1.19 1.54-1.24 2.51.04.97.5 1.87 1.25 2.5.75.63 1.71.95 2.68.88 1.56-.1 3.01-.9 3.96-2.18.95-1.28 1.45-2.84 1.37-4.44V.02z"/></svg>' },
+                    { id: 'yt', name: 'YouTube', bg: '#dc2626', re: /(youtube\.com|youtu\.be)/i, svg: '<svg fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.498-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>' },
+                    { id: 'x', name: 'X / Twitter', bg: '#000000', re: /(twitter\.com|x\.com)/i, svg: '<svg fill="currentColor" viewBox="0 0 24 24"><path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"/></svg>' }
+                ],
+
+                init() {
+                    // Инициализация Telegram WebApp
+                    if (this.tg) {
+                        this.tg.ready();
+                        this.tg.expand();
+                        
+                        // Безопасная настройка цветов
+                        try {
+                            this.tg.setHeaderColor(this.tg.themeParams.secondary_bg_color || '#2a2a2a');
+                            this.tg.setBackgroundColor(this.tg.themeParams.bg_color || '#1a1a1a');
+                        } catch(e) {}
+
+                        // Отслеживание Safe Area (особенно для iOS)
+                        this.updateSafeArea();
+                        this.tg.onEvent('viewportChanged', () => this.updateSafeArea());
+                    }
+                    
+                    this.loadHistory();
+                },
+
+                updateSafeArea() {
+                    if (this.tg) {
+                        // Используем contentSafeAreaInset если доступно, иначе фоллбэк
+                        const inset = this.tg.contentSafeAreaInset || { top: 0, bottom: 0 };
+                        this.safeAreaTop = inset.top;
+                        this.safeAreaBottom = inset.bottom;
+                    }
+                },
+
+                handlePasteOrClear() {
+                    if (this.url) {
+                        this.url = '';
+                        this.active = null;
+                        this.video = null;
+                        this.error = '';
+                        this.haptic('light');
+                    } else {
+                        this.paste();
+                    }
+                },
+
+                async paste() {
+                    this.haptic('medium');
+                    try {
+                        // Сначала пробуем через API браузера
+                        const text = await navigator.clipboard.readText();
+                        if (text) {
+                            this.url = text.trim();
+                            this.analyze();
+                            return;
+                        }
+                    } catch (e) {
+                        console.log('Clipboard API failed, trying Telegram API');
+                    }
+
+                    // Фоллбэк для Telegram (если метод доступен)
+                    if (this.tg?.readTextFromClipboard) {
+                        this.tg.readTextFromClipboard((text) => {
+                            if (text) {
+                                this.url = text.trim();
+                                this.analyze();
+                            } else {
+                                this.showToast('Буфер обмена пуст', false);
+                            }
+                        });
+                    } else {
+                        this.showToast('Вставьте ссылку вручную', false);
+                    }
+                },
+
+                validateUrl(string) {
+                    if (!string) return false;
+                    try {
+                        const url = new URL(string);
+                        return url.protocol === 'http:' || url.protocol === 'https:';
+                    } catch {
+                        return false;
+                    }
+                },
+
+                async analyze() {
+                    this.error = '';
+                    this.urlError = '';
+                    this.video = null;
+                    this.selectedMedia = null;
+                    this.progress = 0;
+                    this.downloading = false;
+
+                    const trimmedUrl = this.url.trim();
+
+                    if (!trimmedUrl) {
+                        this.active = null;
+                        return;
+                    }
+
+                    if (!this.validateUrl(trimmedUrl)) {
+                        this.urlError = 'Некорректная ссылка';
+                        this.active = null;
+                        this.haptic('error');
+                        return;
+                    }
+
+                    // Определение платформы
+                    const platform = this.platforms.find(p => p.re.test(trimmedUrl));
+                    this.active = platform ? platform.id : null;
+
+                    if (!platform) {
+                        this.urlError = 'Эта ссылка не поддерживается';
+                        this.haptic('error');
+                        return;
+                    }
+
+                    this.loading = true;
+                    this.haptic('light');
+
+                    try {
+                        // Добавляем таймаут для fetch
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 сек
+
+                        const response = await fetch(`${API_BASE}/v1/fetch?url=${encodeURIComponent(trimmedUrl)}`, {
+                            method: 'GET',
+                            headers: {
+                                'x-api-key': API_KEY,
+                                'Accept': 'application/json'
+                            },
+                            signal: controller.signal
+                        });
+                        
+                        clearTimeout(timeoutId);
+
+                        if (!response.ok) {
+                            throw new Error(`Ошибка сервера: ${response.status}`);
+                        }
+
+                        const data = await response.json();
+
+                        if (!data.result) {
+                            throw new Error('Видео не найдено или доступ закрыт');
+                        }
+
+                        // Формируем объект видео
+                        const medias = Array.isArray(data.result.medias) ? data.result.medias : [];
+                        
+                        // Фильтруем только полезные медиа (видео/аудио)
+                        const validMedias = medias.filter(m => m.url);
+
+                        if (validMedias.length === 0) {
+                            throw new Error('Ссылки для скачивания не найдены');
+                        }
+
+                        this.video = {
+                            id: crypto.randomUUID(),
+                            title: data.result.title || 'Видео без названия',
+                            author: data.result.author || 'Неизвестный автор',
+                            duration: this.formatDuration(data.result.duration),
+                            thumbnail: data.result.thumbnail || '',
+                            medias: validMedias,
+                            sourceUrl: trimmedUrl
+                        };
+
+                        // Автовыбор лучшего качества (обычно MP4 с видео)
+                        this.selectedMedia = this.video.medias.find(m => m.type === 'video' && !m.no_audio) || this.video.medias[0];
+
+                        this.haptic('success');
+                    } catch (e) {
+                        console.error(e);
+                        this.error = e.name === 'AbortError' ? 'Время ожидания истекло' : (e.message || 'Не удалось загрузить данные');
+                        this.haptic('error');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                selectMedia(media) {
+                    this.selectedMedia = media;
+                    this.haptic('selection');
+                },
+
+                getButtonText() {
+                    if (this.downloading) return 'Загрузка...';
+                    if (!this.video) return 'Вставьте ссылку';
+                    if (!this.selectedMedia) return 'Выберите качество';
+                    return `Скачать ${this.selectedMedia.quality || ''} ${this.selectedMedia.extension ? this.selectedMedia.extension.toUpperCase() : ''}`;
+                },
+
+                async download() {
+                    if (!this.video || !this.selectedMedia || this.downloading) return;
+
+                    this.downloading = true;
+                    this.progress = 5;
+                    this.haptic('medium');
+
+                    try {
+                        const downloadUrl = this.selectedMedia.url;
+                        
+                        // Симуляция прогресса (так как браузер не дает реальный прогресс для openLink)
+                        const interval = setInterval(() => {
+                            if (this.progress < 90) {
+                                this.progress += Math.random() * 10;
+                                this.progress = Math.min(90, Math.floor(this.progress));
+                            }
+                        }, 200);
+
+                        // Открываем ссылку
+                        // tg.openLink предпочтительнее для WebApp
+                        if (this.tg?.openLink) {
+                            this.tg.openLink(downloadUrl, { try_instant_view: false });
+                        } else {
+                            // Фоллбэк для обычного браузера
+                            const a = document.createElement('a');
+                            a.href = downloadUrl;
+                            a.target = '_blank';
+                            a.download = this.video.title + '.' + (this.selectedMedia.extension || 'mp4');
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                        }
+
+                        // Завершаем "загрузку" через небольшую паузу
+                        await new Promise(r => setTimeout(r, 1500));
+                        clearInterval(interval);
+                        this.progress = 100;
+
+                        this.addToHistory();
+                        this.showToast('Загрузка началась!', true);
+                        this.haptic('success');
+
+                    } catch (e) {
+                        this.showToast('Ошибка старта загрузки', false);
+                        this.haptic('error');
+                    } finally {
+                        setTimeout(() => {
+                            this.downloading = false;
+                            this.progress = 0;
+                        }, 1000);
+                    }
+                },
+
+                addToHistory() {
+                    const newItem = {
+                        id: this.video.id,
+                        title: this.video.title,
+                        thumbnail: this.video.thumbnail,
+                        url: this.video.sourceUrl,
+                        time: Date.now()
+                    };
+                    
+                    // Удаляем дубликаты
+                    const filtered = this.history.filter(h => h.url !== newItem.url);
+                    // Оставляем только последние 10
+                    this.history = [newItem, ...filtered].slice(0, 10);
+                    this.saveHistory();
+                },
+
+                restoreFromHistory(item) {
+                    this.url = item.url;
+                    this.analyze();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+
+                loadHistory() {
+                    try {
+                        const saved = localStorage.getItem('dl_history');
+                        this.history = saved ? JSON.parse(saved) : [];
+                    } catch (e) {
+                        this.history = [];
+                    }
+                },
+
+                saveHistory() {
+                    localStorage.setItem('dl_history', JSON.stringify(this.history));
+                },
+
+                clearHistory() {
+                    if (confirm('Очистить историю?')) {
+                        this.history = [];
+                        this.saveHistory();
+                        this.haptic('medium');
+                    }
+                },
+
+                // Утилиты
+                haptic(type) {
+                    if (!this.tg?.HapticFeedback) return;
+                    
+                    switch(type) {
+                        case 'light': this.tg.HapticFeedback.impactOccurred('light'); break;
+                        case 'medium': this.tg.HapticFeedback.impactOccurred('medium'); break;
+                        case 'heavy': this.tg.HapticFeedback.impactOccurred('heavy'); break;
+                        case 'selection': this.tg.HapticFeedback.selectionChanged(); break;
+                        case 'success': this.tg.HapticFeedback.notificationOccurred('success'); break;
+                        case 'error': this.tg.HapticFeedback.notificationOccurred('error'); break;
+                    }
+                },
+
+                showToast(msg, ok = true) {
+                    if (this.toastTimeout) clearTimeout(this.toastTimeout);
+                    this.toast = { show: true, msg, ok };
+                    this.toastTimeout = setTimeout(() => {
+                        this.toast.show = false;
+                    }, 3000);
+                },
+
+                formatDuration(seconds) {
+                    if (!seconds) return '';
+                    // Если API возвращает строку типа "03:45", возвращаем как есть
+                    if (typeof seconds === 'string' && seconds.includes(':')) return seconds;
+                    
+                    // Если число
+                    const sec = parseInt(seconds);
+                    if (isNaN(sec)) return '';
+                    const m = Math.floor(sec / 60);
+                    const s = sec % 60;
+                    return `${m}:${s.toString().padStart(2, '0')}`;
+                },
+
+                timeAgo(timestamp) {
+                    const seconds = Math.floor((Date.now() - timestamp) / 1000);
+                    if (seconds < 60) return 'Только что';
+                    const minutes = Math.floor(seconds / 60);
+                    if (minutes < 60) return `${minutes} мин. назад`;
+                    const hours = Math.floor(minutes / 60);
+                    if (hours < 24) return `${hours} ч. назад`;
+                    return `${Math.floor(hours / 24)} дн. назад`;
                 }
-            });
+            }));
         });
     </script>
 </body>
