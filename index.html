@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
@@ -16,12 +20,21 @@
             --color-tg-btn-text: var(--tg-theme-button-text-color, #ffffff);
             --color-tg-secondary: var(--tg-theme-secondary-bg-color, #2a2a2a);
         }
+        
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+        }
     </style>
 </head>
 <body 
     class="bg-tg-bg text-tg-text min-h-dvh select-none overscroll-none touch-manipulation antialiased"
-    x-data="app">
-    <div class="min-h-dvh flex flex-col" :style="`padding-top: ${safeAreaTop}px`">
+    x-data="app"
+    @:init="init()"
+>
+    <div class="min-h-dvh flex flex-col" :style="`padding-top: ${safeAreaTop}px; padding-bottom: ${safeAreaBottom}px;`">
         <main class="flex-1 px-4 pt-4 pb-4 space-y-5 overflow-y-auto">
             <section>
                 <div class="relative">
@@ -36,7 +49,8 @@
                         autocomplete="off"
                         autocorrect="off"
                         autocapitalize="off"
-                        spellcheck="false">
+                        spellcheck="false"
+                    >
                     <button 
                         @click="paste"
                         class="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 rounded-xl active:scale-90 transition-transform duration-150"
@@ -59,15 +73,16 @@
                 <p class="text-xs text-tg-hint uppercase tracking-wider mb-3 px-1 font-medium">Платформы</p>
                 <div class="grid grid-cols-4 gap-2.5">
                     <template x-for="p in platforms" :key="p.id">
-                        <div 
-                            class="bg-tg-secondary rounded-2xl p-3 flex flex-col items-center gap-2 transition-all duration-200"
+                        <button 
+                            class="bg-tg-secondary rounded-2xl p-3 flex flex-col items-center gap-2 transition-all duration-200 active:scale-95"
                             :class="active === p.id && 'ring-2 ring-tg-btn'"
+                            type="button"
                         >
                             <div class="w-10 h-10 rounded-xl flex items-center justify-center" :style="`background: ${p.bg}`">
                                 <span x-html="p.svg" class="w-5 h-5 text-white"></span>
                             </div>
                             <span class="text-[11px] font-medium" x-text="p.name"></span>
-                        </div>
+                        </button>
                     </template>
                 </div>
             </section>
@@ -112,7 +127,7 @@
                 <div class="flex gap-2 mt-4 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                     <template x-for="m in video?.medias" :key="m.url">
                         <button 
-                            @click="selectedMedia = m; haptic()"
+                            @click="selectMedia(m)"
                             class="shrink-0 px-4 py-2.5 rounded-xl text-sm font-semibold active:scale-95 transition-transform duration-150"
                             :class="selectedMedia?.url === m.url ? 'bg-tg-btn text-tg-btn-text' : 'bg-tg-secondary text-tg-text'"
                             x-text="formatMediaLabel(m)"
@@ -121,7 +136,7 @@
                     </template>
                 </div>
 
-                <div x-show="progress > 0" x-transition class="mt-4">
+                <div x-show="progress > 0 && downloading" x-transition class="mt-4">
                     <div class="flex justify-between text-sm mb-1.5">
                         <span class="text-tg-hint">Загрузка</span>
                         <span class="font-semibold" x-text="`${progress}%`"></span>
@@ -142,16 +157,17 @@
                 </div>
                 <div class="space-y-2">
                     <template x-for="h in history" :key="h.id">
-                        <div 
+                        <button 
                             @click="url = h.url; analyze()"
-                            class="bg-tg-secondary rounded-2xl p-3 flex items-center gap-3 active:scale-[0.98] transition-transform cursor-pointer"
+                            class="w-full bg-tg-secondary rounded-2xl p-3 flex items-center gap-3 active:scale-[0.98] transition-transform text-left"
+                            type="button"
                         >
-                            <img :src="h.thumbnail" class="w-12 h-12 rounded-xl object-cover" alt="" loading="lazy" decoding="async">
+                            <img :src="h.thumbnail" class="w-12 h-12 rounded-xl object-cover shrink-0" alt="" loading="lazy" decoding="async">
                             <div class="flex-1 min-w-0">
                                 <p class="text-sm font-medium truncate" x-text="h.title"></p>
                                 <p class="text-xs text-tg-hint mt-0.5" x-text="timeAgo(h.time)"></p>
                             </div>
-                        </div>
+                        </button>
                     </template>
                 </div>
             </section>
@@ -159,7 +175,6 @@
 
         <div 
             class="shrink-0 p-4 bg-gradient-to-t from-tg-bg via-tg-bg to-transparent pt-6"
-            :style="`padding-bottom: max(1rem, ${safeAreaBottom}px)`"
         >
             <button 
                 @click="download"
@@ -188,8 +203,8 @@
             x-transition:leave="transition ease-in duration-150"
             x-transition:leave-start="opacity-100"
             x-transition:leave-end="opacity-0"
-            class="fixed bottom-28 inset-x-4 z-50"
-            :style="`margin-bottom: ${safeAreaBottom}px`"
+            class="fixed bottom-24 inset-x-4 z-50"
+            @click="toast.show = false"
         >
             <div class="bg-tg-secondary rounded-2xl p-4 flex items-center gap-3 shadow-xl">
                 <div :class="toast.ok ? 'bg-green-500/20' : 'bg-red-500/20'" class="w-9 h-9 rounded-full flex items-center justify-center shrink-0">
@@ -209,6 +224,17 @@
         const API_BASE = 'https://api.fastsaverapi.com';
         const API_KEY = 'YOUR_API_KEY_HERE';
 
+        // Инициализация safe areas ДО Alpine
+        let initialSafeTop = 0;
+        let initialSafeBottom = 0;
+        
+        if (window.Telegram?.WebApp) {
+            const tg = window.Telegram.WebApp;
+            tg.ready();
+            initialSafeTop = (tg.safeAreaInset?.top || 0) + (tg.contentSafeAreaInset?.top || 0);
+            initialSafeBottom = (tg.safeAreaInset?.bottom || 0) + (tg.contentSafeAreaInset?.bottom || 0);
+        }
+
         document.addEventListener('alpine:init', () => {
             Alpine.data('app', () => ({
                 url: '',
@@ -223,8 +249,9 @@
                 history: [],
                 toast: { show: false, msg: '', ok: true },
                 tg: null,
-                safeAreaTop: 0,
-                safeAreaBottom: 0,
+                safeAreaTop: initialSafeTop,
+                safeAreaBottom: initialSafeBottom,
+                toastTimeout: null,
 
                 platforms: [
                     { 
@@ -289,6 +316,7 @@
                         if (this.tg.onEvent) {
                             this.tg.onEvent('viewportChanged', () => this.updateSafeAreas());
                             this.tg.onEvent('fullscreenChanged', () => this.updateSafeAreas());
+                            this.tg.onEvent('safeAreaChanged', () => this.updateSafeAreas());
                         }
                     }
                     
@@ -297,15 +325,20 @@
 
                 updateSafeAreas() {
                     if (this.tg) {
-                        this.safeAreaTop = (this.tg.safeAreaInset?.top || 0) + (this.tg.contentSafeAreaInset?.top || 0);
-                        this.safeAreaBottom = (this.tg.safeAreaInset?.bottom || 0) + (this.tg.contentSafeAreaInset?.bottom || 0);
+                        const newTop = (this.tg.safeAreaInset?.top || 0) + (this.tg.contentSafeAreaInset?.top || 0);
+                        const newBottom = (this.tg.safeAreaInset?.bottom || 0) + (this.tg.contentSafeAreaInset?.bottom || 0);
+                        
+                        this.safeAreaTop = newTop;
+                        this.safeAreaBottom = newBottom;
                     }
                 },
 
                 loadHistory() {
                     try {
-                        this.history = JSON.parse(localStorage.getItem('vh') || '[]');
-                    } catch {
+                        const saved = localStorage.getItem('vh');
+                        this.history = saved ? JSON.parse(saved) : [];
+                    } catch (e) {
+                        console.error('History load error:', e);
                         this.history = [];
                     }
                 },
@@ -313,24 +346,43 @@
                 saveHistory() {
                     try {
                         localStorage.setItem('vh', JSON.stringify(this.history));
-                    } catch {}
+                    } catch (e) {
+                        console.error('History save error:', e);
+                    }
                 },
 
                 haptic(type = 'light') {
                     if (this.tg?.HapticFeedback?.impactOccurred) {
-                        this.tg.HapticFeedback.impactOccurred(type);
+                        try {
+                            this.tg.HapticFeedback.impactOccurred(type);
+                        } catch {}
                     }
                 },
 
                 notify(type = 'success') {
                     if (this.tg?.HapticFeedback?.notificationOccurred) {
-                        this.tg.HapticFeedback.notificationOccurred(type);
+                        try {
+                            this.tg.HapticFeedback.notificationOccurred(type);
+                        } catch {}
                     }
                 },
 
                 showToast(msg, ok = true) {
-                    this.toast = { show: true, msg, ok };
-                    setTimeout(() => this.toast.show = false, 2500);
+                    // Очищаем предыдущий таймер
+                    if (this.toastTimeout) {
+                        clearTimeout(this.toastTimeout);
+                    }
+                    
+                    // Устанавливаем сообщение
+                    this.toast.msg = msg || 'Готово';
+                    this.toast.ok = ok;
+                    this.toast.show = true;
+                    
+                    // Скрываем через 3 секунды
+                    this.toastTimeout = setTimeout(() => {
+                        this.toast.show = false;
+                        this.toast.msg = '';
+                    }, 3000);
                 },
 
                 detectPlatform(url) {
@@ -368,6 +420,7 @@
                     this.urlError = '';
                     this.video = null;
                     this.selectedMedia = null;
+                    this.progress = 0;
 
                     const trimmedUrl = this.url.trim();
                     
@@ -378,11 +431,18 @@
 
                     if (!this.isValidUrl(trimmedUrl)) {
                         this.urlError = 'Некорректная ссылка';
+                        this.active = null;
                         return;
                     }
 
                     const platform = this.detectPlatform(trimmedUrl);
                     this.active = platform;
+                    
+                    if (!platform) {
+                        this.urlError = 'Платформа не поддерживается';
+                        return;
+                    }
+
                     this.loading = true;
 
                     try {
@@ -405,13 +465,15 @@
                             throw new Error('Не удалось получить данные о видео');
                         }
 
+                        const medias = Array.isArray(data.result.medias) ? data.result.medias : [];
+
                         this.video = {
                             id: crypto.randomUUID(),
                             title: data.result.title || 'Без названия',
                             author: data.result.author || '',
                             duration: data.result.duration || '',
                             thumbnail: data.result.thumbnail || '',
-                            medias: data.result.medias || [],
+                            medias: medias,
                             sourceUrl: trimmedUrl
                         };
 
@@ -429,8 +491,13 @@
                     }
                 },
 
+                selectMedia(media) {
+                    this.selectedMedia = media;
+                    this.haptic('light');
+                },
+
                 formatMediaLabel(media) {
-                    if (!media) return '';
+                    if (!media) return 'Скачать';
                     
                     const parts = [];
                     
@@ -446,7 +513,7 @@
                         parts.push(media.formattedSize);
                     }
                     
-                    return parts.join(' • ') || media.type || 'Скачать';
+                    return parts.length > 0 ? parts.join(' • ') : (media.type || 'Скачать');
                 },
 
                 getButtonText() {
@@ -466,23 +533,34 @@
                     try {
                         const downloadUrl = this.selectedMedia.url;
                         
+                        if (!downloadUrl) {
+                            throw new Error('Ссылка на скачивание недоступна');
+                        }
+
+                        // Открываем ссылку
                         if (this.tg?.openLink) {
                             this.tg.openLink(downloadUrl);
                         } else {
                             window.open(downloadUrl, '_blank');
                         }
 
+                        // Имитируем прогресс
+                        let currentProgress = 0;
                         const progressInterval = setInterval(() => {
                             const increment = Math.floor(Math.random() * 15) + 5;
-                            this.progress = Math.min(100, this.progress + increment);
+                            currentProgress = Math.min(95, currentProgress + increment);
+                            this.progress = currentProgress;
                             
-                            if (this.progress >= 100) {
+                            if (currentProgress >= 95) {
                                 clearInterval(progressInterval);
                             }
                         }, 100);
 
-                        await new Promise(resolve => setTimeout(resolve, 1500));
+                        // Ждём перед завершением
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        this.progress = 100;
 
+                        // Добавляем в историю
                         const historyItem = { 
                             id: this.video.id, 
                             title: this.video.title, 
@@ -491,17 +569,21 @@
                             time: Date.now() 
                         };
                         
-                        this.history = [historyItem, ...this.history.filter(h => h.url !== historyItem.url).slice(0, 7)];
+                        const filtered = this.history.filter(h => h.url !== historyItem.url).slice(0, 9);
+                        this.history = [historyItem, ...filtered];
                         this.saveHistory();
 
-                        this.showToast('Загрузка началась!');
+                        // Показываем тост с сообщением
+                        this.showToast('✓ Загрузка началась!', true);
                         this.notify('success');
-                    } catch {
-                        this.showToast('Ошибка при загрузке', false);
+                    } catch (e) {
+                        this.showToast(e?.message || 'Ошибка при загрузке', false);
                         this.notify('error');
                     } finally {
                         this.downloading = false;
-                        this.progress = 0;
+                        setTimeout(() => {
+                            this.progress = 0;
+                        }, 500);
                     }
                 },
 
@@ -510,14 +592,14 @@
                         this.history = [];
                         this.saveHistory();
                         this.haptic('medium');
-                        this.showToast('История очищена');
+                        this.showToast('История очищена', true);
                     };
 
                     if (this.tg?.showConfirm) {
                         this.tg.showConfirm('Очистить всю историю загрузок?', confirmed => {
                             if (confirmed) clear();
                         });
-                    } else {
+                    } else if (confirm('Очистить всю историю загрузок?')) {
                         clear();
                     }
                 },
