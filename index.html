@@ -13,7 +13,6 @@
       defer
       src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"
     ></script>
-    <!-- Privacy-friendly analytics by Plausible -->
     <script async src="https://plausible.io/js/pa-QR-RoZMy12hrhzIXv4u0Z.js"></script>
     <script>
        window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
@@ -560,7 +559,7 @@
         static init() {
           if (!this.app) return;
           this.app.ready();
-          this.app.expand();
+          this.app.requestFullscreen();
           this.app.setHeaderColor("#ffffff");
           this.app.setBackgroundColor("#ffffff");
         }
