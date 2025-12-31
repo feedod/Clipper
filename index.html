@@ -1,1 +1,109 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body class="min-h-screen flex items-center justify-center p-6 bg-gradient-to-b from-[#f9f9fb] to-[#ececf0] font-sans antialiased">
+    <div x-data="clipperApp()" class="w-full max-w-lg bg-white/70 backdrop-blur-2xl border border-white/30 rounded-3xl shadow-2xl p-8 space-y-8">
+        <div class="text-center space-y-2">
+            <h1 class="text-3xl font-semibold text-gray-900">Clipper</h1>
+            <p class="text-base text-gray-600">Видео из Instagram и TikTok</p>
+        </div>
 
+        <div class="space-y-5">
+            <select x-model="platform" class="w-full px-5 py-4 rounded-2xl bg-white/50 border border-gray-200/50 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 text-gray-900 text-base transition">
+                <option value="" disabled selected>Выберите платформу</option>
+                <option value="instagram">Instagram</option>
+                <option value="tiktok">TikTok</option>
+            </select>
+
+            <input x-model="url" type="url" placeholder="Вставьте ссылку на видео" class="w-full px-5 py-4 rounded-2xl bg-white/50 border border-gray-200/50 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 placeholder-gray-500 text-gray-900 text-base transition">
+
+            <button @click="fetchVideo()" :disabled="loading || !platform || !url.trim()" class="w-full py-4 rounded-2xl font-semibold text-white shadow-lg transition-all" :class="loading || !platform || !url.trim() ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600 active:scale-95'">
+                <span x-show="!loading">Получить ссылку</span>
+                <span x-show="loading">Загрузка...</span>
+            </button>
+        </div>
+
+        <div x-show="error" class="text-center text-red-600 text-base" x-text="error" x-transition></div>
+
+        <div x-show="downloadUrl" x-transition class="animate-fade-in">
+            <a :href="downloadUrl" download class="block w-full py-4 rounded-2xl bg-green-500 hover:bg-green-600 active:scale-95 text-white font-semibold text-center shadow-lg transition-all">
+                Скачать видео
+            </a>
+        </div>
+    </div>
+
+    <script>
+        function clipperApp() {
+            return {
+                platform: '',
+                url: '',
+                loading: false,
+                error: null,
+                downloadUrl: null,
+
+                init() {
+                    if (window.Telegram?.WebApp) {
+                        Telegram.WebApp.ready();
+                        Telegram.WebApp.expand();
+                    }
+                },
+
+                async fetchVideo() {
+                    if (!this.platform || !this.url.trim()) {
+                        this.error = 'Выберите платформу и вставьте ссылку';
+                        return;
+                    }
+
+                    this.loading = true;
+                    this.error = null;
+                    this.downloadUrl = null;
+
+                    try {
+                        if (this.platform === 'instagram') {
+                            const match = this.url.match(/\/(p|reel|tv)\/([^/?#]+)/);
+                            if (!match) throw new Error('Неверная ссылка Instagram');
+
+                            const shortcode = match[2];
+                            const pageUrl = `https://www.instagram.com/p/${shortcode}/`;
+
+                            const response = await fetch(pageUrl, {
+                                headers: { 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1' }
+                            });
+
+                            if (!response.ok) throw new Error('Не удалось загрузить страницу');
+
+                            const text = await response.text();
+
+                            const videoMatch = text.match(/"video_url":"([^"]+)"/);
+                            if (!videoMatch) throw new Error('Видео не найдено или пост недоступен');
+
+                            this.downloadUrl = videoMatch[1].replace(/\\\//g, '/');
+
+                        } else if (this.platform === 'tiktok') {
+                            const apiUrl = `https://www.tikwm.com/api/?url=${encodeURIComponent(this.url.trim())}&hd=1`;
+
+                            const response = await fetch(apiUrl);
+                            if (!response.ok) throw new Error('Ошибка загрузки TikTok');
+
+                            const data = await response.json();
+                            if (data.code !== 0) throw new Error(data.msg || 'Не удалось получить видео TikTok');
+
+                            this.downloadUrl = data.data.hdplay || data.data.play;
+                        }
+                    } catch (err) {
+                        this.error = err.message || 'Ошибка. Проверьте ссылку и попробуйте снова';
+                    } finally {
+                        this.loading = false;
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
