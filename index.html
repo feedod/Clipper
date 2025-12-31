@@ -91,9 +91,20 @@
         -webkit-box-orient: vertical;
         overflow: hidden;
       }
+      
+      @layer utilities {
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
     </style>
   </head>
-  <body x-data="App" class="min-h-dvh flex flex-col bg-bg text-text caret-black select-none">
+  <body x-data="App" class="min-h-dvh flex flex-col bg-bg text-text caret-black select-none scrollbar-hide">
     <main class="flex-1 flex flex-col px-5 pb-32 max-w-md mx-auto w-full">
       <header class="pt-10 pb-8 text-center fade">
         <h1 class="text-3xl font-bold tracking-tight">Clipper</h1>
