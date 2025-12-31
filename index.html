@@ -9,558 +9,388 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
     <style type="text/tailwindcss">
         @theme {
-            --color-tg-bg: var(--tg-theme-bg-color, #ffffff);
-            --color-tg-text: var(--tg-theme-text-color, #000000);
-            --color-tg-hint: var(--tg-theme-hint-color, #999999);
-            --color-tg-link: var(--tg-theme-link-color, #2481cc);
-            --color-tg-button: var(--tg-theme-button-color, #2481cc);
-            --color-tg-button-text: var(--tg-theme-button-text-color, #ffffff);
-            --color-tg-secondary: var(--tg-theme-secondary-bg-color, #f0f0f0);
-            --color-instagram: #E4405F;
-            --color-tiktok: #00F2EA;
-            --color-tiktok-pink: #FF0050;
+            --color-tg-bg: var(--tg-theme-bg-color, #0a0a0a);
+            --color-tg-text: var(--tg-theme-text-color, #fafafa);
+            --color-tg-hint: var(--tg-theme-hint-color, #6b6b6b);
+            --color-tg-link: var(--tg-theme-link-color, #5ebbff);
+            --color-tg-btn: var(--tg-theme-button-color, #5ebbff);
+            --color-tg-btn-text: var(--tg-theme-button-text-color, #ffffff);
+            --color-tg-sec: var(--tg-theme-secondary-bg-color, #161616);
+            --color-pink: #fe2c55;
+            --color-cyan: #25f4ee;
         }
+
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
         
-        :root { 
-            --safe-top: env(safe-area-inset-top); 
-            --safe-bottom: env(safe-area-inset-bottom); 
+        html, body { 
+            background: var(--tg-theme-bg-color, #0a0a0a);
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+            overscroll-behavior: none;
         }
+
+        body { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+
+        .grad { background: linear-gradient(135deg, #25f4ee, #fe2c55); }
+        .grad-text { background: linear-gradient(135deg, #25f4ee, #fe2c55); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .glass { background: rgba(255,255,255,0.03); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
         
-        body { 
-            background: var(--tg-theme-bg-color, #fff); 
-            color: var(--tg-theme-text-color, #000);
-            overflow-x: hidden;
-            -webkit-tap-highlight-color: transparent;
-            -webkit-touch-callout: none;
-        }
+        .press { transition: transform 80ms ease, opacity 80ms ease; }
+        .press:active { transform: scale(0.97); opacity: 0.85; }
         
-        .gradient-instagram { background: linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); }
-        .gradient-tiktok { background: linear-gradient(135deg, #00F2EA 0%, #FF0050 100%); }
-        .gradient-neutral { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        @keyframes fade { from { opacity: 0; transform: translateY(12px); } }
+        .fade { animation: fade 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards; }
         
-        .glass { backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
-        
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-        @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 20px currentColor; } 50% { box-shadow: 0 0 40px currentColor; } }
-        @keyframes progress { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-        
-        .animate-float { animation: float 3s ease-in-out infinite; }
-        .progress-shimmer { 
-            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
-            background-size: 200% 100%;
-            animation: progress 1.5s linear infinite;
-        }
+        .hide-scroll { scrollbar-width: none; }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     </style>
 </head>
-<body x-data="Clipper" class="min-h-screen flex flex-col antialiased">
+<body x-data="App" class="min-h-dvh flex flex-col text-tg-text">
     
-    <div class="flex-1 flex flex-col px-4 pt-[calc(var(--safe-top)+16px)] pb-[calc(var(--safe-bottom)+120px)]">
+    <main class="flex-1 flex flex-col p-4 pb-28 max-w-md mx-auto w-full">
         
-        <header class="text-center mb-8">
-            <div class="inline-flex items-center justify-center w-20 h-20 rounded-3xl mb-4 transition-all duration-500 animate-float"
-                 :class="platform ? (platform === 'instagram' ? 'gradient-instagram' : 'gradient-tiktok') : 'gradient-neutral'">
-                <template x-if="!platform">
-                    <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z"/>
-                    </svg>
-                </template>
-                <template x-if="platform === 'instagram'">
-                    <svg class="w-10 h-10 text-white" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
-                    </svg>
-                </template>
-                <template x-if="platform === 'tiktok'">
-                    <svg class="w-10 h-10 text-white" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
-                    </svg>
-                </template>
-            </div>
-            <h1 class="text-2xl font-bold text-tg-text mb-1">Clipper</h1>
+        <header class="text-center pt-6 pb-8 fade">
+            <h1 class="text-4xl font-extrabold tracking-tight mb-1">
+                <span class="grad-text">Clipper</span>
+            </h1>
             <p class="text-tg-hint text-sm" x-text="statusText"></p>
         </header>
 
-        <section class="space-y-4">
+        <section class="space-y-3 fade" style="animation-delay:50ms">
             <div class="relative">
-                <input type="url" 
-                       x-model="url" 
-                       @input.debounce.200ms="detect"
-                       @paste="onPaste"
-                       :disabled="loading"
-                       class="w-full h-14 px-5 pr-14 rounded-2xl bg-tg-secondary text-tg-text placeholder-tg-hint outline-none border-2 border-transparent transition-all duration-300 focus:border-tg-button disabled:opacity-50"
-                       inputmode="url"
-                       autocomplete="off"
-                       autocorrect="off"
-                       autocapitalize="off"
-                       spellcheck="false"
-                       placeholder="Вставьте ссылку...">
-                <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                    <button x-show="url" 
-                            @click="clear" 
-                            class="w-8 h-8 rounded-full bg-tg-hint/20 flex items-center justify-center transition-all hover:bg-tg-hint/30 active:scale-90">
-                        <svg class="w-4 h-4 text-tg-hint" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
-                    </button>
-                </div>
+                <input 
+                    type="url"
+                    x-model="url"
+                    @input.debounce.100ms="detect"
+                    @paste="$nextTick(detect)"
+                    :disabled="loading"
+                    inputmode="url"
+                    autocomplete="off"
+                    spellcheck="false"
+                    placeholder="Вставьте ссылку..."
+                    class="w-full h-[52px] px-4 pr-11 rounded-xl bg-tg-sec text-tg-text placeholder:text-tg-hint border border-white/5 outline-none focus:border-tg-btn/50 transition-colors disabled:opacity-40"
+                >
+                <button 
+                    x-show="url" 
+                    x-transition.opacity.duration.150ms
+                    @click="clear"
+                    class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-white/5 grid place-items-center press"
+                >
+                    <svg class="w-4 h-4 text-tg-hint" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
             </div>
 
-            <template x-if="platform && !loading && !video">
-                <button @click="download" 
-                        class="w-full h-14 rounded-2xl text-white font-semibold flex items-center justify-center gap-3 transition-all active:scale-[0.98]"
-                        :class="platform === 'instagram' ? 'gradient-instagram' : 'gradient-tiktok'">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
-                    </svg>
-                    <span x-text="'Скачать из ' + (platform === 'instagram' ? 'Instagram' : 'TikTok')"></span>
-                </button>
-            </template>
+            <button 
+                x-show="platform && !loading"
+                x-transition.opacity.duration.200ms
+                @click="download"
+                class="w-full h-[52px] rounded-xl grad text-white font-semibold flex items-center justify-center gap-2.5 press shadow-lg shadow-pink/20"
+            >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
+                </svg>
+                <span>Скачать из TikTok</span>
+            </button>
         </section>
 
         <template x-if="loading">
-            <section class="mt-8 flex flex-col items-center">
-                <div class="relative w-24 h-24 mb-4">
-                    <svg class="w-24 h-24 -rotate-90" viewBox="0 0 100 100">
-                        <circle cx="50" cy="50" r="45" fill="none" stroke-width="6" class="stroke-tg-secondary"/>
-                        <circle cx="50" cy="50" r="45" fill="none" stroke-width="6" stroke-linecap="round"
-                                class="transition-all duration-300"
-                                :class="platform === 'instagram' ? 'stroke-instagram' : 'stroke-tiktok'"
-                                :stroke-dasharray="283"
-                                :stroke-dashoffset="283 - (283 * progress / 100)"/>
+            <section class="flex-1 flex flex-col items-center justify-center py-16 fade">
+                <div class="relative w-20 h-20 mb-5">
+                    <svg class="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="40" fill="none" stroke-width="8" class="stroke-white/10"/>
+                        <circle cx="50" cy="50" r="40" fill="none" stroke-width="8" stroke-linecap="round" class="stroke-pink transition-all duration-200" :stroke-dasharray="251" :stroke-dashoffset="251 - 251 * progress / 100"/>
                     </svg>
-                    <div class="absolute inset-0 flex items-center justify-center">
-                        <span class="text-xl font-bold text-tg-text" x-text="progress + '%'"></span>
-                    </div>
+                    <span class="absolute inset-0 grid place-items-center text-lg font-bold" x-text="progress + '%'"></span>
                 </div>
                 <p class="text-tg-hint text-sm" x-text="loadingText"></p>
             </section>
         </template>
 
-        <template x-if="video && !loading">
-            <section class="mt-6 space-y-4" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-y-4">
-                <div class="rounded-3xl overflow-hidden bg-black shadow-2xl">
-                    <div class="relative aspect-[9/16] max-h-[55vh]">
-                        <video :src="video.url" 
-                               class="w-full h-full object-contain" 
-                               controls 
-                               playsinline
-                               webkit-playsinline
-                               x-ref="player"></video>
-                        <div class="absolute top-3 left-3 px-3 py-1.5 rounded-full text-white text-xs font-semibold glass"
-                             :class="platform === 'instagram' ? 'bg-instagram/70' : 'bg-black/70'">
-                            <span x-text="platform === 'instagram' ? 'Instagram Reels' : 'TikTok'"></span>
-                        </div>
-                        <div class="absolute top-3 right-3 px-3 py-1.5 rounded-full bg-black/70 text-white text-xs font-medium glass" x-text="formatDuration(video.duration)"></div>
-                    </div>
-                </div>
-
-                <div class="flex items-center gap-3 p-4 rounded-2xl bg-tg-secondary">
-                    <img :src="video.author.avatar" class="w-12 h-12 rounded-full object-cover ring-2 ring-white/20" :alt="video.author.name">
-                    <div class="flex-1 min-w-0">
-                        <p class="font-semibold text-tg-text truncate" x-text="video.author.name"></p>
-                        <p class="text-sm text-tg-hint truncate" x-text="video.author.username"></p>
-                    </div>
-                    <div class="flex items-center gap-1 text-tg-hint">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                        </svg>
-                        <span class="text-xs font-medium" x-text="formatNumber(video.likes)"></span>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <button @click="saveVideo" 
-                            class="h-14 rounded-2xl bg-tg-button text-tg-button-text font-semibold flex items-center justify-center gap-2 transition-all active:scale-95">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
-                        </svg>
-                        <span>Сохранить</span>
-                    </button>
-                    <button @click="shareStory" 
-                            class="h-14 rounded-2xl font-semibold flex items-center justify-center gap-2 text-white transition-all active:scale-95"
-                            :class="platform === 'instagram' ? 'gradient-instagram' : 'gradient-tiktok'">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
-                        </svg>
-                        <span>В историю</span>
-                    </button>
-                </div>
-            </section>
-        </template>
-
         <template x-if="error">
-            <section class="mt-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/20" x-transition>
-                <div class="flex items-start gap-3">
-                    <div class="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center shrink-0">
-                        <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
+            <section class="mt-5 p-4 rounded-xl bg-red-500/10 border border-red-500/20 fade">
+                <div class="flex gap-3">
+                    <div class="w-10 h-10 rounded-full bg-red-500/20 grid place-items-center shrink-0">
+                        <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
                         </svg>
                     </div>
                     <div>
-                        <p class="font-medium text-red-500">Ошибка</p>
-                        <p class="text-sm text-tg-hint mt-1" x-text="error"></p>
+                        <p class="font-medium text-red-400 mb-0.5">Ошибка</p>
+                        <p class="text-sm text-tg-hint" x-text="error"></p>
                     </div>
                 </div>
             </section>
         </template>
 
-        <section class="mt-auto pt-8" x-show="history.length > 0">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-lg font-semibold text-tg-text">История</h2>
-                <button @click="clearHistory" class="text-sm text-tg-hint hover:text-tg-link transition-colors">Очистить</button>
-            </div>
-            <div class="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
-                <template x-for="item in history" :key="item.id">
-                    <button @click="loadFromHistory(item)" 
-                            class="shrink-0 w-20 group">
-                        <div class="relative w-20 h-28 rounded-xl overflow-hidden mb-2 ring-2 ring-transparent transition-all group-hover:ring-tg-button">
-                            <img :src="item.thumbnail" class="w-full h-full object-cover">
-                            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                            <div class="absolute bottom-1 left-1 w-5 h-5 rounded-full flex items-center justify-center"
-                                 :class="item.platform === 'instagram' ? 'gradient-instagram' : 'gradient-tiktok'">
-                                <template x-if="item.platform === 'instagram'">
-                                    <svg class="w-3 h-3 text-white" viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0z"/>
-                                    </svg>
-                                </template>
-                                <template x-if="item.platform === 'tiktok'">
-                                    <svg class="w-3 h-3 text-white" viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
-                                    </svg>
-                                </template>
-                            </div>
+        <template x-if="video && !loading">
+            <section class="mt-5 space-y-3 fade">
+                <div class="rounded-2xl overflow-hidden bg-black border border-white/5">
+                    <div class="relative aspect-[9/16] max-h-[58dvh]">
+                        <video :src="video.play" :poster="video.cover" class="w-full h-full object-contain" controls playsinline></video>
+                        <span class="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg bg-black/70 glass text-white text-xs font-medium" x-text="fmt.time(video.duration)"></span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3 p-3.5 rounded-xl bg-tg-sec/60 border border-white/5">
+                    <img :src="video.author.avatar" class="w-11 h-11 rounded-full object-cover ring-1 ring-white/10">
+                    <div class="flex-1 min-w-0">
+                        <p class="font-semibold truncate" x-text="video.author.nickname"></p>
+                        <p class="text-sm text-tg-hint truncate" x-text="'@' + video.author.unique_id"></p>
+                    </div>
+                </div>
+
+                <p x-show="video.title" class="text-sm text-tg-text/80 clamp-2 px-1" x-text="video.title"></p>
+
+                <div class="grid grid-cols-4 gap-1.5 text-center p-2.5 rounded-xl bg-tg-sec/40">
+                    <template x-for="s in [['play_count','▶'],['digg_count','♥'],['comment_count','💬'],['share_count','↗']]">
+                        <div>
+                            <p class="font-bold text-sm" x-text="fmt.num(video[s[0]])"></p>
+                            <p class="text-[10px] text-tg-hint mt-0.5" x-text="s[1]"></p>
                         </div>
-                        <p class="text-xs text-tg-hint truncate" x-text="item.author"></p>
+                    </template>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2.5 pt-1">
+                    <button @click="save" class="h-12 rounded-xl bg-tg-btn text-tg-btn-text font-semibold flex items-center justify-center gap-2 press">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
+                        </svg>
+                        Сохранить
                     </button>
-                </template>
+                    <button @click="shareStory" class="h-12 rounded-xl grad text-white font-semibold flex items-center justify-center gap-2 press">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+                        </svg>
+                        История
+                    </button>
+                </div>
+            </section>
+        </template>
+
+        <template x-if="history.length && !loading">
+            <section class="mt-7 fade">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="font-semibold">Недавние</h2>
+                    <button @click="clearHistory" class="text-sm text-tg-link press">Очистить</button>
+                </div>
+                <div class="flex gap-2.5 overflow-x-auto -mx-4 px-4 pb-2 hide-scroll">
+                    <template x-for="h in history" :key="h.id">
+                        <button @click="fromHistory(h)" class="shrink-0 w-20 press">
+                            <div class="w-20 h-28 rounded-xl overflow-hidden ring-1 ring-white/10 mb-1.5 relative">
+                                <img :src="h.cover" class="w-full h-full object-cover" loading="lazy">
+                                <div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/80 to-transparent"></div>
+                            </div>
+                            <p class="text-[11px] text-tg-hint truncate" x-text="h.author"></p>
+                        </button>
+                    </template>
+                </div>
+            </section>
+        </template>
+
+        <footer class="mt-auto pt-10 fade" style="animation-delay:100ms" x-show="!loading && !video">
+            <p class="text-center text-xs text-tg-hint mb-4">Поддерживаемые платформы</p>
+            <div class="flex justify-center gap-3">
+                <div class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-tg-sec border border-white/5">
+                    <svg class="w-5 h-5 text-pink" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64c.29 0 .58.04.88.13V9.4c-.29-.03-.6-.05-1-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1.04-.1z"/>
+                    </svg>
+                    <span class="text-sm font-medium">TikTok</span>
+                </div>
+                <div class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-tg-sec border border-white/5 opacity-40">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+                    </svg>
+                    <span class="text-sm font-medium">Instagram</span>
+                    <span class="text-[10px] text-tg-hint">скоро</span>
+                </div>
             </div>
-        </section>
-    </div>
+        </footer>
+    </main>
 
     <script>
-        class TelegramApp {
-            constructor() {
-                this.tg = window.Telegram?.WebApp;
-                this.init();
-            }
+    const TG = {
+        app: window.Telegram?.WebApp,
+        
+        init() {
+            if (!this.app) return;
+            this.app.ready();
+            this.app.expand();
+            this.app.setHeaderColor('secondary_bg_color');
+            this.app.setBackgroundColor('secondary_bg_color');
+        },
+        
+        haptic(type = 'light') {
+            this.app?.HapticFeedback?.impactOccurred(type);
+        },
+        
+        notify(type) {
+            this.app?.HapticFeedback?.notificationOccurred(type);
+        },
+        
+        story(url) {
+            if (!this.app?.shareToStory) return false;
+            this.app.shareToStory(url, { widget_link: { url: 'https://t.me/clipper', name: 'Clipper' } });
+            return true;
+        }
+    };
+
+    class TikTokAPI {
+        static URL = 'https://www.tikwm.com/api/';
+        static PATTERNS = [
+            /tiktok\.com\/@[\w.]+\/video\/(\d+)/i,
+            /tiktok\.com\/t\/([\w]+)/i,
+            /vm\.tiktok\.com\/([\w]+)/i,
+            /vt\.tiktok\.com\/([\w]+)/i
+        ];
+
+        static match(url) {
+            return this.PATTERNS.some(p => p.test(url));
+        }
+
+        static async fetch(url) {
+            const res = await fetch(this.URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ url, hd: 1 })
+            });
+            
+            const json = await res.json();
+            if (json.code !== 0) throw new Error(json.msg || 'Не удалось получить видео');
+            return json.data;
+        }
+    }
+
+    class Storage {
+        static KEY = 'clipper_history';
+        static MAX = 15;
+
+        static get() {
+            try { return JSON.parse(localStorage.getItem(this.KEY)) || []; }
+            catch { return []; }
+        }
+
+        static add(item) {
+            const list = this.get().filter(i => i.id !== item.id);
+            list.unshift(item);
+            localStorage.setItem(this.KEY, JSON.stringify(list.slice(0, this.MAX)));
+        }
+
+        static clear() {
+            localStorage.removeItem(this.KEY);
+        }
+    }
+
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('App', () => ({
+            url: '',
+            platform: null,
+            loading: false,
+            progress: 0,
+            video: null,
+            error: null,
+            history: Storage.get(),
+
+            fmt: {
+                num: n => n >= 1e6 ? (n/1e6).toFixed(1)+'M' : n >= 1e3 ? (n/1e3).toFixed(1)+'K' : String(n || 0),
+                time: s => `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`
+            },
+
+            get statusText() {
+                if (this.loading) return 'Загрузка...';
+                if (this.platform) return 'TikTok видео найдено';
+                return 'Скачивайте видео без водяных знаков';
+            },
+
+            get loadingText() {
+                if (this.progress < 30) return 'Подключение...';
+                if (this.progress < 70) return 'Получение видео...';
+                return 'Почти готово...';
+            },
 
             init() {
-                if (!this.tg) return;
-                this.tg.ready();
-                this.tg.expand();
-                this.tg.enableClosingConfirmation();
-                this.tg.setHeaderColor('bg_color');
-                this.tg.setBackgroundColor('bg_color');
-            }
+                TG.init();
+            },
 
-            haptic(type = 'impact', style = 'light') {
-                if (!this.tg?.HapticFeedback) return;
-                const methods = { impact: 'impactOccurred', notification: 'notificationOccurred', selection: 'selectionChanged' };
-                this.tg.HapticFeedback[methods[type]]?.(style);
-            }
+            detect() {
+                this.error = null;
+                this.platform = TikTokAPI.match(this.url) ? 'tiktok' : null;
+                if (this.platform) TG.haptic('light');
+            },
 
-            showMainButton(text, callback) {
-                if (!this.tg?.MainButton) return;
-                this.tg.MainButton.setText(text);
-                this.tg.MainButton.onClick(callback);
-                this.tg.MainButton.show();
-            }
+            clear() {
+                this.url = '';
+                this.platform = null;
+                this.video = null;
+                this.error = null;
+                TG.haptic('light');
+            },
 
-            hideMainButton() {
-                this.tg?.MainButton?.hide();
-            }
+            async download() {
+                if (!this.platform || this.loading) return;
+                
+                this.loading = true;
+                this.progress = 0;
+                this.error = null;
+                this.video = null;
+                TG.haptic('medium');
 
-            shareToStory(mediaUrl, params = {}) {
-                if (!this.tg?.shareToStory) {
-                    this.haptic('notification', 'error');
-                    return false;
-                }
-                this.tg.shareToStory(mediaUrl, {
-                    widget_link: params.widgetLink || { url: 'https://t.me/clipper_bot', name: 'Clipper' },
-                    ...params
-                });
-                this.haptic('notification', 'success');
-                return true;
-            }
-
-            downloadFile(url, filename) {
-                if (this.tg?.downloadFile) {
-                    this.tg.downloadFile({ url, file_name: filename });
-                    return true;
-                }
-                return false;
-            }
-
-            get user() {
-                return this.tg?.initDataUnsafe?.user;
-            }
-
-            get colorScheme() {
-                return this.tg?.colorScheme || 'light';
-            }
-        }
-
-        class PlatformDetector {
-            static patterns = {
-                instagram: [
-                    /(?:https?:\/\/)?(?:www\.)?instagram\.com\/(?:p|reel|reels|tv)\/([A-Za-z0-9_-]+)/i,
-                    /(?:https?:\/\/)?(?:www\.)?instagram\.com\/stories\/([A-Za-z0-9._]+)\/(\d+)/i,
-                    /(?:https?:\/\/)?(?:www\.)?instagr\.am\/(?:p|reel)\/([A-Za-z0-9_-]+)/i
-                ],
-                tiktok: [
-                    /(?:https?:\/\/)?(?:www\.)?tiktok\.com\/@([^\/]+)\/video\/(\d+)/i,
-                    /(?:https?:\/\/)?(?:vm|vt)\.tiktok\.com\/([A-Za-z0-9]+)/i,
-                    /(?:https?:\/\/)?(?:www\.)?tiktok\.com\/t\/([A-Za-z0-9]+)/i
-                ]
-            };
-
-            static detect(url) {
-                if (!url) return null;
-                const normalized = url.trim();
-                for (const [platform, patterns] of Object.entries(this.patterns)) {
-                    if (patterns.some(p => p.test(normalized))) return platform;
-                }
-                return null;
-            }
-
-            static extractId(url, platform) {
-                if (!url || !platform) return null;
-                for (const pattern of this.patterns[platform]) {
-                    const match = url.match(pattern);
-                    if (match) return match[1] || match[2];
-                }
-                return null;
-            }
-        }
-
-        class InstagramAPI {
-            static baseUrl = 'https://api.example.com/instagram';
-
-            static async getVideo(url) {
-                await this.simulateDelay();
-                return {
-                    id: crypto.randomUUID(),
-                    url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
-                    thumbnail: 'https://picsum.photos/seed/ig' + Date.now() + '/400/600',
-                    duration: Math.floor(Math.random() * 60) + 15,
-                    likes: Math.floor(Math.random() * 1000000),
-                    author: {
-                        name: 'Instagram Creator',
-                        username: '@instagram_user',
-                        avatar: 'https://i.pravatar.cc/150?img=' + Math.floor(Math.random() * 70)
-                    }
-                };
-            }
-
-            static simulateDelay() {
-                return new Promise(r => setTimeout(r, 1500 + Math.random() * 1000));
-            }
-        }
-
-        class TikTokAPI {
-            static baseUrl = 'https://api.example.com/tiktok';
-
-            static async getVideo(url) {
-                await this.simulateDelay();
-                return {
-                    id: crypto.randomUUID(),
-                    url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-                    thumbnail: 'https://picsum.photos/seed/tt' + Date.now() + '/400/600',
-                    duration: Math.floor(Math.random() * 180) + 10,
-                    likes: Math.floor(Math.random() * 5000000),
-                    author: {
-                        name: 'TikTok Star',
-                        username: '@tiktok_creator',
-                        avatar: 'https://i.pravatar.cc/150?img=' + Math.floor(Math.random() * 70)
-                    }
-                };
-            }
-
-            static simulateDelay() {
-                return new Promise(r => setTimeout(r, 1200 + Math.random() * 800));
-            }
-        }
-
-        class VideoDownloader {
-            static apis = { instagram: InstagramAPI, tiktok: TikTokAPI };
-
-            static async download(url, platform, onProgress) {
-                const api = this.apis[platform];
-                if (!api) throw new Error('Платформа не поддерживается');
-
-                let progress = 0;
-                const progressInterval = setInterval(() => {
-                    progress = Math.min(progress + Math.random() * 15, 90);
-                    onProgress?.(Math.floor(progress));
-                }, 200);
+                const tick = setInterval(() => {
+                    this.progress = Math.min(this.progress + Math.random() * 12, 90);
+                }, 150);
 
                 try {
-                    const video = await api.getVideo(url);
-                    clearInterval(progressInterval);
-                    onProgress?.(100);
-                    return video;
-                } catch (e) {
-                    clearInterval(progressInterval);
-                    throw e;
-                }
-            }
-        }
-
-        class StorageManager {
-            static key = 'clipper_history';
-            static maxItems = 20;
-
-            static get() {
-                try {
-                    return JSON.parse(localStorage.getItem(this.key)) || [];
-                } catch { return []; }
-            }
-
-            static add(item) {
-                const history = this.get().filter(h => h.id !== item.id);
-                history.unshift(item);
-                localStorage.setItem(this.key, JSON.stringify(history.slice(0, this.maxItems)));
-            }
-
-            static clear() {
-                localStorage.removeItem(this.key);
-            }
-        }
-
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('Clipper', () => ({
-                tgApp: new TelegramApp(),
-                url: '',
-                platform: null,
-                loading: false,
-                progress: 0,
-                video: null,
-                error: null,
-                history: StorageManager.get(),
-
-                get statusText() {
-                    if (this.platform === 'instagram') return 'Instagram Reels обнаружен';
-                    if (this.platform === 'tiktok') return 'TikTok видео обнаружено';
-                    return 'Вставьте ссылку на видео';
-                },
-
-                get loadingText() {
-                    if (this.progress < 30) return 'Подключение к серверу...';
-                    if (this.progress < 60) return 'Получение видео...';
-                    if (this.progress < 90) return 'Обработка...';
-                    return 'Почти готово...';
-                },
-
-                detect() {
-                    this.error = null;
-                    this.platform = PlatformDetector.detect(this.url);
-                    if (this.platform) this.tgApp.haptic('selection');
-                },
-
-                onPaste(e) {
-                    setTimeout(() => this.detect(), 50);
-                },
-
-                clear() {
-                    this.url = '';
-                    this.platform = null;
-                    this.video = null;
-                    this.error = null;
-                    this.tgApp.haptic('impact', 'light');
-                },
-
-                async download() {
-                    if (!this.platform || this.loading) return;
+                    this.video = await TikTokAPI.fetch(this.url);
+                    this.progress = 100;
                     
-                    this.loading = true;
-                    this.progress = 0;
-                    this.error = null;
-                    this.tgApp.haptic('impact', 'medium');
-
-                    try {
-                        this.video = await VideoDownloader.download(
-                            this.url, 
-                            this.platform,
-                            p => this.progress = p
-                        );
-                        
-                        StorageManager.add({
-                            id: this.video.id,
-                            platform: this.platform,
-                            thumbnail: this.video.thumbnail,
-                            author: this.video.author.name,
-                            url: this.url
-                        });
-                        
-                        this.history = StorageManager.get();
-                        this.tgApp.haptic('notification', 'success');
-                    } catch (e) {
-                        this.error = e.message || 'Не удалось загрузить видео';
-                        this.tgApp.haptic('notification', 'error');
-                    } finally {
-                        this.loading = false;
-                    }
-                },
-
-                saveVideo() {
-                    if (!this.video) return;
-                    
-                    const saved = this.tgApp.downloadFile(
-                        this.video.url, 
-                        `clipper_${this.platform}_${Date.now()}.mp4`
-                    );
-                    
-                    if (!saved) {
-                        const a = document.createElement('a');
-                        a.href = this.video.url;
-                        a.download = `clipper_${this.platform}_${Date.now()}.mp4`;
-                        a.click();
-                    }
-                    
-                    this.tgApp.haptic('notification', 'success');
-                },
-
-                shareStory() {
-                    if (!this.video) return;
-                    
-                    const shared = this.tgApp.shareToStory(this.video.url, {
-                        widget_link: {
-                            url: 'https://t.me/clipper_bot',
-                            name: 'Скачано через Clipper'
-                        }
+                    Storage.add({
+                        id: this.video.id,
+                        cover: this.video.cover,
+                        author: this.video.author.nickname,
+                        url: this.url
                     });
-                    
-                    if (!shared) {
-                        this.error = 'Публикация в истории недоступна в этой версии Telegram';
-                    }
-                },
-
-                loadFromHistory(item) {
-                    this.url = item.url;
-                    this.platform = item.platform;
-                    this.tgApp.haptic('selection');
-                },
-
-                clearHistory() {
-                    StorageManager.clear();
-                    this.history = [];
-                    this.tgApp.haptic('impact', 'medium');
-                },
-
-                formatDuration(seconds) {
-                    if (!seconds) return '0:00';
-                    const m = Math.floor(seconds / 60);
-                    const s = seconds % 60;
-                    return `${m}:${s.toString().padStart(2, '0')}`;
-                },
-
-                formatNumber(num) {
-                    if (!num) return '0';
-                    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-                    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-                    return num.toString();
+                    this.history = Storage.get();
+                    TG.notify('success');
+                } catch (e) {
+                    this.error = e.message || 'Произошла ошибка';
+                    TG.notify('error');
+                } finally {
+                    clearInterval(tick);
+                    this.loading = false;
                 }
-            }));
-        });
+            },
+
+            save() {
+                if (!this.video?.play) return;
+                const a = document.createElement('a');
+                a.href = this.video.play;
+                a.download = `tiktok_${this.video.id}.mp4`;
+                a.target = '_blank';
+                a.click();
+                TG.notify('success');
+            },
+
+            shareStory() {
+                if (!this.video?.play) return;
+                if (!TG.story(this.video.play)) {
+                    this.error = 'Истории доступны в мобильном Telegram';
+                }
+            },
+
+            fromHistory(h) {
+                this.url = h.url;
+                this.detect();
+                TG.haptic('light');
+            },
+
+            clearHistory() {
+                Storage.clear();
+                this.history = [];
+                TG.haptic('medium');
+            }
+        }));
+    });
     </script>
 </body>
 </html>
