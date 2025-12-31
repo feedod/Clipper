@@ -1,250 +1,859 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <meta name="theme-color" content="#ffffff">
+    <meta name="color-scheme" content="light only">
+    <title>Clipper — Загрузчик видео</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <style>
+        :root {
+            --pico-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+            --pico-border-radius: 1rem;
+            --pico-spacing: 1.5rem;
+        }
+        
+        html, body {
+            overscroll-behavior: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .video-container {
+            aspect-ratio: 9 / 16;
+            max-height: 60vh;
+            background: #000;
+            border-radius: var(--pico-border-radius);
+            overflow: hidden;
+        }
+        
+        .video-container video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .history-cover {
+            width: 5rem;
+            height: 5rem;
+            object-fit: cover;
+            border-radius: 0.75rem;
+            flex-shrink: 0;
+        }
+        
+        .spinner {
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 2px solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            vertical-align: middle;
+            margin-right: 0.5rem;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(1rem); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        [hidden] { display: none !important; }
+        
+        .quality-grid {
+            display: grid;
+            gap: 0.75rem;
+        }
+        
+        .quality-grid a[role="button"] {
+            margin: 0;
+            text-align: center;
+        }
+        
+        .history-item {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+        
+        .history-meta {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .history-meta p {
+            margin: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        main {
+            padding-bottom: env(safe-area-inset-bottom, 1rem);
+        }
+    </style>
 </head>
-<body class="min-h-screen bg-gradient-to-b from-[#f8f9fc] to-[#e5e9f0] font-sans antialiased">
-    <div x-data="clipperApp()" class="min-h-screen flex flex-col">
-        <div class="flex-1 overflow-y-auto px-4 py-8">
-            <div class="max-w-2xl mx-auto space-y-10">
-                <div class="text-center space-y-4">
-                    <h1 class="text-4xl font-bold text-gray-900">Clipper</h1>
-                    <p class="text-xl text-gray-600">Скачивайте видео из Instagram и TikTok без водяных знаков</p>
-                </div>
+<body>
+    <main class="container">
+        <header>
+            <hgroup>
+                <h1>📎 Clipper</h1>
+                <p>Скачивайте видео из Instagram и TikTok без водяных знаков</p>
+            </hgroup>
+        </header>
 
-                <div class="bg-white/70 backdrop-blur-3xl rounded-3xl shadow-2xl p-8 space-y-8">
-                    <div class="space-y-6">
-                        <select x-model="platform" class="w-full px-6 py-5 rounded-2xl bg-white/60 border border-gray-200/70 focus:outline-none focus:ring-4 focus:ring-blue-200 text-gray-900 text-lg transition-all">
+        <article id="downloadForm">
+            <form id="clipperForm">
+                <fieldset>
+                    <label for="platform">
+                        Платформа
+                        <select id="platform" name="platform" required>
                             <option value="" disabled selected>Выберите платформу</option>
-                            <option value="instagram">Instagram</option>
-                            <option value="tiktok">TikTok</option>
+                            <option value="instagram">📷 Instagram</option>
+                            <option value="tiktok">🎵 TikTok</option>
                         </select>
+                    </label>
 
-                        <input x-model="url" @keydown.enter="fetchVideo()" type="url" placeholder="Вставьте ссылку на видео" class="w-full px-6 py-5 rounded-2xl bg-white/60 border border-gray-200/70 focus:outline-none focus:ring-4 focus:ring-blue-200 placeholder-gray-500 text-gray-900 text-lg transition-all">
+                    <label for="videoUrl">
+                        Ссылка на видео
+                        <input 
+                            type="url" 
+                            id="videoUrl" 
+                            name="url" 
+                            placeholder="https://..."
+                            autocomplete="off"
+                            autocapitalize="off"
+                            spellcheck="false"
+                            required
+                        >
+                    </label>
+                </fieldset>
 
-                        <button @click="fetchVideo()" :disabled="loading || !platform || !url.trim()" class="w-full py-5 rounded-2xl font-semibold text-white text-lg shadow-xl transition-all duration-200 flex items-center justify-center gap-3" :class="{'bg-blue-500 hover:bg-blue-600 active:scale-98': platform && url.trim() && !loading, 'bg-gray-300 cursor-not-allowed': loading || !platform || !url.trim()}">
-                            <span x-show="!loading">Получить видео</span>
-                            <span x-show="loading" class="flex items-center gap-3">
-                                <svg class="animate-spin h-6 w-6" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-                                </svg>
-                                Загрузка...
-                            </span>
-                        </button>
-                    </div>
+                <button type="submit" id="submitBtn">
+                    Получить видео
+                </button>
+            </form>
 
-                    <div x-show="error" x-transition class="text-center text-red-600 text-lg font-medium" x-text="error"></div>
+            <p id="errorMessage" role="alert" hidden></p>
+        </article>
+
+        <article id="videoResult" class="fade-in" hidden>
+            <header>
+                <h3>Результат</h3>
+            </header>
+            
+            <div class="grid">
+                <div class="video-container">
+                    <video id="videoPlayer" controls playsinline webkit-playsinline preload="metadata">
+                        Ваш браузер не поддерживает видео.
+                    </video>
                 </div>
-
-                <template x-if="currentVideo">
-                    <div x-transition class="bg-white/70 backdrop-blur-3xl rounded-3xl shadow-2xl overflow-hidden">
-                        <div class="p-8 space-y-8">
-                            <div class="flex flex-col sm:flex-row items-start gap-6">
-                                <div class="flex-shrink-0 w-full sm:w-80 aspect-[9/16] bg-black rounded-2xl overflow-hidden shadow-2xl">
-                                    <video :src="currentVideo.previewUrl" :poster="currentVideo.cover" controls preload="metadata" playsinline webkit-playsinline class="w-full h-full object-contain">
-                                        Ваш браузер не поддерживает видео.
-                                    </video>
-                                </div>
-
-                                <div class="flex-1 space-y-4">
-                                    <div>
-                                        <p class="text-xl font-semibold text-gray-900 break-words" x-text="currentVideo.title || 'Без заголовка'"></p>
-                                        <p class="text-lg text-gray-600" x-text="currentVideo.author ? '@' + currentVideo.author : ''"></p>
-                                        <p class="text-base text-gray-500" x-text="currentVideo.platform === 'instagram' ? 'Instagram' : 'TikTok'"></p>
-                                    </div>
-
-                                    <div class="space-y-4">
-                                        <template x-for="quality in currentVideo.qualities" :key="quality.label">
-                                            <a :href="quality.url" download class="block w-full py-5 rounded-2xl bg-green-500 hover:bg-green-600 active:scale-98 text-white font-semibold text-lg text-center shadow-xl transition-all duration-200" x-text="quality.label"></a>
-                                        </template>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </template>
-
-                <template x-if="history.length">
-                    <div class="space-y-6">
-                        <div class="flex items-center justify-between">
-                            <h2 class="text-2xl font-bold text-gray-900">История</h2>
-                            <button @click="clearHistory()" class="text-sm text-gray-500 hover:text-gray-700 underline">Очистить</button>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <template x-for="item in history" :key="item.timestamp">
-                                <div class="bg-white/70 backdrop-blur-3xl rounded-3xl shadow-2xl overflow-hidden">
-                                    <div class="p-6 space-y-4">
-                                        <div class="flex items-start gap-4">
-                                            <img :src="item.cover" alt="Обложка" class="w-32 h-32 object-cover rounded-xl shadow-lg flex-shrink-0">
-                                            <div class="flex-1 min-w-0">
-                                                <p class="text-base font-medium text-gray-900 truncate" x-text="item.title || 'Без заголовка'"></p>
-                                                <p class="text-sm text-gray-600" x-text="item.author ? '@' + item.author : ''"></p>
-                                                <p class="text-xs text-gray-500" x-text="new Date(item.timestamp).toLocaleString()"></p>
-                                            </div>
-                                        </div>
-
-                                        <div class="grid grid-cols-1 gap-3">
-                                            <template x-for="quality in item.qualities">
-                                                <a :href="quality.url" download class="block py-3 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-medium text-center shadow transition-all" x-text="quality.label"></a>
-                                            </template>
-                                        </div>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-                </template>
+                
+                <div>
+                    <hgroup>
+                        <h4 id="videoTitle">Без заголовка</h4>
+                        <p id="videoAuthor"></p>
+                    </hgroup>
+                    
+                    <p id="videoPlatform">
+                        <small></small>
+                    </p>
+                    
+                    <div id="qualityButtons" class="quality-grid"></div>
+                </div>
             </div>
-        </div>
-    </div>
+        </article>
+
+        <section id="historySection" hidden>
+            <div class="header-actions">
+                <h2>📜 История</h2>
+                <button id="clearHistoryBtn" class="outline secondary">
+                    Очистить
+                </button>
+            </div>
+            
+            <div id="historyList" class="grid"></div>
+        </section>
+    </main>
 
     <script>
-        function clipperApp() {
-            return {
-                platform: '',
-                url: '',
-                loading: false,
-                error: null,
-                currentVideo: null,
-                history: [],
+    /**
+     * ============================================================
+     * CONFIGURATION
+     * ============================================================
+     */
+    const CONFIG = Object.freeze({
+        HISTORY_KEY: 'clipper_history_v2',
+        MAX_HISTORY_ITEMS: 50,
+        PLATFORMS: Object.freeze({
+            INSTAGRAM: 'instagram',
+            TIKTOK: 'tiktok'
+        })
+    });
 
-                init() {
-                    if (window.Telegram?.WebApp) {
-                        Telegram.WebApp.ready();
-                        Telegram.WebApp.expand();
-                    }
-                    this.loadHistory();
-                },
+    /**
+     * ============================================================
+     * UTILITY CLASSES
+     * ============================================================
+     */
+    class DOMHelper {
+        static $(selector) {
+            return document.querySelector(selector);
+        }
 
-                loadHistory() {
-                    const saved = localStorage.getItem('clipperHistory');
-                    if (saved) this.history = JSON.parse(saved);
-                },
+        static $$(selector) {
+            return document.querySelectorAll(selector);
+        }
 
-                saveHistory() {
-                    localStorage.setItem('clipperHistory', JSON.stringify(this.history.slice(0, 50)));
-                },
+        static show(element) {
+            element?.removeAttribute('hidden');
+        }
 
-                addToHistory(video) {
-                    const exists = this.history.findIndex(h => h.originalUrl === video.originalUrl);
-                    if (exists !== -1) this.history.splice(exists, 1);
-                    this.history.unshift({ ...video, timestamp: Date.now() });
-                    this.saveHistory();
-                },
+        static hide(element) {
+            element?.setAttribute('hidden', '');
+        }
 
-                clearHistory() {
-                    this.history = [];
-                    localStorage.removeItem('clipperHistory');
-                },
+        static setError(element, message) {
+            if (!element) return;
+            
+            element.textContent = message;
+            element.setAttribute('data-error', '');
+            this.show(element);
+        }
 
-                async fetchVideo() {
-                    if (!this.platform || !this.url.trim()) {
-                        this.error = 'Выберите платформу и вставьте корректную ссылку';
-                        return;
-                    }
+        static clearError(element) {
+            if (!element) return;
+            
+            element.textContent = '';
+            element.removeAttribute('data-error');
+            this.hide(element);
+        }
 
-                    this.loading = true;
-                    this.error = null;
-                    this.currentVideo = null;
-
-                    try {
-                        let videoInfo = {
-                            platform: this.platform,
-                            originalUrl: this.url.trim(),
-                            cover: '',
-                            author: '',
-                            title: '',
-                            qualities: [],
-                            previewUrl: ''
-                        };
-
-                        if (this.platform === 'instagram') {
-                            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(this.url.trim())}`;
-                            const response = await fetch(proxyUrl);
-                            if (!response.ok) throw new Error('Не удалось загрузить страницу (прокси ошибка)');
-
-                            const html = await response.text();
-
-                            // Основной поиск video_url (работает для большинства Reels и видео-постов)
-                            let videoUrl = null;
-                            const videoMatch = html.match(/"video_url":"([^"]+)"/);
-                            if (videoMatch) {
-                                videoUrl = videoMatch[1].replace(/\\\//g, '/');
-                            }
-
-                            // Альтернатива: video_versions (если несколько качеств)
-                            if (!videoUrl) {
-                                const versionsMatch = html.match(/"video_versions":\[([\s\S]*?)\]/);
-                                if (versionsMatch) {
-                                    try {
-                                        const versions = JSON.parse(`[${versionsMatch[1]}]`);
-                                        const sorted = versions.sort((a, b) => (b.height || b.width) - (a.height || a.width));
-                                        videoUrl = sorted[0].url.replace(/\\\//g, '/');
-                                    } catch (e) {}
-                                }
-                            }
-
-                            if (!videoUrl) {
-                                throw new Error('Это фото, карусель или приватный пост — видео не найдено');
-                            }
-
-                            // Обложка
-                            const coverMatch = html.match(/"display_url":"([^"]+)"/);
-                            videoInfo.cover = coverMatch ? coverMatch[1].replace(/\\\//g, '/') : '';
-
-                            // Автор
-                            const authorMatch = html.match(/"owner":\{"username":"([^"]+)"/);
-                            videoInfo.author = authorMatch ? authorMatch[1] : '';
-
-                            // Описание/заголовок
-                            const captionMatch = html.match(/"edge_media_to_caption":\{"edges":\[\{"node":\{"text":"([^"]*)"/);
-                            videoInfo.title = captionMatch ? captionMatch[1].replace(/\\n/g, ' ') : 'Без описания';
-
-                            videoInfo.qualities = [{ label: 'Скачать видео (лучшее качество)', url: videoUrl }];
-                            videoInfo.previewUrl = videoUrl;
-
-                        } else if (this.platform === 'tiktok') {
-                            const apiUrl = `https://www.tikwm.com/api/?url=${encodeURIComponent(this.url.trim())}&hd=1`;
-                            const response = await fetch(apiUrl);
-                            if (!response.ok) throw new Error('Ошибка сервиса TikTok');
-
-                            const data = await response.json();
-                            if (data.code !== 0) throw new Error(data.msg || 'Не удалось обработать видео TikTok');
-
-                            const vid = data.data;
-                            videoInfo.cover = vid.cover;
-                            videoInfo.author = vid.author.nickname || vid.author.unique_id;
-                            videoInfo.title = vid.title || 'Без заголовка';
-
-                            const qualities = [];
-                            if (vid.hdplay) qualities.push({ label: 'HD без водяного знака', url: vid.hdplay });
-                            if (vid.play) qualities.push({ label: 'Стандартное качество', url: vid.play });
-                            if (vid.wmplay) qualities.push({ label: 'С водяным знаком', url: vid.wmplay });
-
-                            if (qualities.length === 0) throw new Error('Ссылки на видео не найдены');
-
-                            videoInfo.qualities = qualities;
-                            videoInfo.previewUrl = vid.hdplay || vid.play || vid.wmplay;
-                        }
-
-                        this.currentVideo = videoInfo;
-                        this.addToHistory(videoInfo);
-
-                    } catch (err) {
-                        this.error = err.message || 'Неизвестная ошибка. Попробуйте другую ссылку или позже';
-                    } finally {
-                        this.loading = false;
-                        this.url = '';
-                    }
+        static createElement(tag, attributes = {}, children = []) {
+            const element = document.createElement(tag);
+            
+            Object.entries(attributes).forEach(([key, value]) => {
+                if (key === 'className') {
+                    element.className = value;
+                } else if (key === 'textContent') {
+                    element.textContent = value;
+                } else if (key === 'innerHTML') {
+                    element.innerHTML = value;
+                } else if (key.startsWith('data')) {
+                    element.setAttribute(key.replace(/([A-Z])/g, '-$1').toLowerCase(), value);
+                } else {
+                    element.setAttribute(key, value);
                 }
+            });
+
+            children.forEach(child => {
+                if (typeof child === 'string') {
+                    element.appendChild(document.createTextNode(child));
+                } else if (child instanceof Node) {
+                    element.appendChild(child);
+                }
+            });
+
+            return element;
+        }
+    }
+
+    class StorageManager {
+        static get(key, defaultValue = null) {
+            try {
+                const data = localStorage.getItem(key);
+                return data ? JSON.parse(data) : defaultValue;
+            } catch {
+                return defaultValue;
             }
         }
+
+        static set(key, value) {
+            try {
+                localStorage.setItem(key, JSON.stringify(value));
+                return true;
+            } catch {
+                return false;
+            }
+        }
+
+        static remove(key) {
+            try {
+                localStorage.removeItem(key);
+                return true;
+            } catch {
+                return false;
+            }
+        }
+    }
+
+    /**
+     * ============================================================
+     * API CLASSES
+     * ============================================================
+     */
+    class BaseAPI {
+        constructor() {
+            if (new.target === BaseAPI) {
+                throw new Error('BaseAPI is abstract class');
+            }
+        }
+
+        async fetchVideo(url) {
+            throw new Error('Method fetchVideo must be implemented');
+        }
+
+        sanitizeUrl(url) {
+            return url.trim();
+        }
+
+        decodeEscapedUrl(url) {
+            return url.replace(/\\u0026/g, '&').replace(/\\\//g, '/');
+        }
+    }
+
+    class InstagramAPI extends BaseAPI {
+        static PROXY_URL = 'https://api.allorigins.win/raw?url=';
+        
+        static PATTERNS = Object.freeze({
+            VIDEO_URL: /"video_url":"([^"]+)"/,
+            VIDEO_VERSIONS: /"video_versions":\[([\s\S]*?)\]/,
+            DISPLAY_URL: /"display_url":"([^"]+)"/,
+            OWNER: /"owner":\{"username":"([^"]+)"/,
+            CAPTION: /"edge_media_to_caption":\{"edges":\[\{"node":\{"text":"([^"]*)"/
+        });
+
+        async fetchVideo(url) {
+            const sanitizedUrl = this.sanitizeUrl(url);
+            const proxyUrl = `${InstagramAPI.PROXY_URL}${encodeURIComponent(sanitizedUrl)}`;
+            
+            const response = await fetch(proxyUrl);
+            
+            if (!response.ok) {
+                throw new Error('Не удалось загрузить страницу Instagram');
+            }
+
+            const html = await response.text();
+            return this.parseResponse(html, sanitizedUrl);
+        }
+
+        parseResponse(html, originalUrl) {
+            const videoUrl = this.extractVideoUrl(html);
+            
+            if (!videoUrl) {
+                throw new Error('Видео не найдено. Возможно, это фото, карусель или приватный пост');
+            }
+
+            return {
+                platform: CONFIG.PLATFORMS.INSTAGRAM,
+                originalUrl,
+                cover: this.extractCover(html),
+                author: this.extractAuthor(html),
+                title: this.extractCaption(html),
+                qualities: [{ 
+                    label: '⬇️ Скачать видео (лучшее качество)', 
+                    url: videoUrl 
+                }],
+                previewUrl: videoUrl
+            };
+        }
+
+        extractVideoUrl(html) {
+            const directMatch = html.match(InstagramAPI.PATTERNS.VIDEO_URL);
+            
+            if (directMatch) {
+                return this.decodeEscapedUrl(directMatch[1]);
+            }
+
+            const versionsMatch = html.match(InstagramAPI.PATTERNS.VIDEO_VERSIONS);
+            
+            if (versionsMatch) {
+                try {
+                    const versions = JSON.parse(`[${versionsMatch[1]}]`);
+                    const sorted = versions.sort((a, b) => 
+                        (b.height || b.width || 0) - (a.height || a.width || 0)
+                    );
+                    
+                    if (sorted.length > 0) {
+                        return this.decodeEscapedUrl(sorted[0].url);
+                    }
+                } catch {
+                    return null;
+                }
+            }
+
+            return null;
+        }
+
+        extractCover(html) {
+            const match = html.match(InstagramAPI.PATTERNS.DISPLAY_URL);
+            return match ? this.decodeEscapedUrl(match[1]) : '';
+        }
+
+        extractAuthor(html) {
+            const match = html.match(InstagramAPI.PATTERNS.OWNER);
+            return match ? match[1] : '';
+        }
+
+        extractCaption(html) {
+            const match = html.match(InstagramAPI.PATTERNS.CAPTION);
+            return match ? match[1].replace(/\\n/g, ' ').substring(0, 200) : 'Без описания';
+        }
+    }
+
+    class TikTokAPI extends BaseAPI {
+        static API_URL = 'https://www.tikwm.com/api/';
+
+        async fetchVideo(url) {
+            const sanitizedUrl = this.sanitizeUrl(url);
+            const apiUrl = `${TikTokAPI.API_URL}?url=${encodeURIComponent(sanitizedUrl)}&hd=1`;
+            
+            const response = await fetch(apiUrl);
+            
+            if (!response.ok) {
+                throw new Error('Ошибка сервиса TikTok');
+            }
+
+            const data = await response.json();
+            
+            if (data.code !== 0) {
+                throw new Error(data.msg || 'Не удалось обработать видео TikTok');
+            }
+
+            return this.parseResponse(data.data, sanitizedUrl);
+        }
+
+        parseResponse(videoData, originalUrl) {
+            const qualities = this.extractQualities(videoData);
+            
+            if (qualities.length === 0) {
+                throw new Error('Ссылки на видео не найдены');
+            }
+
+            return {
+                platform: CONFIG.PLATFORMS.TIKTOK,
+                originalUrl,
+                cover: videoData.cover || '',
+                author: videoData.author?.nickname || videoData.author?.unique_id || '',
+                title: videoData.title || 'Без заголовка',
+                qualities,
+                previewUrl: videoData.hdplay || videoData.play || videoData.wmplay
+            };
+        }
+
+        extractQualities(videoData) {
+            const qualities = [];
+            
+            const qualityMap = [
+                { key: 'hdplay', label: '⬇️ HD без водяного знака' },
+                { key: 'play', label: '⬇️ Стандартное качество' },
+                { key: 'wmplay', label: '⬇️ С водяным знаком' }
+            ];
+
+            qualityMap.forEach(({ key, label }) => {
+                if (videoData[key]) {
+                    qualities.push({ label, url: videoData[key] });
+                }
+            });
+
+            return qualities;
+        }
+    }
+
+    class APIFactory {
+        static #apis = new Map([
+            [CONFIG.PLATFORMS.INSTAGRAM, InstagramAPI],
+            [CONFIG.PLATFORMS.TIKTOK, TikTokAPI]
+        ]);
+
+        static create(platform) {
+            const APIClass = this.#apis.get(platform);
+            
+            if (!APIClass) {
+                throw new Error(`Неизвестная платформа: ${platform}`);
+            }
+
+            return new APIClass();
+        }
+    }
+
+    /**
+     * ============================================================
+     * HISTORY MANAGER
+     * ============================================================
+     */
+    class HistoryManager {
+        #items = [];
+        #maxItems;
+        #storageKey;
+        #onChangeCallback;
+
+        constructor(storageKey, maxItems = 50) {
+            this.#storageKey = storageKey;
+            this.#maxItems = maxItems;
+            this.#load();
+        }
+
+        get items() {
+            return [...this.#items];
+        }
+
+        get isEmpty() {
+            return this.#items.length === 0;
+        }
+
+        onChange(callback) {
+            this.#onChangeCallback = callback;
+        }
+
+        add(video) {
+            const existingIndex = this.#items.findIndex(
+                item => item.originalUrl === video.originalUrl
+            );
+
+            if (existingIndex !== -1) {
+                this.#items.splice(existingIndex, 1);
+            }
+
+            const historyItem = {
+                ...video,
+                timestamp: Date.now()
+            };
+
+            this.#items.unshift(historyItem);
+            this.#items = this.#items.slice(0, this.#maxItems);
+            
+            this.#save();
+            this.#notify();
+        }
+
+        clear() {
+            this.#items = [];
+            StorageManager.remove(this.#storageKey);
+            this.#notify();
+        }
+
+        #load() {
+            this.#items = StorageManager.get(this.#storageKey, []);
+        }
+
+        #save() {
+            StorageManager.set(this.#storageKey, this.#items);
+        }
+
+        #notify() {
+            this.#onChangeCallback?.();
+        }
+    }
+
+    /**
+     * ============================================================
+     * TELEGRAM WEB APP INTEGRATION
+     * ============================================================
+     */
+    class TelegramIntegration {
+        #webApp;
+        #isAvailable;
+
+        constructor() {
+            this.#webApp = window.Telegram?.WebApp;
+            this.#isAvailable = !!this.#webApp;
+        }
+
+        get isAvailable() {
+            return this.#isAvailable;
+        }
+
+        init() {
+            if (!this.#isAvailable) return;
+
+            this.#webApp.ready();
+            this.#webApp.expand();
+            this.#webApp.setHeaderColor('#ffffff');
+            this.#webApp.setBackgroundColor('#ffffff');
+            
+            this.#applyTheme();
+        }
+
+        hapticFeedback(type = 'light') {
+            if (!this.#isAvailable) return;
+
+            const impact = this.#webApp.HapticFeedback;
+            
+            switch (type) {
+                case 'light':
+                    impact?.impactOccurred('light');
+                    break;
+                case 'medium':
+                    impact?.impactOccurred('medium');
+                    break;
+                case 'success':
+                    impact?.notificationOccurred('success');
+                    break;
+                case 'error':
+                    impact?.notificationOccurred('error');
+                    break;
+            }
+        }
+
+        showAlert(message) {
+            if (this.#isAvailable) {
+                this.#webApp.showAlert(message);
+            } else {
+                alert(message);
+            }
+        }
+
+        #applyTheme() {
+            document.documentElement.setAttribute('data-theme', 'light');
+        }
+    }
+
+    /**
+     * ============================================================
+     * UI RENDERER
+     * ============================================================
+     */
+    class UIRenderer {
+        static renderVideoResult(video) {
+            const { $ } = DOMHelper;
+
+            $('#videoTitle').textContent = video.title || 'Без заголовка';
+            $('#videoAuthor').textContent = video.author ? `@${video.author}` : '';
+            $('#videoPlatform small').textContent = 
+                video.platform === CONFIG.PLATFORMS.INSTAGRAM ? '📷 Instagram' : '🎵 TikTok';
+
+            const videoPlayer = $('#videoPlayer');
+            videoPlayer.src = video.previewUrl;
+            videoPlayer.poster = video.cover;
+
+            this.renderQualityButtons(video.qualities, '#qualityButtons');
+            
+            DOMHelper.show($('#videoResult'));
+        }
+
+        static renderQualityButtons(qualities, containerSelector) {
+            const container = DOMHelper.$(containerSelector);
+            container.innerHTML = '';
+
+            qualities.forEach(quality => {
+                const link = DOMHelper.createElement('a', {
+                    href: quality.url,
+                    role: 'button',
+                    download: '',
+                    textContent: quality.label
+                });
+                
+                container.appendChild(link);
+            });
+        }
+
+        static renderHistory(items) {
+            const container = DOMHelper.$('#historyList');
+            const section = DOMHelper.$('#historySection');
+
+            if (items.length === 0) {
+                DOMHelper.hide(section);
+                return;
+            }
+
+            container.innerHTML = '';
+
+            items.forEach(item => {
+                const article = this.createHistoryCard(item);
+                container.appendChild(article);
+            });
+
+            DOMHelper.show(section);
+        }
+
+        static createHistoryCard(item) {
+            const platformIcon = item.platform === CONFIG.PLATFORMS.INSTAGRAM ? '📷' : '🎵';
+            const formattedDate = new Date(item.timestamp).toLocaleString('ru-RU', {
+                day: '2-digit',
+                month: '2-digit',
+                year: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            const article = DOMHelper.createElement('article');
+            
+            article.innerHTML = `
+                <div class="history-item">
+                    <img 
+                        src="${item.cover || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Crect fill="%23ddd" width="100" height="100"/%3E%3C/svg%3E'}" 
+                        alt="Обложка" 
+                        class="history-cover"
+                        loading="lazy"
+                    >
+                    <div class="history-meta">
+                        <p><strong>${this.escapeHtml(item.title || 'Без заголовка')}</strong></p>
+                        <p><small>${item.author ? '@' + this.escapeHtml(item.author) : ''}</small></p>
+                        <p><small>${platformIcon} ${formattedDate}</small></p>
+                    </div>
+                </div>
+                <div class="quality-grid"></div>
+            `;
+
+            const qualityContainer = article.querySelector('.quality-grid');
+            
+            item.qualities.forEach(quality => {
+                const link = DOMHelper.createElement('a', {
+                    href: quality.url,
+                    role: 'button',
+                    className: 'secondary outline',
+                    download: '',
+                    textContent: quality.label
+                });
+                qualityContainer.appendChild(link);
+            });
+
+            return article;
+        }
+
+        static escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        static setLoading(button, isLoading) {
+            if (isLoading) {
+                button.setAttribute('aria-busy', 'true');
+                button.disabled = true;
+                button.innerHTML = '<span class="spinner"></span>Загрузка...';
+            } else {
+                button.removeAttribute('aria-busy');
+                button.disabled = false;
+                button.textContent = 'Получить видео';
+            }
+        }
+    }
+
+    /**
+     * ============================================================
+     * MAIN APPLICATION
+     * ============================================================
+     */
+    class ClipperApp {
+        #telegram;
+        #history;
+        #elements;
+
+        constructor() {
+            this.#telegram = new TelegramIntegration();
+            this.#history = new HistoryManager(CONFIG.HISTORY_KEY, CONFIG.MAX_HISTORY_ITEMS);
+            this.#cacheElements();
+            this.#bindEvents();
+            this.#init();
+        }
+
+        #cacheElements() {
+            this.#elements = {
+                form: DOMHelper.$('#clipperForm'),
+                platform: DOMHelper.$('#platform'),
+                url: DOMHelper.$('#videoUrl'),
+                submitBtn: DOMHelper.$('#submitBtn'),
+                errorMessage: DOMHelper.$('#errorMessage'),
+                videoResult: DOMHelper.$('#videoResult'),
+                clearHistoryBtn: DOMHelper.$('#clearHistoryBtn')
+            };
+        }
+
+        #bindEvents() {
+            this.#elements.form.addEventListener('submit', (e) => this.#handleSubmit(e));
+            this.#elements.clearHistoryBtn.addEventListener('click', () => this.#handleClearHistory());
+            
+            this.#history.onChange(() => {
+                UIRenderer.renderHistory(this.#history.items);
+            });
+        }
+
+        #init() {
+            this.#telegram.init();
+            UIRenderer.renderHistory(this.#history.items);
+        }
+
+        async #handleSubmit(event) {
+            event.preventDefault();
+
+            const platform = this.#elements.platform.value;
+            const url = this.#elements.url.value.trim();
+
+            if (!platform || !url) {
+                this.#showError('Выберите платформу и вставьте ссылку');
+                return;
+            }
+
+            this.#clearError();
+            this.#setLoadingState(true);
+            DOMHelper.hide(this.#elements.videoResult);
+
+            try {
+                const api = APIFactory.create(platform);
+                const videoInfo = await api.fetchVideo(url);
+                
+                UIRenderer.renderVideoResult(videoInfo);
+                this.#history.add(videoInfo);
+                this.#telegram.hapticFeedback('success');
+                
+                this.#elements.url.value = '';
+                
+            } catch (error) {
+                this.#showError(error.message || 'Произошла ошибка. Попробуйте позже');
+                this.#telegram.hapticFeedback('error');
+                
+            } finally {
+                this.#setLoadingState(false);
+            }
+        }
+
+        #handleClearHistory() {
+            this.#history.clear();
+            this.#telegram.hapticFeedback('medium');
+        }
+
+        #showError(message) {
+            DOMHelper.setError(this.#elements.errorMessage, `⚠️ ${message}`);
+        }
+
+        #clearError() {
+            DOMHelper.clearError(this.#elements.errorMessage);
+        }
+
+        #setLoadingState(isLoading) {
+            UIRenderer.setLoading(this.#elements.submitBtn, isLoading);
+            this.#elements.platform.disabled = isLoading;
+            this.#elements.url.disabled = isLoading;
+        }
+    }
+
+    /**
+     * ============================================================
+     * INITIALIZATION
+     * ============================================================
+     */
+    document.addEventListener('DOMContentLoaded', () => {
+        new ClipperApp();
+    });
     </script>
 </body>
 </html>
