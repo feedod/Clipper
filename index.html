@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body class="min-h-screen bg-gradient-to-b from-[#f8f9fc] to-[#e5e9f0] font-sans antialiased">
     <div x-data="clipperApp()" class="min-h-screen flex flex-col">
         <div class="flex-1 overflow-y-auto px-4 py-8">
-            <div class="max-w-2xl mx-auto space-y-8">
+            <div class="max-w-2xl mx-auto space-y-10">
                 <div class="text-center space-y-4">
                     <h1 class="text-4xl font-bold text-gray-900">Clipper</h1>
-                    <p class="text-xl text-gray-600">Скачивайте видео из Instagram и TikTok</p>
+                    <p class="text-xl text-gray-600">Скачивайте видео из Instagram и TikTok без водяных знаков</p>
                 </div>
 
                 <div class="bg-white/70 backdrop-blur-3xl rounded-3xl shadow-2xl p-8 space-y-8">
@@ -43,20 +43,27 @@
 
                 <template x-if="currentVideo">
                     <div x-transition class="bg-white/70 backdrop-blur-3xl rounded-3xl shadow-2xl overflow-hidden">
-                        <div class="p-8 space-y-6">
-                            <div class="flex items-center gap-6">
-                                <img :src="currentVideo.cover" alt="Cover" class="w-32 h-32 object-cover rounded-2xl shadow-lg">
-                                <div class="flex-1">
-                                    <p class="text-lg font-semibold text-gray-900" x-text="currentVideo.title || 'Без описания'"></p>
-                                    <p class="text-base text-gray-600" x-text="currentVideo.author ? '@' + currentVideo.author : ''"></p>
-                                    <p class="text-sm text-gray-500" x-text="currentVideo.platform === 'instagram' ? 'Instagram' : 'TikTok'"></p>
+                        <div class="p-8 space-y-8">
+                            <div class="flex flex-col sm:flex-row items-start gap-6">
+                                <div class="flex-shrink-0 w-full sm:w-80 aspect-[9/16] bg-black rounded-2xl overflow-hidden shadow-2xl">
+                                    <video :src="currentVideo.previewUrl" :poster="currentVideo.cover" controls preload="metadata" playsinline class="w-full h-full object-contain">
+                                        Ваш браузер не поддерживает видео.
+                                    </video>
                                 </div>
-                            </div>
 
-                            <div class="space-y-4">
-                                <template x-for="quality in currentVideo.qualities" :key="quality.label">
-                                    <a :href="quality.url" download class="block w-full py-5 rounded-2xl bg-green-500 hover:bg-green-600 active:scale-98 text-white font-semibold text-lg text-center shadow-xl transition-all duration-200" x-text="quality.label"></a>
-                                </template>
+                                <div class="flex-1 space-y-4">
+                                    <div>
+                                        <p class="text-xl font-semibold text-gray-900 break-words" x-text="currentVideo.title || 'Без заголовка'"></p>
+                                        <p class="text-lg text-gray-600" x-text="currentVideo.author ? '@' + currentVideo.author : ''"></p>
+                                        <p class="text-base text-gray-500" x-text="currentVideo.platform === 'instagram' ? 'Instagram' : 'TikTok'"></p>
+                                    </div>
+
+                                    <div class="space-y-4">
+                                        <template x-for="quality in currentVideo.qualities" :key="quality.label">
+                                            <a :href="quality.url" download class="block w-full py-5 rounded-2xl bg-green-500 hover:bg-green-600 active:scale-98 text-white font-semibold text-lg text-center shadow-xl transition-all duration-200" x-text="quality.label"></a>
+                                        </template>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -65,26 +72,26 @@
                 <template x-if="history.length">
                     <div class="space-y-6">
                         <div class="flex items-center justify-between">
-                            <h2 class="text-2xl font-bold text-gray-900">История скачиваний</h2>
+                            <h2 class="text-2xl font-bold text-gray-900">История</h2>
                             <button @click="clearHistory()" class="text-sm text-gray-500 hover:text-gray-700 underline">Очистить</button>
                         </div>
 
-                        <div class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <template x-for="item in history" :key="item.timestamp">
                                 <div class="bg-white/70 backdrop-blur-3xl rounded-3xl shadow-2xl overflow-hidden">
                                     <div class="p-6 space-y-4">
-                                        <div class="flex items-center gap-4">
-                                            <img :src="item.cover" alt="Cover" class="w-24 h-24 object-cover rounded-xl shadow">
-                                            <div class="flex-1">
-                                                <p class="text-base font-medium text-gray-900" x-text="item.title || 'Без описания'"></p>
+                                        <div class="flex items-start gap-4">
+                                            <img :src="item.cover" alt="Обложка" class="w-32 h-32 object-cover rounded-xl shadow-lg flex-shrink-0">
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-base font-medium text-gray-900 truncate" x-text="item.title || 'Без заголовка'"></p>
                                                 <p class="text-sm text-gray-600" x-text="item.author ? '@' + item.author : ''"></p>
                                                 <p class="text-xs text-gray-500" x-text="new Date(item.timestamp).toLocaleString()"></p>
                                             </div>
                                         </div>
 
-                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div class="grid grid-cols-1 gap-3">
                                             <template x-for="quality in item.qualities">
-                                                <a :href="quality.url" download class="block py-4 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-medium text-center shadow transition-all" x-text="quality.label"></a>
+                                                <a :href="quality.url" download class="block py-3 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-medium text-center shadow transition-all" x-text="quality.label"></a>
                                             </template>
                                         </div>
                                     </div>
@@ -121,22 +128,25 @@
                 },
 
                 saveHistory() {
-                    localStorage.setItem('clipperHistory', JSON.stringify(this.history.slice(0, 30)));
+                    localStorage.setItem('clipperHistory', JSON.stringify(this.history.slice(0, 50)));
                 },
 
                 addToHistory(video) {
+                    // Избегаем дубликатов
+                    const exists = this.history.findIndex(h => h.originalUrl === video.originalUrl);
+                    if (exists !== -1) this.history.splice(exists, 1);
                     this.history.unshift({ ...video, timestamp: Date.now() });
                     this.saveHistory();
                 },
 
                 clearHistory() {
                     this.history = [];
-                    this.saveHistory();
+                    localStorage.removeItem('clipperHistory');
                 },
 
                 async fetchVideo() {
                     if (!this.platform || !this.url.trim()) {
-                        this.error = 'Выберите платформу и вставьте ссылку';
+                        this.error = 'Выберите платформу и вставьте корректную ссылку';
                         return;
                     }
 
@@ -151,31 +161,43 @@
                             cover: '',
                             author: '',
                             title: '',
-                            qualities: []
+                            qualities: [],
+                            previewUrl: ''
                         };
 
                         if (this.platform === 'instagram') {
-                            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(this.url.trim())}`;
+                            // Новый надежный прокси (работает в 2025, обходит блокировки и CORS)
+                            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(this.url.trim())}`;
                             const response = await fetch(proxyUrl);
-                            if (!response.ok) throw new Error('Ошибка прокси');
+                            if (!response.ok) throw new Error('Не удалось загрузить страницу Instagram (прокси ошибка)');
 
-                            const data = await response.json();
-                            const html = data.contents;
+                            const html = await response.text();
 
-                            const videoMatch = html.match(/<meta\s+property="og:video"\s+content="([^"]+)"/i);
-                            const imageMatch = html.match(/<meta\s+property="og:image"\s+content="([^"]+)"/i);
-                            const titleMatch = html.match(/<meta\s+property="og:description"\s+content="([^"]+)"/i);
-                            const authorMatch = html.match(/<meta\s+property="instapp:owner_name"\s+content="([^"]+)"/i) || html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i);
+                            // Более надежный парсинг og: тегов
+                            const getMeta = (property) => {
+                                const match = html.match(new RegExp(`<meta\\s+property="${property}"\\s+content="([^"]+)"`, 'i'));
+                                return match ? decodeURIComponent(match[1].replace(/&amp;/g, '&')) : '';
+                            };
 
-                            if (!videoMatch) {
-                                if (imageMatch) throw new Error('Это фото, а не видео');
-                                throw new Error('Видео не найдено. Пост может быть приватным или удалён');
+                            const videoUrl = getMeta('og:video');
+                            const imageUrl = getMeta('og:image');
+                            const description = getMeta('og:description');
+                            const titleMeta = getMeta('og:title');
+
+                            if (!videoUrl) {
+                                if (imageUrl) throw new Error('Это фото или карусель, а не видео');
+                                throw new Error('Видео не найдено. Пост может быть приватным, удалён или недоступен в вашем регионе');
                             }
 
-                            videoInfo.cover = imageMatch ? imageMatch[1] : '';
-                            videoInfo.title = titleMatch ? titleMatch[1] : '';
-                            videoInfo.author = authorMatch ? authorMatch[1] : '';
-                            videoInfo.qualities = [{ label: 'Скачать видео', url: videoMatch[1] }];
+                            // Автор обычно в description или title
+                            const authorMatch = description.match(/([^@]+) \(@([^)]+)\)/) || titleMeta.match(/@([^|]+)/);
+                            const author = authorMatch ? authorMatch[2] || authorMatch[1] : '';
+
+                            videoInfo.cover = imageUrl;
+                            videoInfo.title = description || 'Без описания';
+                            videoInfo.author = author;
+                            videoInfo.qualities = [{ label: 'Скачать видео (оригинальное качество)', url: videoUrl }];
+                            videoInfo.previewUrl = videoUrl;
 
                         } else if (this.platform === 'tiktok') {
                             const apiUrl = `https://www.tikwm.com/api/?url=${encodeURIComponent(this.url.trim())}&hd=1`;
@@ -183,26 +205,29 @@
                             if (!response.ok) throw new Error('Ошибка сервиса TikTok');
 
                             const data = await response.json();
-                            if (data.code !== 0) throw new Error(data.msg || 'Не удалось получить видео');
+                            if (data.code !== 0) throw new Error(data.msg || 'Не удалось обработать видео TikTok');
 
                             const vid = data.data;
                             videoInfo.cover = vid.cover;
                             videoInfo.author = vid.author.nickname || vid.author.unique_id;
-                            videoInfo.title = vid.title;
+                            videoInfo.title = vid.title || 'Без заголовка';
 
                             const qualities = [];
-                            if (vid.hdplay) qualities.push({ label: 'HD (без водяного знака)', url: vid.hdplay });
+                            if (vid.hdplay) qualities.push({ label: 'HD без водяного знака', url: vid.hdplay });
                             if (vid.play) qualities.push({ label: 'Стандартное качество', url: vid.play });
+                            if (vid.wmplay) qualities.push({ label: 'С водяным знаком', url: vid.wmplay });
 
                             if (qualities.length === 0) throw new Error('Ссылки на видео не найдены');
+
                             videoInfo.qualities = qualities;
+                            videoInfo.previewUrl = vid.hdplay || vid.play || vid.wmplay;
                         }
 
                         this.currentVideo = videoInfo;
                         this.addToHistory(videoInfo);
 
                     } catch (err) {
-                        this.error = err.message || 'Неизвестная ошибка. Попробуйте позже';
+                        this.error = err.message || 'Неизвестная ошибка. Попробуйте другую ссылку или позже';
                     } finally {
                         this.loading = false;
                         this.url = '';
