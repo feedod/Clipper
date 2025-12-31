@@ -46,7 +46,7 @@
                         <div class="p-8 space-y-8">
                             <div class="flex flex-col sm:flex-row items-start gap-6">
                                 <div class="flex-shrink-0 w-full sm:w-80 aspect-[9/16] bg-black rounded-2xl overflow-hidden shadow-2xl">
-                                    <video :src="currentVideo.previewUrl" :poster="currentVideo.cover" controls preload="metadata" playsinline class="w-full h-full object-contain">
+                                    <video :src="currentVideo.previewUrl" :poster="currentVideo.cover" controls preload="metadata" playsinline webkit-playsinline class="w-full h-full object-contain">
                                         Ваш браузер не поддерживает видео.
                                     </video>
                                 </div>
@@ -132,7 +132,6 @@
                 },
 
                 addToHistory(video) {
-                    // Избегаем дубликатов
                     const exists = this.history.findIndex(h => h.originalUrl === video.originalUrl);
                     if (exists !== -1) this.history.splice(exists, 1);
                     this.history.unshift({ ...video, timestamp: Date.now() });
@@ -166,37 +165,48 @@
                         };
 
                         if (this.platform === 'instagram') {
-                            // Новый надежный прокси (работает в 2025, обходит блокировки и CORS)
-                            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(this.url.trim())}`;
+                            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(this.url.trim())}`;
                             const response = await fetch(proxyUrl);
-                            if (!response.ok) throw new Error('Не удалось загрузить страницу Instagram (прокси ошибка)');
+                            if (!response.ok) throw new Error('Не удалось загрузить страницу (прокси ошибка)');
 
                             const html = await response.text();
 
-                            // Более надежный парсинг og: тегов
-                            const getMeta = (property) => {
-                                const match = html.match(new RegExp(`<meta\\s+property="${property}"\\s+content="([^"]+)"`, 'i'));
-                                return match ? decodeURIComponent(match[1].replace(/&amp;/g, '&')) : '';
-                            };
-
-                            const videoUrl = getMeta('og:video');
-                            const imageUrl = getMeta('og:image');
-                            const description = getMeta('og:description');
-                            const titleMeta = getMeta('og:title');
-
-                            if (!videoUrl) {
-                                if (imageUrl) throw new Error('Это фото или карусель, а не видео');
-                                throw new Error('Видео не найдено. Пост может быть приватным, удалён или недоступен в вашем регионе');
+                            // Основной поиск video_url (работает для большинства Reels и видео-постов)
+                            let videoUrl = null;
+                            const videoMatch = html.match(/"video_url":"([^"]+)"/);
+                            if (videoMatch) {
+                                videoUrl = videoMatch[1].replace(/\\\//g, '/');
                             }
 
-                            // Автор обычно в description или title
-                            const authorMatch = description.match(/([^@]+) \(@([^)]+)\)/) || titleMeta.match(/@([^|]+)/);
-                            const author = authorMatch ? authorMatch[2] || authorMatch[1] : '';
+                            // Альтернатива: video_versions (если несколько качеств)
+                            if (!videoUrl) {
+                                const versionsMatch = html.match(/"video_versions":\[([\s\S]*?)\]/);
+                                if (versionsMatch) {
+                                    try {
+                                        const versions = JSON.parse(`[${versionsMatch[1]}]`);
+                                        const sorted = versions.sort((a, b) => (b.height || b.width) - (a.height || a.width));
+                                        videoUrl = sorted[0].url.replace(/\\\//g, '/');
+                                    } catch (e) {}
+                                }
+                            }
 
-                            videoInfo.cover = imageUrl;
-                            videoInfo.title = description || 'Без описания';
-                            videoInfo.author = author;
-                            videoInfo.qualities = [{ label: 'Скачать видео (оригинальное качество)', url: videoUrl }];
+                            if (!videoUrl) {
+                                throw new Error('Это фото, карусель или приватный пост — видео не найдено');
+                            }
+
+                            // Обложка
+                            const coverMatch = html.match(/"display_url":"([^"]+)"/);
+                            videoInfo.cover = coverMatch ? coverMatch[1].replace(/\\\//g, '/') : '';
+
+                            // Автор
+                            const authorMatch = html.match(/"owner":\{"username":"([^"]+)"/);
+                            videoInfo.author = authorMatch ? authorMatch[1] : '';
+
+                            // Описание/заголовок
+                            const captionMatch = html.match(/"edge_media_to_caption":\{"edges":\[\{"node":\{"text":"([^"]*)"/);
+                            videoInfo.title = captionMatch ? captionMatch[1].replace(/\\n/g, ' ') : 'Без описания';
+
+                            videoInfo.qualities = [{ label: 'Скачать видео (лучшее качество)', url: videoUrl }];
                             videoInfo.previewUrl = videoUrl;
 
                         } else if (this.platform === 'tiktok') {
