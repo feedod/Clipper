@@ -518,7 +518,7 @@
         }
 
         static get isPremium() {
-          return this.#app?.initDataUnsafe?.user?.is_premium === true;
+          return this.#app?.initDataUnsafe?.user?.is_premium === false;
         }
 
         static haptic(type = "light") {
