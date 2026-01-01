@@ -549,7 +549,7 @@
         }
 
         static get showWidget() {
-          return this.#app?.initDataUnsafe?.user?.is_premium === false;
+          return this.#app?.is_premium === false;
         }
 
         static haptic(type = "light") {
