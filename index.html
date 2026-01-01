@@ -209,7 +209,7 @@
             <div class="h-2 overflow-hidden rounded-full border border-border bg-surface">
               <div
                 class="h-full rounded-full transition-all duration-200 ease-out"
-                :style="{ backgroundColor: platform?.getColor() || '#fe2c55', width: progress + '%' }"
+                :style="{ backgroundColor: platform?.getColor(), width: progress + '%' }"
               ></div>
             </div>
           </div>
@@ -262,13 +262,13 @@
               >
                 <svg
                   class="h-4 w-4"
-                  :style="{ color: platform.getColor() }"
+                  :style="{ color: video.platform.getColor() }"
                   viewBox="0 0 24 24"
                   fill="currentColor"
                 >
-                  <path :d="platform.iconPath" />
+                  <path :d="video.platform.iconPath" />
                 </svg>
-                <span class="text-xs font-semibold text-text" x-text="platform.name"></span>
+                <span class="text-xs font-semibold text-text" x-text="video.platform.name"></span>
               </div>
 
               <div
@@ -297,11 +297,11 @@
             </div>
             <svg
               class="h-5 w-5"
-              :style="{ color: platform.getColor() }"
+              :style="{ color: video.platform.getColor() }"
               viewBox="0 0 24 24"
               fill="currentColor"
             >
-              <path :d="platform.iconPath" />
+              <path :d="video.platform.iconPath" />
             </svg>
           </div>
 
@@ -317,11 +317,11 @@
                 <div class="text-center py-2">
                   <div
                     class="mx-auto grid h-9 w-9 place-items-center rounded-full"
-                    :style="{ backgroundColor: platform.getColor() + '20' }"
+                    :style="{ backgroundColor: video.platform.getColor() + '20' }"
                   >
                     <svg
                       class="h-4 w-4"
-                      :style="{ color: platform.getColor() }"
+                      :style="{ color: video.platform.getColor() }"
                       fill="none"
                       stroke="currentColor"
                       stroke-width="1.5"
@@ -340,7 +340,7 @@
           <div class="grid grid-cols-2 gap-3 pt-2">
             <button
               @click="saveVideo"
-              :style="{ backgroundColor: platform?.getColor() }"
+              :style="{ backgroundColor: video.platform.getColor() }"
               class="press flex h-14 items-center justify-center gap-2 rounded-2xl font-semibold text-white"
             >
               <svg
@@ -361,7 +361,7 @@
 
             <button
               @click="shareStory"
-              :style="{ backgroundColor: platform?.getColor() }"
+              :style="{ backgroundColor: video.platform.getColor() }"
               class="press flex h-14 items-center justify-center gap-2 rounded-2xl font-semibold text-white"
             >
               <svg
@@ -792,10 +792,14 @@
             }
           },
 
+          // Теперь при клике на историю — сразу запускается загрузка
           loadHistory(item) {
             this.url = item.url;
-            this.detect();
-            Telegram.haptic("light");
+            this.platform = this.getPlatformByName(item.platform);
+            if (this.platform) {
+              Telegram.haptic("light");
+              this.download();
+            }
           },
 
           clearHistory() {
