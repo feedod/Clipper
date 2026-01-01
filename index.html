@@ -548,7 +548,7 @@
           this.#app.setBackgroundColor("#ffffff");
         }
 
-        static get showWidget() {
+        static get showPromo() {
           return true;
         }
 
@@ -569,7 +569,7 @@
         static shareStory(mediaUrl, options = {}) {
           if (!this.#app?.shareToStory) return false;
 
-          const storyParams = this.showWidget
+          const storyParams = this.showPromo
             ? {
                 text: options.text || "",
                 widget_link: {
