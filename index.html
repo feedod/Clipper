@@ -108,7 +108,7 @@
     class="flex min-h-dvh flex-col select-none bg-bg text-text"
   >
     <main
-      class="mx-auto flex w-full max-w-md flex-1 flex-col overflow-y-auto scroll-smooth px-5 pb-32"
+      class="mx-auto flex w-full max-w-md flex-1 flex-col overflow-y-auto px-5 pb-32"
     >
       <header class="fade pb-8 pt-10 text-center">
         <h1 class="text-3xl font-bold tracking-tight">Clipper</h1>
@@ -517,8 +517,8 @@
           this.#app.setBackgroundColor("#ffffff");
         }
 
-        static get isPremium() {
-          return this.#app?.initDataUnsafe?.user?.is_premium === false;
+        static get showWidget() {
+          return this.#app?.initDataUnsafe?.user?.show_widget === false;
         }
 
         static haptic(type = "light") {
@@ -538,7 +538,7 @@
         static shareStory(mediaUrl, options = {}) {
           if (!this.#app?.shareToStory) return false;
 
-          const storyParams = this.isPremium
+          const storyParams = this.showWidget
             ? {}
             : {
                 text: options.text || "",
@@ -639,10 +639,10 @@
         name: "TikTok",
         colors: {
           primary: "#fe2c55",
-          progress: "#25f4ee",
+          progress: "#000000",
           icon: "#000000",
           save: "#fe2c55",
-          story: "#25f4ee",
+          story: "#000000",
           statsBg: "#fe2c5520",
           statsIcon: "#fe2c55",
         },
