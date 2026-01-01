@@ -13,7 +13,10 @@
       defer
       src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"
     ></script>
-    <script async src="https://plausible.io/js/pa-QR-RoZMy12hrhzIXv4u0Z.js"></script>
+    <script
+      async
+      src="https://plausible.io/js/pa-QR-RoZMy12hrhzIXv4u0Z.js"
+    ></script>
     <script>
       window.plausible =
         window.plausible ||
@@ -153,7 +156,9 @@
             x-show="url.length > 0"
             x-transition.opacity.duration.100ms
             @click="clear"
-            class="press absolute right-3 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-border"
+            :disabled="loading"
+            aria-label="Очистить поле"
+            class="press absolute right-3 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full bg-border disabled:opacity-40"
             type="button"
           >
             <svg
@@ -176,8 +181,9 @@
           x-show="platform && !loading && !video"
           x-transition.opacity.duration.150ms
           @click="download"
-          :style="{ backgroundColor: platform?.colors.primary }"
-          class="press flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl font-semibold text-white"
+          :disabled="loading"
+          :style="{ backgroundColor: platform?.colors?.primary }"
+          class="press flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl font-semibold text-white disabled:opacity-40"
           type="button"
         >
           <svg
@@ -214,7 +220,7 @@
             >
               <div
                 class="h-full rounded-full transition-all duration-200 ease-out"
-                :style="{ backgroundColor: platform?.colors.progress, width: progress + '%' }"
+                :style="{ backgroundColor: platform?.colors?.progress, width: progress + '%' }"
               ></div>
             </div>
           </div>
@@ -271,15 +277,15 @@
               >
                 <svg
                   class="h-4 w-4"
-                  :style="{ color: platform.colors.icon }"
+                  :style="{ color: platform?.colors?.icon }"
                   viewBox="0 0 24 24"
                   fill="currentColor"
                 >
-                  <path :d="platform.icon" />
+                  <path :d="platform?.icon" />
                 </svg>
                 <span
                   class="text-xs font-semibold text-text"
-                  x-text="platform.name"
+                  x-text="platform?.name"
                 ></span>
               </div>
               <div
@@ -297,8 +303,9 @@
             class="flex items-center gap-3 rounded-2xl border border-border bg-surface p-4"
           >
             <img
-              :src="video.author?.avatar || 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 48 48%22><rect fill=%22%23e5e5e5%22 width=%2248%22 height=%2248%22/></svg>'"
+              :src="video.author?.avatar"
               :alt="video.author?.nickname || 'Автор'"
+              @error="$event.target.src = FALLBACK_AVATAR"
               class="h-12 w-12 rounded-full border border-border object-cover"
             />
             <div class="min-w-0 flex-1">
@@ -313,11 +320,11 @@
             </div>
             <svg
               class="h-5 w-5"
-              :style="{ color: platform.colors.icon }"
+              :style="{ color: platform?.colors?.icon }"
               viewBox="0 0 24 24"
               fill="currentColor"
             >
-              <path :d="platform.icon" />
+              <path :d="platform?.icon" />
             </svg>
           </div>
 
@@ -336,11 +343,11 @@
                 <div class="py-2 text-center">
                   <div
                     class="mx-auto grid h-9 w-9 place-items-center rounded-full"
-                    :style="{ backgroundColor: platform.colors.statsBg }"
+                    :style="{ backgroundColor: platform?.colors?.statsBg }"
                   >
                     <svg
                       class="h-4 w-4"
-                      :style="{ color: platform.colors.statsIcon }"
+                      :style="{ color: platform?.colors?.statsIcon }"
                       fill="none"
                       stroke="currentColor"
                       stroke-width="1.5"
@@ -369,7 +376,8 @@
           <div class="grid grid-cols-2 gap-3 pt-2">
             <button
               @click="saveVideo"
-              :style="{ backgroundColor: platform.colors.save }"
+              :style="{ backgroundColor: platform?.colors?.save }"
+              aria-label="Сохранить видео"
               class="press flex h-14 items-center justify-center gap-2 rounded-2xl font-semibold text-white"
             >
               <svg
@@ -389,7 +397,8 @@
             </button>
             <button
               @click="shareStory"
-              :style="{ backgroundColor: platform.colors.story }"
+              :style="{ backgroundColor: platform?.colors?.story }"
+              aria-label="Поделиться в историю"
               class="press flex h-14 items-center justify-center gap-2 rounded-2xl font-semibold text-white"
             >
               <svg
@@ -430,7 +439,11 @@
               </svg>
               <h2 class="font-semibold text-text">Недавние</h2>
             </div>
-            <button @click="clearHistory" class="press text-sm text-muted">
+            <button
+              @click="clearHistory"
+              aria-label="Очистить историю"
+              class="press text-sm text-muted"
+            >
               Очистить
             </button>
           </div>
@@ -438,6 +451,7 @@
             <template x-for="item in history" :key="item.id">
               <button
                 @click="loadHistory(item)"
+                aria-label="Загрузить из истории"
                 class="press w-[88px] shrink-0"
               >
                 <div
@@ -446,6 +460,7 @@
                   <img
                     :src="item.cover"
                     alt="Обложка"
+                    @error="$event.target.src = FALLBACK_COVER"
                     class="h-full w-full object-cover"
                     loading="lazy"
                   />
@@ -457,7 +472,7 @@
                   >
                     <svg
                       class="h-3 w-3"
-                      :style="{ color: PlatformRegistry.get(item.platform)?.colors.icon }"
+                      :style="{ color: PlatformRegistry.get(item.platform)?.colors?.icon }"
                       viewBox="0 0 24 24"
                       fill="currentColor"
                     >
@@ -492,13 +507,16 @@
             >
               <svg
                 class="h-5 w-5"
-                :style="{ color: p.colors.icon }"
+                :style="{ color: p.colors?.icon }"
                 viewBox="0 0 24 24"
                 fill="currentColor"
               >
                 <path :d="p.icon" />
               </svg>
-              <span class="text-sm font-semibold text-text" x-text="p.name"></span>
+              <span
+                class="text-sm font-semibold text-text"
+                x-text="p.name"
+              ></span>
             </div>
           </template>
         </div>
@@ -506,6 +524,19 @@
     </main>
 
     <script>
+      const FETCH_TIMEOUT = 15000;
+      const PROGRESS_INTERVAL = 100;
+      const PROGRESS_STEP_MIN = 2;
+      const PROGRESS_STEP_MAX = 10;
+      const PROGRESS_LIMIT = 95;
+      const FALLBACK_AVATAR =
+        "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 48 48%22><rect fill=%22%23e5e5e5%22 width=%2248%22 height=%2248%22/></svg>";
+      const FALLBACK_COVER =
+        "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 88 120%22><rect fill=%22%23e5e5e5%22 width=%2288%22 height=%22120%22/></svg>";
+
+      window.FALLBACK_AVATAR = FALLBACK_AVATAR;
+      window.FALLBACK_COVER = FALLBACK_COVER;
+
       class TelegramBridge {
         static #app = window.Telegram?.WebApp;
 
@@ -539,14 +570,14 @@
           if (!this.#app?.shareToStory) return false;
 
           const storyParams = this.showWidget
-            ? {}
-            : {
+            ? {
                 text: options.text || "",
                 widget_link: {
                   url: "https://t.me/clipper_dl_bot",
                   name: "Clipper",
                 },
-              };
+              }
+            : {};
 
           this.#app.shareToStory(mediaUrl, storyParams);
           return true;
@@ -566,13 +597,20 @@
         }
 
         static add(item) {
-          const list = this.get().filter((i) => i.id !== item.id);
-          list.unshift(item);
-          localStorage.setItem(this.#KEY, JSON.stringify(list.slice(0, this.#MAX)));
+          try {
+            const list = this.get().filter((i) => i.id !== item.id);
+            list.unshift(item);
+            localStorage.setItem(
+              this.#KEY,
+              JSON.stringify(list.slice(0, this.#MAX))
+            );
+          } catch {}
         }
 
         static clear() {
-          localStorage.removeItem(this.#KEY);
+          try {
+            localStorage.removeItem(this.#KEY);
+          } catch {}
         }
       }
 
@@ -586,8 +624,8 @@
 
         static number(num) {
           if (!num) return "0";
-          if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + "M";
-          if (num >= 1_000) return (num / 1_000).toFixed(1) + "K";
+          if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
+          if (num >= 1000) return (num / 1000).toFixed(1) + "K";
           return num.toString();
         }
       }
@@ -607,7 +645,16 @@
         }
 
         async fetch(url) {
-          return this._fetch(url);
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
+
+          try {
+            const data = await this._fetch(url, controller.signal);
+            if (!data?.play) throw new Error("Видео недоступно");
+            return data;
+          } finally {
+            clearTimeout(timeout);
+          }
         }
 
         getFilename(video) {
@@ -639,10 +686,10 @@
         name: "TikTok",
         colors: {
           primary: "#fe2c55",
-          progress: "#000000",
+          progress: "#25f4ee",
           icon: "#000000",
           save: "#fe2c55",
-          story: "#000000",
+          story: "#25f4ee",
           statsBg: "#fe2c5520",
           statsIcon: "#fe2c55",
         },
@@ -675,11 +722,12 @@
             icon: "M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z",
           },
         ],
-        async fetch(url) {
+        async fetch(url, signal) {
           const response = await fetch("https://www.tikwm.com/api/", {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
             body: new URLSearchParams({ url, hd: 1 }),
+            signal,
           });
           if (!response.ok) throw new Error("Ошибка сети");
           const json = await response.json();
@@ -700,6 +748,7 @@
           video: null,
           error: null,
           history: Storage.get(),
+          progressInterval: null,
 
           get statusText() {
             if (this.loading) return "Загрузка видео...";
@@ -742,6 +791,13 @@
             TelegramBridge.haptic("light");
           },
 
+          stopProgress() {
+            if (this.progressInterval) {
+              clearInterval(this.progressInterval);
+              this.progressInterval = null;
+            }
+          },
+
           async download() {
             if (!this.platform || this.loading) return;
 
@@ -752,12 +808,13 @@
             this.video = null;
             TelegramBridge.haptic("medium");
 
-            const progressInterval = setInterval(() => {
-              this.progress = Math.min(
-                this.progress + Math.floor(Math.random() * 8) + 2,
-                95
-              );
-            }, 100);
+            this.stopProgress();
+            this.progressInterval = setInterval(() => {
+              const step =
+                Math.floor(Math.random() * (PROGRESS_STEP_MAX - PROGRESS_STEP_MIN + 1)) +
+                PROGRESS_STEP_MIN;
+              this.progress = Math.min(this.progress + step, PROGRESS_LIMIT);
+            }, PROGRESS_INTERVAL);
 
             try {
               this.video = await this.platform.fetch(this.url);
@@ -777,10 +834,14 @@
               this.history = Storage.get();
               TelegramBridge.notify("success");
             } catch (err) {
-              this.error = err.message || "Произошла ошибка";
+              if (err.name === "AbortError") {
+                this.error = "Превышено время ожидания";
+              } else {
+                this.error = err.message || "Произошла ошибка";
+              }
               TelegramBridge.notify("error");
             } finally {
-              clearInterval(progressInterval);
+              this.stopProgress();
               this.loading = false;
             }
           },
@@ -825,6 +886,9 @@
             if (this.platform) {
               TelegramBridge.haptic("light");
               this.download();
+            } else {
+              this.error = "Платформа больше не поддерживается";
+              TelegramBridge.notify("error");
             }
           },
 
