@@ -199,7 +199,7 @@
               d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"
             />
           </svg>
-          <span>Скачать видео</span>
+          <span>Сохранить видео</span>
         </button>
       </section>
 
@@ -437,7 +437,7 @@
                   d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
                 />
               </svg>
-              <h2 class="font-semibold text-text">Недавние</h2>
+              <h2 class="font-semibold text-text">Недавние видео</h2>
             </div>
             <button
               @click="clearHistory"
@@ -498,7 +498,7 @@
         x-show="!loading && !video"
       >
         <p class="mb-4 text-center text-sm text-muted">
-          Поддерживаемые платформы
+          Поддерживаемые платформы (только для просмотра/своего контента)
         </p>
         <div class="flex flex-wrap justify-center gap-3">
           <template x-for="p in PlatformRegistry.all()" :key="p.name">
@@ -573,7 +573,7 @@
             ? {
                 text: options.text || "",
                 widget_link: {
-                  url: "https://t.me/clipper_dl_bot",
+                  url: "https://t.me/ClipperAppBot",
                   name: "Clipper",
                 },
               }
@@ -755,7 +755,7 @@
             if (this.error) return "Попробуйте другую ссылку";
             if (this.video) return "Видео готово к сохранению";
             if (this.platform) return `${this.platform.name} видео найдено`;
-            return "Скачивайте видео без водяных знаков";
+            return "Сохраняйте видео легко и быстро";
           },
 
           get loadingText() {
@@ -826,7 +826,7 @@
                 author:
                   this.video.author?.nickname ||
                   this.video.author?.unique_id ||
-                  "Автор",
+                  "Неизвестный автор",
                 url: this.url,
                 platform: this.platform.name,
               });
@@ -856,7 +856,7 @@
               TelegramBridge.notify("success");
             } else {
               this.error =
-                "Скачивание доступно только в мобильном приложении Telegram";
+                "Скачивание видео доступно только в мобильном приложении Telegram";
               TelegramBridge.notify("error");
             }
           },
@@ -865,8 +865,8 @@
             if (!this.video?.play) return;
 
             const storyText = this.video.title?.trim()
-              ? `${this.video.title.trim()}\n\nСкачано с ${this.platform.name} через @clipper_dl_bot`
-              : `Скачано с ${this.platform.name} через @clipper_dl_bot`;
+              ? `${this.video.title.trim()}\n\Сохранено с ${this.platform.name} через @ClipperAppBot`
+              : `Сохранено с ${this.platform.name} через @ClipperAppBot`;
 
             const success = TelegramBridge.shareStory(this.video.play, {
               text: storyText,
