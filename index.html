@@ -1,535 +1,824 @@
 <!DOCTYPE html>
 <html lang="ru">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover" />
-  <meta name="color-scheme" content="light" />
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
-  <script async src="https://plausible.io/js/pa-QR-RoZMy12hrhzIXv4u0Z.js"></script>
-  <script>window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init()</script>
-  <style type="text/tailwindcss">
-    @theme {
-      --color-bg: #ffffff;
-      --color-surface: #f8f8f8;
-      --color-border: #ebebeb;
-      --color-text: #000000;
-      --color-muted: #8e8e93;
-      --color-tiktok: #fe2c55;
-      --color-tiktok-cyan: #25f4ee;
-    }
-    * {
-      -webkit-tap-highlight-color: transparent;
-      -webkit-touch-callout: none;
-    }
-    html, body {
-      background: #ffffff;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-      overscroll-behavior: none;
-      -webkit-font-smoothing: antialiased;
-    }
-    body {
-      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-    }
-    input {
-      font-size: 16px !important;
-    }
-    input:focus {
-      outline: none;
-    }
-    .press {
-      transition: transform 80ms ease, opacity 80ms ease;
-    }
-    .press:active {
-      transform: scale(0.97);
-      opacity: 0.8;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(12px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .fade {
-      animation: fadeIn 0.4s cubic-bezier(0.25, 1, 0.5, 1) both;
-    }
-    .no-scrollbar {
-      scrollbar-width: none;
-    }
-    .no-scrollbar::-webkit-scrollbar {
-      display: none;
-    }
-    .line-clamp {
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-  </style>
-</head>
-<body x-data="App" class="bg-bg caret-black flex flex-col min-h-dvh select-none text-text">
-  <main class="flex flex-col flex-1 max-w-md mx-auto pb-32 px-5 w-full">
-    <header class="fade pb-8 pt-10 text-center">
-      <h1 class="font-bold text-3xl tracking-tight">Clipper</h1>
-      <p class="mt-2 text-muted text-sm" x-text="statusText"></p>
-    </header>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover"
+    />
+    <meta name="color-scheme" content="light" />
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"
+    ></script>
+    <script async src="https://plausible.io/js/pa-QR-RoZMy12hrhzIXv4u0Z.js"></script>
+    <script>
+      window.plausible =
+        window.plausible ||
+        function () {
+          (plausible.q = plausible.q || []).push(arguments);
+        };
+      plausible.init();
+    </script>
 
-    <section class="fade space-y-3" style="animation-delay:50ms">
-      <div class="relative">
-        <div class="absolute left-4 pointer-events-none top-1/2 -translate-y-1/2">
-          <svg class="h-5 text-muted w-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"/>
-          </svg>
+    <style type="text/tailwindcss">
+      @theme {
+        --color-bg: #ffffff;
+        --color-surface: #f8f8f8;
+        --color-border: #ebebeb;
+        --color-text: #000000;
+        --color-muted: #8e8e93;
+        --color-tiktok: #fe2c55;
+      }
+
+      * {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+      }
+
+      html,
+      body {
+        background: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          system-ui, sans-serif;
+        overscroll-behavior: none;
+        -webkit-font-smoothing: antialiased;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+
+      html::-webkit-scrollbar,
+      body::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        height: 0;
+      }
+
+      body {
+        padding: env(safe-area-inset-top) env(safe-area-inset-right)
+          env(safe-area-inset-bottom) env(safe-area-inset-left);
+      }
+
+      input {
+        font-size: 16px;
+      }
+
+      input:focus {
+        outline: none;
+      }
+
+      .press {
+        transition: transform 80ms ease, opacity 80ms ease;
+      }
+
+      .press:active {
+        transform: scale(0.97);
+        opacity: 0.8;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .fade {
+        animation: fadeIn 0.4s cubic-bezier(0.25, 1, 0.5, 1) both;
+      }
+
+      .no-scrollbar {
+        scrollbar-width: none;
+      }
+
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+    </style>
+  </head>
+
+  <body
+    x-data="App"
+    class="flex min-h-dvh flex-col select-none bg-bg text-text"
+  >
+    <main
+      class="mx-auto w-full max-w-md flex-1 flex flex-col overflow-y-auto scroll-smooth px-5 pb-32"
+    >
+      <header class="fade pt-10 pb-8 text-center">
+        <h1 class="font-bold text-3xl tracking-tight">Clipper</h1>
+        <p class="mt-2 text-sm text-muted" x-text="statusText"></p>
+      </header>
+
+      <section class="fade space-y-3" style="animation-delay: 50ms">
+        <div class="relative">
+          <div
+            class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2"
+          >
+            <svg
+              class="h-5 w-5 text-muted"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"
+              />
+            </svg>
+          </div>
+
+          <input
+            type="url"
+            x-ref="input"
+            x-model="url"
+            @input.debounce.100ms="detect"
+            @paste="$nextTick(detect)"
+            @keydown.enter.prevent="download"
+            :disabled="loading"
+            placeholder="Вставьте ссылку на видео"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
+            class="h-14 w-full rounded-2xl border border-border bg-surface pl-12 pr-12 text-text placeholder:text-muted disabled:opacity-40 transition-colors focus:border-text/20"
+          />
+
+          <button
+            x-show="url.length > 0"
+            x-transition.opacity.duration.100ms
+            @click="clear"
+            class="press absolute right-3 top-1/2 -translate-y-1/2 grid h-8 w-8 place-items-center rounded-full bg-border"
+            type="button"
+          >
+            <svg
+              class="h-4 w-4 text-muted"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
         </div>
-        <input
-          type="url"
-          x-ref="input"
-          x-model="url"
-          @input.debounce.100ms="detect"
-          @paste="$nextTick(detect)"
-          @keydown.enter.prevent="download"
-          :disabled="loading"
-          inputmode="url"
-          autocomplete="off"
-          autocorrect="off"
-          autocapitalize="off"
-          spellcheck="false"
-          enterkeyhint="go"
-          placeholder="Вставьте ссылку на видео"
-          class="bg-surface border border-border disabled:opacity-40 focus:border-text/20 h-14 pl-12 placeholder:text-muted pr-12 rounded-2xl text-text transition-colors w-full"
-        />
+
         <button
-          x-show="url.length > 0"
-          x-transition.opacity.duration.100ms
-          @click="clear"
-          class="absolute bg-border grid h-8 place-items-center press right-3 rounded-full top-1/2 -translate-y-1/2 w-8"
+          x-show="platform && !loading && !video"
+          x-transition.opacity.duration.150ms
+          @click="download"
+          :style="{ backgroundColor: platform?.getColor() }"
+          class="press flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl font-semibold text-white"
           type="button"
         >
-          <svg class="h-4 text-muted w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          <svg
+            class="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"
+            />
           </svg>
+          <span>Скачать видео</span>
         </button>
-      </div>
-
-      <button
-        x-show="platform && !loading && !video"
-        x-transition.opacity.duration.150ms
-        @click="download"
-        class="bg-text flex font-semibold gap-2.5 h-14 items-center justify-center press rounded-2xl text-bg w-full"
-        type="button"
-      >
-        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/>
-        </svg>
-        <span>Скачать видео</span>
-      </button>
-    </section>
-
-    <template x-if="loading">
-      <section class="fade flex flex-1 flex-col items-center justify-center py-20">
-        <div class="max-w-[240px] mb-6 w-full">
-          <div class="flex items-center justify-between mb-3">
-            <span class="font-semibold text-sm text-text">Загрузка</span>
-            <span class="font-semibold text-sm text-text" x-text="progress + '%'"></span>
-          </div>
-          <div class="bg-surface border border-border h-2 overflow-hidden rounded-full">
-            <div class="bg-tiktok duration-200 ease-out h-full rounded-full transition-all" :style="{ width: progress + '%' }"></div>
-          </div>
-        </div>
-        <p class="text-muted text-sm" x-text="loadingText"></p>
       </section>
-    </template>
 
-    <template x-if="error && !loading">
-      <section class="bg-red-50 border border-red-100 fade mt-6 p-4 rounded-2xl">
-        <div class="flex gap-3 items-start">
-          <div class="bg-red-100 grid h-10 place-items-center rounded-full shrink-0 w-10">
-            <svg class="h-5 text-red-500 w-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0zm-9 3.75h.008v.008H12v-.008z"/>
-            </svg>
-          </div>
-          <div class="flex-1 min-w-0 pt-0.5">
-            <p class="font-semibold text-red-600 text-sm">Ошибка</p>
-            <p class="mt-0.5 text-red-500 text-sm" x-text="error"></p>
-          </div>
-        </div>
-      </section>
-    </template>
-
-    <template x-if="video && !loading">
-      <section class="fade mt-6 space-y-4">
-        <div class="bg-surface border border-border overflow-hidden rounded-2xl">
-          <div class="bg-black h-[56dvh] relative w-full">
-            <video
-              :src="video.play"
-              :poster="video.cover"
-              class="absolute h-full inset-0 object-contain w-full"
-              controls
-              playsinline
-              webkit-playsinline
-              x-ref="player"
-            ></video>
-            <div class="absolute bg-white/95 flex gap-1.5 items-center left-3 px-2.5 py-1.5 rounded-lg shadow-sm top-3">
-              <svg class="h-4 text-tiktok w-4" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.88.13V9.4c-.29-.03-.6-.05-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4c-.35-.05-.7-.08-1.04-.1z"/>
-              </svg>
-              <span class="font-semibold text-text text-xs">TikTok</span>
+      <template x-if="loading">
+        <section class="fade flex flex-1 flex-col items-center justify-center py-20">
+          <div class="w-full max-w-[240px] mb-6">
+            <div class="mb-3 flex items-center justify-between">
+              <span class="text-sm font-semibold text-text">Загрузка</span>
+              <span class="text-sm font-semibold text-text" x-text="progress + '%'"></span>
             </div>
-            <div class="absolute bg-white/95 px-2.5 py-1.5 right-3 rounded-lg shadow-sm top-3">
-              <span class="font-semibold text-text text-xs" x-text="formatTime(video.duration)"></span>
+            <div class="h-2 overflow-hidden rounded-full border border-border bg-surface">
+              <div
+                class="h-full rounded-full transition-all duration-200 ease-out"
+                :style="{ backgroundColor: platform?.getColor() || '#fe2c55', width: progress + '%' }"
+              ></div>
             </div>
           </div>
-        </div>
+          <p class="text-sm text-muted" x-text="loadingText"></p>
+        </section>
+      </template>
 
-        <div class="bg-surface border border-border flex gap-3 items-center p-4 rounded-2xl">
-          <img :src="video.author.avatar" :alt="video.author.nickname" class="border border-border h-12 object-cover rounded-full w-12" />
-          <div class="flex-1 min-w-0">
-            <p class="font-semibold text-text truncate" x-text="video.author.nickname"></p>
-            <p class="text-muted text-sm truncate" x-text="'@' + video.author.unique_id"></p>
-          </div>
-          <svg class="h-5 text-tiktok w-5" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.88.13V9.4c-.29-.03-.6-.05-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4c-.35-.05-.7-.08-1.04-.1z"/>
-          </svg>
-        </div>
-
-        <p x-show="video.title" class="leading-relaxed line-clamp px-1 text-sm text-text" x-text="video.title"></p>
-
-        <div class="bg-surface border border-border gap-2 grid grid-cols-4 p-3 rounded-2xl">
-          <div class="py-2 text-center">
-            <div class="bg-tiktok/10 grid h-9 mb-2 mx-auto place-items-center rounded-full w-9">
-              <svg class="h-4 text-tiktok w-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z"/>
+      <template x-if="error && !loading">
+        <section class="fade mt-6 rounded-2xl border border-red-100 bg-red-50 p-4">
+          <div class="flex items-start gap-3">
+            <div class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-red-100">
+              <svg
+                class="h-5 w-5 text-red-500"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0zm-9 3.75h.008v.008H12v-.008z"
+                />
               </svg>
             </div>
-            <p class="font-semibold text-sm text-text" x-text="formatNum(video.play_count)"></p>
-            <p class="mt-0.5 text-[10px] text-muted">Просмотры</p>
-          </div>
-          <div class="py-2 text-center">
-            <div class="bg-tiktok/10 grid h-9 mb-2 mx-auto place-items-center rounded-full w-9">
-              <svg class="h-4 text-tiktok w-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"/>
-              </svg>
+            <div class="flex-1 min-w-0 pt-0.5">
+              <p class="text-sm font-semibold text-red-600">Ошибка</p>
+              <p class="mt-0.5 text-sm text-red-500" x-text="error"></p>
             </div>
-            <p class="font-semibold text-sm text-text" x-text="formatNum(video.digg_count)"></p>
-            <p class="mt-0.5 text-[10px] text-muted">Лайки</p>
           </div>
-          <div class="py-2 text-center">
-            <div class="bg-tiktok/10 grid h-9 mb-2 mx-auto place-items-center rounded-full w-9">
-              <svg class="h-4 text-tiktok w-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 0 1-.923 1.785A5.969 5.969 0 0 0 6 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337Z"/>
-              </svg>
-            </div>
-            <p class="font-semibold text-sm text-text" x-text="formatNum(video.comment_count)"></p>
-            <p class="mt-0.5 text-[10px] text-muted">Комменты</p>
-          </div>
-          <div class="py-2 text-center">
-            <div class="bg-tiktok/10 grid h-9 mb-2 mx-auto place-items-center rounded-full w-9">
-              <svg class="h-4 text-tiktok w-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"/>
-              </svg>
-            </div>
-            <p class="font-semibold text-sm text-text" x-text="formatNum(video.share_count)"></p>
-            <p class="mt-0.5 text-[10px] text-muted">Репосты</p>
-          </div>
-        </div>
+        </section>
+      </template>
 
-        <div class="gap-3 grid grid-cols-2 pt-2">
-          <button @click="saveVideo" class="bg-text flex font-semibold gap-2 h-14 items-center justify-center press rounded-2xl text-bg" type="button">
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/>
-            </svg>
-            <span>Сохранить</span>
-          </button>
-          <button @click="shareStory" class="bg-tiktok flex font-semibold gap-2 h-14 items-center justify-center press rounded-2xl text-white" type="button">
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
-            </svg>
-            <span>В историю</span>
-          </button>
-        </div>
-      </section>
-    </template>
+      <template x-if="video && !loading">
+        <section class="fade mt-6 space-y-4">
+          <div class="overflow-hidden rounded-2xl border border-border bg-surface">
+            <div class="relative h-[56dvh] w-full bg-black">
+              <video
+                :src="video.play"
+                :poster="video.cover"
+                class="absolute inset-0 h-full w-full object-contain"
+                controls
+                playsinline
+                webkit-playsinline
+                x-ref="player"
+              ></video>
 
-    <template x-if="history.length > 0 && !loading">
-      <section class="fade mt-8" style="animation-delay:100ms">
-        <div class="flex items-center justify-between mb-4">
-          <div class="flex gap-2 items-center">
-            <svg class="h-5 text-muted w-5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
-            </svg>
-            <h2 class="font-semibold text-text">Недавние</h2>
-          </div>
-          <button @click="clearHistory" class="press text-muted text-sm" type="button">Очистить</button>
-        </div>
-        <div class="flex gap-3 -mx-5 no-scrollbar overflow-x-auto pb-2 px-5">
-          <template x-for="item in history" :key="item.id">
-            <button @click="loadHistory(item)" class="press shrink-0 w-[88px]" type="button">
-              <div class="border border-border h-[120px] mb-2 overflow-hidden relative rounded-xl w-[88px]">
-                <img :src="item.cover" :alt="item.author" class="h-full object-cover w-full" loading="lazy" />
-                <div class="absolute bg-gradient-to-t bottom-0 from-black/60 h-12 inset-x-0 to-transparent"></div>
-                <div class="absolute bg-white bottom-2 grid h-5 left-2 place-items-center rounded-full w-5">
-                  <svg class="h-3 text-tiktok w-3" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.88.13V9.4c-.29-.03-.6-.05-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4c-.35-.05-.7-.08-1.04-.1z"/>
-                  </svg>
-                </div>
+              <div
+                class="absolute left-3 top-3 flex items-center gap-1.5 rounded-lg bg-white/95 px-2.5 py-1.5 shadow-sm"
+              >
+                <svg
+                  class="h-4 w-4"
+                  :style="{ color: platform.getColor() }"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path :d="platform.iconPath" />
+                </svg>
+                <span class="text-xs font-semibold text-text" x-text="platform.name"></span>
               </div>
-              <p class="text-left text-muted text-xs truncate" x-text="item.author"></p>
+
+              <div
+                class="absolute right-3 top-3 rounded-lg bg-white/95 px-2.5 py-1.5 shadow-sm"
+              >
+                <span class="text-xs font-semibold text-text" x-text="formatTime(video.duration)"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3 rounded-2xl border border-border bg-surface p-4">
+            <img
+              :src="video.author?.avatar || 'https://via.placeholder.com/48'"
+              :alt="video.author?.nickname || 'Автор'"
+              class="h-12 w-12 rounded-full border border-border object-cover"
+            />
+            <div class="flex-1 min-w-0">
+              <p
+                class="truncate font-semibold text-text"
+                x-text="video.author?.nickname || 'Неизвестный автор'"
+              ></p>
+              <p
+                class="truncate text-sm text-muted"
+                x-text="video.author?.unique_id ? '@' + video.author.unique_id : ''"
+              ></p>
+            </div>
+            <svg
+              class="h-5 w-5"
+              :style="{ color: platform.getColor() }"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <path :d="platform.iconPath" />
+            </svg>
+          </div>
+
+          <p
+            x-show="video.title"
+            class="line-clamp-2 px-1 text-sm leading-relaxed text-text"
+            x-text="video.title"
+          ></p>
+
+          <template x-if="hasStats">
+            <div class="grid grid-cols-4 gap-2 rounded-2xl border border-border bg-surface p-3">
+              <template x-for="stat in visibleStats" :key="stat.key">
+                <div class="text-center py-2">
+                  <div
+                    class="mx-auto grid h-9 w-9 place-items-center rounded-full"
+                    :style="{ backgroundColor: platform.getColor() + '20' }"
+                  >
+                    <svg
+                      class="h-4 w-4"
+                      :style="{ color: platform.getColor() }"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.5"
+                      viewBox="0 0 24 24"
+                    >
+                      <path stroke-linecap="round" stroke-linejoin="round" :d="stat.icon" />
+                    </svg>
+                  </div>
+                  <p class="text-sm font-semibold text-text" x-text="formatNum(video[stat.key])"></p>
+                  <p class="mt-0.5 text-[10px] text-muted" x-text="stat.label"></p>
+                </div>
+              </template>
+            </div>
+          </template>
+
+          <div class="grid grid-cols-2 gap-3 pt-2">
+            <button
+              @click="saveVideo"
+              :style="{ backgroundColor: platform?.getColor() }"
+              class="press flex h-14 items-center justify-center gap-2 rounded-2xl font-semibold text-white"
+            >
+              <svg
+                class="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"
+                />
+              </svg>
+              <span>Сохранить</span>
             </button>
+
+            <button
+              @click="shareStory"
+              :style="{ backgroundColor: platform?.getColor() }"
+              class="press flex h-14 items-center justify-center gap-2 rounded-2xl font-semibold text-white"
+            >
+              <svg
+                class="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                />
+              </svg>
+              <span>В историю</span>
+            </button>
+          </div>
+        </section>
+      </template>
+
+      <template x-if="history.length > 0 && !loading">
+        <section class="fade mt-8" style="animation-delay: 100ms">
+          <div class="mb-4 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <svg
+                class="h-5 w-5 text-muted"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                />
+              </svg>
+              <h2 class="font-semibold text-text">Недавние</h2>
+            </div>
+            <button @click="clearHistory" class="press text-sm text-muted">
+              Очистить
+            </button>
+          </div>
+
+          <div class="no-scrollbar -mx-5 flex gap-3 overflow-x-auto px-5 pb-2">
+            <template x-for="item in history" :key="item.id">
+              <button @click="loadHistory(item)" class="press w-[88px] shrink-0">
+                <div
+                  class="relative mb-2 h-[120px] w-[88px] overflow-hidden rounded-xl border border-border"
+                >
+                  <img
+                    :src="item.cover"
+                    alt="Обложка"
+                    class="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                  <div
+                    class="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/60 to-transparent"
+                  ></div>
+                  <div
+                    class="absolute bottom-2 left-2 grid h-5 w-5 place-items-center rounded-full bg-white"
+                  >
+                    <svg
+                      class="h-3 w-3"
+                      :style="{ color: getPlatformByName(item.platform)?.getColor() }"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <path :d="getPlatformByName(item.platform)?.iconPath" />
+                    </svg>
+                  </div>
+                </div>
+                <p class="truncate text-left text-xs text-muted" x-text="item.author"></p>
+              </button>
+            </template>
+          </div>
+        </section>
+      </template>
+
+      <footer
+        class="fade mt-auto pt-12"
+        style="animation-delay: 150ms"
+        x-show="!loading && !video"
+      >
+        <div class="mb-4 flex items-center justify-center gap-2">
+          <svg
+            class="h-4 w-4 text-muted"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+            />
+          </svg>
+          <p class="text-sm text-muted">Поддерживаемые платформы</p>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-3">
+          <template x-for="p in PLATFORMS" :key="p.name">
+            <div
+              class="flex items-center gap-2.5 rounded-xl border border-border bg-surface px-5 py-3"
+            >
+              <svg
+                class="h-5 w-5"
+                :style="{ color: p.getColor() }"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path :d="p.iconPath" />
+              </svg>
+              <span class="text-sm font-semibold text-text" x-text="p.name"></span>
+            </div>
           </template>
         </div>
-      </section>
-    </template>
+      </footer>
+    </main>
 
-    <footer class="fade mt-auto pt-12" style="animation-delay:150ms" x-show="!loading && !video">
-      <div class="flex gap-2 items-center justify-center mb-4">
-        <svg class="h-4 text-muted w-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
-        </svg>
-        <p class="text-muted text-sm">Поддерживаемые платформы</p>
-      </div>
-      <div class="flex gap-3 justify-center">
-        <div class="bg-surface border border-border flex gap-2.5 items-center px-5 py-3 rounded-xl">
-          <svg class="h-5 text-tiktok w-5" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.88.13V9.4c-.29-.03-.6-.05-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4c-.35-.05-.7-.08-1.04-.1z"/>
-          </svg>
-          <span class="font-semibold text-sm text-text">TikTok</span>
-        </div>
-        <div class="bg-surface border border-border flex gap-2.5 items-center opacity-50 px-5 py-3 rounded-xl">
-          <svg class="h-5 text-muted w-5" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/>
-          </svg>
-          <span class="font-semibold text-muted text-sm">Instagram</span>
-          <span class="bg-border px-1.5 py-0.5 rounded text-[10px] text-muted">скоро</span>
-        </div>
-      </div>
-    </footer>
-  </main>
+    <script>
+      class Telegram {
+        static app = window.Telegram?.WebApp;
 
-  <script>
-    class Telegram {
-      static app = window.Telegram?.WebApp;
+        static init() {
+          if (!this.app) return;
+          this.app.ready();
+          this.app.requestFullscreen();
+          this.app.setHeaderColor("#ffffff");
+          this.app.setBackgroundColor("#ffffff");
+        }
 
-      static init() {
-        if (!this.app) return;
-        this.app.ready();
-        this.app.requestFullscreen();
-        this.app.setHeaderColor("#ffffff");
-        this.app.setBackgroundColor("#ffffff");
-      }
+        static haptic(type = "light") {
+          this.app?.HapticFeedback?.impactOccurred(type);
+        }
 
-      static haptic(type = "light") {
-        this.app?.HapticFeedback?.impactOccurred(type);
-      }
+        static notify(type) {
+          this.app?.HapticFeedback?.notificationOccurred(type);
+        }
 
-      static notify(type) {
-        this.app?.HapticFeedback?.notificationOccurred(type);
-      }
+        static download(url, filename) {
+          if (this.app?.downloadFile) {
+            this.app.downloadFile({ url, file_name: filename });
+            return true;
+          }
+          return false;
+        }
 
-      static download(url, filename) {
-        if (this.app?.downloadFile) {
-          this.app.downloadFile({ url, file_name: filename });
+        static story(url, { title = "", platformName = "платформы" } = {}) {
+          if (!this.app?.shareToStory) return false;
+
+          const lines = [];
+          if (title?.trim()) lines.push(title.trim());
+          lines.push(`Скачано с ${platformName} через Clipper`);
+
+          this.app.shareToStory(url, {
+            text: lines.join("\n\n"),
+            widget_link: {
+              url: "https://t.me/clipper_dl_bot",
+              name: "Clipper",
+            },
+          });
+
           return true;
         }
-        return false;
       }
 
-      static story(url) {
-        if (!this.app?.shareToStory) return false;
-        this.app.shareToStory(url, {
-          widget_link: { url: "https://t.me/clipper_dl_bot", name: "Clipper" }
-        });
-        return true;
-      }
-    }
+      class Platform {
+        constructor({ name, colorVar, iconPath }) {
+          this.name = name;
+          this.colorVar = colorVar;
+          this.iconPath = iconPath;
+        }
 
-    class TikTokAPI {
-      static BASE = "https://www.tikwm.com/api/";
-      static PATTERNS = [
-        /tiktok\.com\/@[\w.-]+\/video\/(\d+)/i,
-        /tiktok\.com\/t\/([\w-]+)/i,
-        /vm\.tiktok\.com\/([\w-]+)/i,
-        /vt\.tiktok\.com\/([\w-]+)/i
-      ];
+        match() {
+          return false;
+        }
 
-      static match(url) {
-        return this.PATTERNS.some((p) => p.test(url));
-      }
+        async fetch() {
+          throw new Error("fetch not implemented");
+        }
 
-      static async fetch(url) {
-        const response = await fetch(this.BASE, {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({ url, hd: 1 })
-        });
+        getFilename(video) {
+          return `${this.name.toLowerCase()}_${video.id || Date.now()}.mp4`;
+        }
 
-        if (!response.ok) throw new Error("Ошибка сети");
+        getColor() {
+          return getComputedStyle(document.documentElement)
+            .getPropertyValue(this.colorVar)
+            .trim();
+        }
 
-        const json = await response.json();
-        if (json.code !== 0) throw new Error(json.msg || "Видео не найдено");
-
-        return json.data;
-      }
-    }
-
-    class Storage {
-      static KEY = "clipper_history";
-      static MAX = 20;
-
-      static get() {
-        try {
-          return JSON.parse(localStorage.getItem(this.KEY)) || [];
-        } catch {
-          return [];
+        get statsConfig() {
+          return [
+            {
+              key: "play_count",
+              label: "Просмотры",
+              icon: "M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z",
+            },
+            {
+              key: "digg_count",
+              label: "Лайки",
+              icon: "M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z",
+            },
+            {
+              key: "comment_count",
+              label: "Комменты",
+              icon: "M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 0 1-.923 1.785A5.969 5.969 0 0 0 6 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337Z",
+            },
+            {
+              key: "share_count",
+              label: "Репосты",
+              icon: "M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z",
+            },
+          ];
         }
       }
 
-      static add(item) {
-        const list = this.get().filter((i) => i.id !== item.id);
-        list.unshift(item);
-        localStorage.setItem(this.KEY, JSON.stringify(list.slice(0, this.MAX)));
+      class TikTok extends Platform {
+        static PATTERNS = [
+          /tiktok\.com\/@[\w.-]+\/video\/(\d+)/i,
+          /tiktok\.com\/t\/([\w-]+)/i,
+          /vm\.tiktok\.com\/([\w-]+)/i,
+          /vt\.tiktok\.com\/([\w-]+)/i,
+        ];
+
+        constructor() {
+          super({
+            name: "TikTok",
+            colorVar: "--color-tiktok",
+            iconPath:
+              "M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.88.13V9.4c-.29-.03-.6-.05-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4c-.35-.05-.7-.08-1.04-.1z",
+          });
+        }
+
+        match(url) {
+          return TikTok.PATTERNS.some((p) => p.test(url));
+        }
+
+        async fetch(url) {
+          const res = await fetch("https://www.tikwm.com/api/", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ url, hd: 1 }),
+          });
+
+          if (!res.ok) throw new Error("Ошибка сети");
+
+          const json = await res.json();
+          if (json.code !== 0) throw new Error(json.msg || "Видео не найдено");
+
+          return json.data;
+        }
       }
 
-      static clear() {
-        localStorage.removeItem(this.KEY);
-      }
-    }
+      const PLATFORMS = [new TikTok()];
 
-    document.addEventListener("alpine:init", () => {
-      Alpine.data("App", () => ({
-        url: "",
-        platform: null,
-        loading: false,
-        progress: 0,
-        video: null,
-        error: null,
-        history: Storage.get(),
+      class Storage {
+        static KEY = "clipper_history";
+        static MAX = 20;
 
-        get statusText() {
-          if (this.loading) return "Загрузка видео...";
-          if (this.error) return "Попробуйте другую ссылку";
-          if (this.video) return "Видео готово к сохранению";
-          if (this.platform) return "TikTok видео найдено";
-          return "Скачивайте видео без водяных знаков";
-        },
-
-        get loadingText() {
-          if (this.progress < 30) return "Подключение к серверу...";
-          if (this.progress < 60) return "Получение видео...";
-          if (this.progress < 90) return "Обработка данных...";
-          return "Почти готово...";
-        },
-
-        init() {
-          Telegram.init();
-        },
-
-        detect() {
-          this.error = null;
-          this.platform = TikTokAPI.match(this.url) ? "tiktok" : null;
-          if (this.platform) Telegram.haptic("light");
-        },
-
-        clear() {
-          this.url = "";
-          this.platform = null;
-          this.video = null;
-          this.error = null;
-          Telegram.haptic("light");
-        },
-
-        hideKeyboard() {
-          this.$refs.input?.blur();
-          document.activeElement?.blur();
-        },
-
-        async download() {
-          if (!this.platform || this.loading) return;
-
-          this.hideKeyboard();
-          this.loading = true;
-          this.progress = 0;
-          this.error = null;
-          this.video = null;
-          Telegram.haptic("medium");
-
-          const interval = setInterval(() => {
-            this.progress = Math.min(this.progress + Math.floor(Math.random() * 8) + 2, 95);
-          }, 100);
-
+        static get() {
           try {
-            this.video = await TikTokAPI.fetch(this.url);
-            this.progress = 100;
-            Storage.add({
-              id: this.video.id,
-              cover: this.video.cover,
-              author: this.video.author.nickname,
-              url: this.url
-            });
-            this.history = Storage.get();
-            Telegram.notify("success");
-          } catch (e) {
-            this.error = e.message || "Произошла ошибка";
-            Telegram.notify("error");
-          } finally {
-            clearInterval(interval);
-            this.loading = false;
+            return JSON.parse(localStorage.getItem(this.KEY)) || [];
+          } catch {
+            return [];
           }
-        },
-
-        saveVideo() {
-          if (!this.video?.play) return;
-          const filename = `tiktok_${this.video.id}.mp4`;
-          const downloaded = Telegram.download(this.video.play, filename);
-          if (!downloaded) {
-            const link = document.createElement("a");
-            link.href = this.video.play;
-            link.download = filename;
-            link.target = "_blank";
-            link.rel = "noopener noreferrer";
-            link.click();
-          }
-          Telegram.notify("success");
-        },
-
-        shareStory() {
-          if (!this.video?.play) return;
-          const shared = Telegram.story(this.video.play);
-          if (!shared) {
-            this.error = "Истории доступны только в мобильном Telegram";
-            Telegram.notify("error");
-          } else {
-            Telegram.notify("success");
-          }
-        },
-
-        loadHistory(item) {
-          this.url = item.url;
-          this.video = null;
-          this.error = null;
-          this.detect();
-          Telegram.haptic("light");
-        },
-
-        clearHistory() {
-          Storage.clear();
-          this.history = [];
-          Telegram.haptic("medium");
-        },
-
-        formatTime(seconds) {
-          if (!seconds) return "0:00";
-          const mins = Math.floor(seconds / 60);
-          const secs = Math.floor(seconds % 60);
-          return `${mins}:${secs.toString().padStart(2, "0")}`;
-        },
-
-        formatNum(num) {
-          if (!num) return "0";
-          if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
-          if (num >= 1000) return (num / 1000).toFixed(1) + "K";
-          return num.toString();
         }
-      }));
-    });
-  </script>
-</body>
+
+        static add(item) {
+          const list = this.get().filter((i) => i.id !== item.id);
+          list.unshift(item);
+          localStorage.setItem(
+            this.KEY,
+            JSON.stringify(list.slice(0, this.MAX))
+          );
+        }
+
+        static clear() {
+          localStorage.removeItem(this.KEY);
+        }
+      }
+
+      document.addEventListener("alpine:init", () => {
+        Alpine.data("App", () => ({
+          url: "",
+          platform: null,
+          loading: false,
+          progress: 0,
+          video: null,
+          error: null,
+          history: Storage.get(),
+          PLATFORMS,
+
+          get statusText() {
+            if (this.loading) return "Загрузка видео...";
+            if (this.error) return "Попробуйте другую ссылку";
+            if (this.video) return "Видео готово к сохранению";
+            if (this.platform) return `${this.platform.name} видео найдено`;
+            return "Скачивайте видео без водяных знаков";
+          },
+
+          get loadingText() {
+            if (this.progress < 30) return "Подключение к серверу...";
+            if (this.progress < 60) return "Получение видео...";
+            if (this.progress < 90) return "Обработка данных...";
+            return "Почти готово...";
+          },
+
+          get hasStats() {
+            return (
+              this.video &&
+              this.platform?.statsConfig.some(
+                (s) => this.video[s.key] != null && this.video[s.key] > 0
+              )
+            );
+          },
+
+          get visibleStats() {
+            if (!this.platform || !this.video) return [];
+            return this.platform.statsConfig.filter(
+              (stat) =>
+                this.video[stat.key] != null && this.video[stat.key] > 0
+            );
+          },
+
+          getPlatformByName(name) {
+            return PLATFORMS.find((p) => p.name === name);
+          },
+
+          init() {
+            Telegram.init();
+          },
+
+          detect() {
+            this.error = null;
+            this.platform = PLATFORMS.find((p) => p.match(this.url)) || null;
+            if (this.platform) Telegram.haptic("light");
+          },
+
+          clear() {
+            this.url = "";
+            this.platform = null;
+            this.video = null;
+            this.error = null;
+            Telegram.haptic("light");
+          },
+
+          hideKeyboard() {
+            this.$refs.input?.blur();
+            document.activeElement?.blur();
+          },
+
+          async download() {
+            if (!this.platform || this.loading) return;
+
+            this.hideKeyboard();
+            this.loading = true;
+            this.progress = 0;
+            this.error = null;
+            this.video = null;
+            Telegram.haptic("medium");
+
+            const interval = setInterval(() => {
+              this.progress = Math.min(
+                this.progress + Math.floor(Math.random() * 8) + 2,
+                95
+              );
+            }, 100);
+
+            try {
+              this.video = await this.platform.fetch(this.url);
+              this.video.platform = this.platform;
+              this.progress = 100;
+
+              Storage.add({
+                id: this.video.id || Date.now(),
+                cover: this.video.cover,
+                author:
+                  this.video.author?.nickname ||
+                  this.video.author?.unique_id ||
+                  "Автор",
+                url: this.url,
+                platform: this.platform.name,
+              });
+
+              this.history = Storage.get();
+              Telegram.notify("success");
+            } catch (e) {
+              this.error = e.message || "Произошла ошибка";
+              Telegram.notify("error");
+            } finally {
+              clearInterval(interval);
+              this.loading = false;
+            }
+          },
+
+          saveVideo() {
+            if (!this.video?.play) return;
+
+            const filename = this.video.platform.getFilename(this.video);
+            const success = Telegram.download(this.video.play, filename);
+
+            if (!success) {
+              this.error =
+                "Скачивание доступно только в мобильном приложении Telegram";
+              Telegram.notify("error");
+            } else {
+              Telegram.notify("success");
+            }
+          },
+
+          shareStory() {
+            if (!this.video?.play) return;
+
+            const shared = Telegram.story(this.video.play, {
+              title: this.video.title || "",
+              platformName: this.video.platform.name,
+            });
+
+            if (!shared) {
+              this.error = "Истории доступны только в мобильном Telegram";
+              Telegram.notify("error");
+            } else {
+              Telegram.notify("success");
+            }
+          },
+
+          loadHistory(item) {
+            this.url = item.url;
+            this.detect();
+            Telegram.haptic("light");
+          },
+
+          clearHistory() {
+            Storage.clear();
+            this.history = [];
+            Telegram.haptic("medium");
+          },
+
+          formatTime(seconds) {
+            if (!seconds) return "0:00";
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, "0")}`;
+          },
+
+          formatNum(num) {
+            if (!num) return "0";
+            if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + "M";
+            if (num >= 1_000) return (num / 1_000).toFixed(1) + "K";
+            return num.toString();
+          },
+        }));
+      });
+    </script>
+  </body>
 </html>
