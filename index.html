@@ -549,7 +549,7 @@
         }
 
         static get showWidget() {
-          return this.#app?.initDataUnsafe?.user?.show_widget === false;
+          return this.#app?.initDataUnsafe?.user?.show_widget === true;
         }
 
         static haptic(type = "light") {
@@ -686,10 +686,10 @@
         name: "TikTok",
         colors: {
           primary: "#fe2c55",
-          progress: "#25f4ee",
+          progress: "#000000",
           icon: "#000000",
           save: "#fe2c55",
-          story: "#25f4ee",
+          story: "#000000",
           statsBg: "#fe2c5520",
           statsIcon: "#fe2c55",
         },
