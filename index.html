@@ -731,7 +731,7 @@
           });
           if (!response.ok) throw new Error("Ошибка сети");
           const json = await response.json();
-          if (json.code !== 0) throw new Error(json.msg || "Видео не найдено");
+          if (json.code !== 0) throw new Error("Видео не найдено");
           return json.data;
         },
       });
