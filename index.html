@@ -865,7 +865,7 @@
             if (!this.video?.play) return;
 
             const storyText = this.video.title?.trim()
-              ? `${this.video.title.trim()}\n\Сохранено с ${this.platform.name} через @ClipperAppBot`
+              ? `${this.video.title.trim()}\n\nСохранено с ${this.platform.name} через @ClipperAppBot`
               : `Сохранено с ${this.platform.name} через @ClipperAppBot`;
 
             const success = TelegramBridge.shareStory(this.video.play, {
