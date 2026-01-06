@@ -74,12 +74,13 @@
       }
 
       .press {
-        transition: transform 80ms ease, opacity 80ms ease;
+        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+          opacity 0.15s ease;
       }
 
       .press:active {
-        transform: scale(0.97);
-        opacity: 0.8;
+        transform: scale(0.96);
+        opacity: 0.85;
       }
 
       @keyframes fadeIn {
@@ -104,12 +105,174 @@
       .no-scrollbar::-webkit-scrollbar {
         display: none;
       }
+
+      /* Skeleton loading */
+      .skeleton {
+        background: linear-gradient(
+          90deg,
+          #f8f8f8 25%,
+          #e8e8e8 50%,
+          #f8f8f8 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.2s ease-in-out infinite;
+      }
+
+      @keyframes shimmer {
+        0% {
+          background-position: 200% 0;
+        }
+        100% {
+          background-position: -200% 0;
+        }
+      }
+
+      /* Spring animations */
+      .spring {
+        transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+
+      /* Glass effect */
+      .glass {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+      }
+
+      /* Success bounce */
+      @keyframes success-bounce {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.02);
+        }
+      }
+
+      .success-bounce {
+        animation: success-bounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+
+      /* Reduced motion */
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+
+      /* Toast animation */
+      @keyframes toast-in {
+        from {
+          opacity: 0;
+          transform: translateY(-20px) scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @keyframes toast-out {
+        from {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+        to {
+          opacity: 0;
+          transform: translateY(-20px) scale(0.95);
+        }
+      }
+
+      .toast-enter {
+        animation: toast-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      }
+
+      .toast-leave {
+        animation: toast-out 0.2s ease-in forwards;
+      }
+
+      /* Swipe delete */
+      .swipe-item {
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+          opacity 0.3s ease;
+      }
+
+      .swipe-item.deleting {
+        transform: translateY(100px) scale(0.8);
+        opacity: 0;
+      }
+
+      /* History item stagger */
+      @keyframes historyIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px) scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      .history-item {
+        animation: historyIn 0.3s cubic-bezier(0.25, 1, 0.5, 1) both;
+      }
     </style>
   </head>
   <body
     x-data="App"
     class="flex min-h-dvh flex-col select-none bg-bg text-text"
   >
+    <!-- Toast уведомления -->
+    <div class="fixed inset-x-4 top-4 z-50 flex flex-col items-center gap-2">
+      <template x-for="toast in toasts" :key="toast.id">
+        <div
+          x-show="toast.visible"
+          x-transition:enter="toast-enter"
+          x-transition:leave="toast-leave"
+          :class="toast.type === 'error' ? 'bg-red-500' : 'bg-black/90'"
+          class="glass flex items-center gap-3 rounded-2xl px-5 py-3.5 shadow-lg"
+        >
+          <template x-if="toast.type === 'success'">
+            <svg
+              class="h-5 w-5 text-green-400"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="m4.5 12.75 6 6 9-13.5"
+              />
+            </svg>
+          </template>
+          <template x-if="toast.type === 'error'">
+            <svg
+              class="h-5 w-5 text-white"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0zm-9 3.75h.008v.008H12v-.008z"
+              />
+            </svg>
+          </template>
+          <span class="text-sm font-medium text-white" x-text="toast.message"></span>
+        </div>
+      </template>
+    </div>
+
     <main
       class="mx-auto flex w-full max-w-md flex-1 flex-col overflow-y-auto px-5 pb-32"
     >
@@ -144,17 +307,23 @@
             @input.debounce.100ms="detect"
             @paste="$nextTick(() => detect())"
             @keydown.enter.prevent="download"
+            @dblclick="if(url) { navigator.clipboard.writeText(url); showToast('Ссылка скопирована', 'success'); TelegramBridge.haptic('light'); }"
             :disabled="loading"
             placeholder="Вставьте ссылку на видео"
             autocomplete="off"
             autocorrect="off"
             autocapitalize="off"
             spellcheck="false"
-            class="h-14 w-full rounded-2xl border border-border bg-surface pl-12 pr-12 text-text transition-colors placeholder:text-muted focus:border-text/20 disabled:opacity-40"
+            class="h-14 w-full rounded-2xl border border-border bg-surface pl-12 pr-12 text-text transition-all duration-200 placeholder:text-muted focus:border-text/20 focus:ring-4 focus:ring-black/5 disabled:opacity-40"
           />
           <button
             x-show="url.length > 0"
-            x-transition.opacity.duration.100ms
+            x-transition:enter="transition ease-out duration-150"
+            x-transition:enter-start="opacity-0 scale-75"
+            x-transition:enter-end="opacity-100 scale-100"
+            x-transition:leave="transition ease-in duration-100"
+            x-transition:leave-start="opacity-100 scale-100"
+            x-transition:leave-end="opacity-0 scale-75"
             @click="clear"
             :disabled="loading"
             aria-label="Очистить поле"
@@ -179,11 +348,16 @@
 
         <button
           x-show="platform && !loading && !video"
-          x-transition.opacity.duration.150ms
+          x-transition:enter="transition ease-out duration-200"
+          x-transition:enter-start="opacity-0 translate-y-2"
+          x-transition:enter-end="opacity-100 translate-y-0"
+          x-transition:leave="transition ease-in duration-150"
+          x-transition:leave-start="opacity-100 translate-y-0"
+          x-transition:leave-end="opacity-0 translate-y-2"
           @click="download"
           :disabled="loading"
           :style="{ backgroundColor: platform?.colors?.primary }"
-          class="press flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl font-semibold text-white disabled:opacity-40"
+          class="press flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl font-semibold text-white shadow-lg disabled:opacity-40"
           type="button"
         >
           <svg
@@ -203,65 +377,39 @@
         </button>
       </section>
 
+      <!-- Skeleton Loading -->
       <template x-if="loading">
-        <section
-          class="fade flex flex-1 flex-col items-center justify-center py-20"
-        >
-          <div class="mb-6 w-full max-w-60">
-            <div class="mb-3 flex items-center justify-between">
-              <span class="text-sm font-semibold text-text">Загрузка</span>
-              <span
-                class="text-sm font-semibold text-text"
-                x-text="progress + '%'"
-              ></span>
-            </div>
-            <div
-              class="h-2 overflow-hidden rounded-full border border-border bg-surface"
-            >
-              <div
-                class="h-full rounded-full transition-all duration-200 ease-out"
-                :style="{ backgroundColor: platform?.colors?.progress, width: progress + '%' }"
-              ></div>
+        <section class="fade mt-6 space-y-4">
+          <div class="overflow-hidden rounded-2xl border border-border bg-surface">
+            <div class="skeleton h-[56dvh] w-full"></div>
+          </div>
+          <div class="flex items-center gap-3 rounded-2xl border border-border bg-surface p-4">
+            <div class="skeleton h-12 w-12 rounded-full"></div>
+            <div class="flex-1 space-y-2">
+              <div class="skeleton h-4 w-32 rounded-lg"></div>
+              <div class="skeleton h-3 w-24 rounded-lg"></div>
             </div>
           </div>
-          <p class="text-sm text-muted" x-text="loadingText"></p>
-        </section>
-      </template>
-
-      <template x-if="error && !loading">
-        <section
-          class="fade mt-6 rounded-2xl border border-red-100 bg-red-50 p-4"
-        >
-          <div class="flex items-start gap-3">
-            <div
-              class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-red-100"
-            >
-              <svg
-                class="h-5 w-5 text-red-500"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.5"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0zm-9 3.75h.008v.008H12v-.008z"
-                />
-              </svg>
-            </div>
-            <div class="min-w-0 flex-1 pt-0.5">
-              <p class="text-sm font-semibold text-red-600">Ошибка</p>
-              <p class="mt-0.5 text-sm text-red-500" x-text="error"></p>
-            </div>
+          <div class="skeleton h-4 w-3/4 rounded-lg"></div>
+          <div class="grid grid-cols-4 gap-2 rounded-2xl border border-border bg-surface p-3">
+            <template x-for="i in 4" :key="i">
+              <div class="flex flex-col items-center gap-2 py-2">
+                <div class="skeleton h-9 w-9 rounded-full"></div>
+                <div class="skeleton h-3 w-8 rounded"></div>
+                <div class="skeleton h-2 w-12 rounded"></div>
+              </div>
+            </template>
+          </div>
+          <div class="flex justify-center pt-4">
+            <p class="text-sm text-muted" x-text="loadingText"></p>
           </div>
         </section>
       </template>
 
       <template x-if="video && !loading">
-        <section class="fade mt-6 space-y-4">
+        <section class="fade mt-6 space-y-4" :class="{ 'success-bounce': justLoaded }">
           <div
-            class="overflow-hidden rounded-2xl border border-border bg-surface"
+            class="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm"
           >
             <div class="relative h-[56dvh] w-full bg-black">
               <video
@@ -273,7 +421,7 @@
                 webkit-playsinline
               ></video>
               <div
-                class="absolute left-3 top-3 flex items-center gap-1.5 rounded-lg bg-white/95 px-2.5 py-1.5 shadow-sm"
+                class="glass absolute left-3 top-3 flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 shadow-sm"
               >
                 <svg
                   class="h-4 w-4"
@@ -289,7 +437,7 @@
                 ></span>
               </div>
               <div
-                class="absolute right-3 top-3 rounded-lg bg-white/95 px-2.5 py-1.5 shadow-sm"
+                class="glass absolute right-3 top-3 rounded-xl px-2.5 py-1.5 shadow-sm"
               >
                 <span
                   class="text-xs font-semibold text-text"
@@ -330,6 +478,7 @@
 
           <p
             x-show="video.title"
+            x-transition
             class="line-clamp-2 px-1 text-sm leading-relaxed text-text"
             x-text="video.title"
           ></p>
@@ -378,7 +527,7 @@
               @click="saveVideo"
               :style="{ backgroundColor: platform?.colors?.save }"
               aria-label="Сохранить видео"
-              class="press flex h-14 items-center justify-center gap-2 rounded-2xl font-semibold text-white"
+              class="press flex h-14 items-center justify-center gap-2 rounded-2xl font-semibold text-white shadow-lg"
             >
               <svg
                 class="h-5 w-5"
@@ -399,7 +548,7 @@
               @click="shareStory"
               :style="{ backgroundColor: platform?.colors?.story }"
               aria-label="Поделиться в историю"
-              class="press flex h-14 items-center justify-center gap-2 rounded-2xl font-semibold text-white"
+              class="press flex h-14 items-center justify-center gap-2 rounded-2xl font-semibold text-white shadow-lg"
             >
               <svg
                 class="h-5 w-5"
@@ -420,73 +569,130 @@
         </section>
       </template>
 
+      <!-- Пустое состояние истории -->
+      <template x-if="history.length === 0 && !loading && !video">
+        <div class="fade mt-8 flex flex-col items-center py-8 text-center" style="animation-delay: 100ms">
+          <div class="mb-4 grid h-16 w-16 place-items-center rounded-full bg-surface">
+            <svg class="h-8 w-8 text-muted" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+          </div>
+          <p class="text-sm text-muted">История пуста</p>
+          <p class="mt-1 text-xs text-muted/60">Сохранённые видео появятся здесь</p>
+        </div>
+      </template>
+
+      <!-- История с swipe-to-delete -->
       <template x-if="history.length > 0 && !loading">
         <section class="fade mt-8" style="animation-delay: 100ms">
-          <div class="mb-4 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <svg
-                class="h-5 w-5 text-muted"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.5"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                />
-              </svg>
-              <h2 class="font-semibold text-text">Недавние видео</h2>
-            </div>
-            <button
-              @click="clearHistory"
-              aria-label="Очистить историю"
-              class="press text-sm text-muted"
+          <div class="mb-4 flex items-center gap-2">
+            <svg
+              class="h-5 w-5 text-muted"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              viewBox="0 0 24 24"
             >
-              Очистить
-            </button>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+              />
+            </svg>
+            <h2 class="font-semibold text-text">Недавние видео</h2>
+            <span class="ml-auto text-xs text-muted">↑ удалить</span>
           </div>
           <div class="no-scrollbar -mx-5 flex gap-3 overflow-x-auto px-5 pb-2">
-            <template x-for="item in history" :key="item.id">
-              <button
-                @click="loadHistory(item)"
-                aria-label="Загрузить из истории"
-                class="press w-[88px] shrink-0"
+            <template x-for="(item, index) in history" :key="item.id">
+              <div
+                x-data="{ 
+                  startY: 0, 
+                  currentY: 0, 
+                  swiping: false,
+                  deleting: false,
+                  triggered: false,
+                  get translateY() { return Math.min(0, this.currentY - this.startY) }
+                }"
+                @touchstart="startY = $event.touches[0].clientY; currentY = startY; swiping = true; triggered = false"
+                @touchmove="
+                  if(swiping) {
+                    const newY = $event.touches[0].clientY;
+                    if(!triggered && (currentY - startY) > -60 && (newY - startY) <= -60) {
+                      TelegramBridge.haptic('rigid');
+                      triggered = true;
+                    }
+                    currentY = newY;
+                  }
+                "
+                @touchend="
+                  if(translateY < -60) { 
+                    deleting = true;
+                    TelegramBridge.haptic('medium');
+                    setTimeout(() => deleteHistoryItem(item.id), 200);
+                  } else { 
+                    currentY = startY;
+                  }
+                  swiping = false;
+                "
+                :style="{ 
+                  transform: deleting ? '' : `translateY(${translateY}px)`,
+                  opacity: deleting ? 0 : (1 + translateY / 120),
+                  animationDelay: (index * 50) + 'ms'
+                }"
+                :class="{ 'deleting': deleting }"
+                class="history-item swipe-item w-[88px] shrink-0"
               >
-                <div
-                  class="relative mb-2 h-[120px] w-[88px] overflow-hidden rounded-xl border border-border"
+                <button
+                  @click="if(!swiping && Math.abs(translateY) < 5) loadHistory(item)"
+                  aria-label="Загрузить из истории"
+                  class="press w-full"
                 >
-                  <img
-                    :src="item.cover"
-                    alt="Обложка"
-                    @error="$event.target.src = FALLBACK_COVER"
-                    class="h-full w-full object-cover"
-                    loading="lazy"
-                  />
                   <div
-                    class="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/60 to-transparent"
-                  ></div>
-                  <div
-                    class="absolute bottom-2 left-2 grid h-5 w-5 place-items-center rounded-full bg-white"
+                    class="relative mb-2 h-[120px] w-[88px] overflow-hidden rounded-xl border border-border"
                   >
-                    <svg
-                      class="h-3 w-3"
-                      :style="{ color: PlatformRegistry.get(item.platform)?.colors?.icon }"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
+                    <img
+                      :src="item.cover"
+                      alt="Обложка"
+                      @error="$event.target.src = FALLBACK_COVER"
+                      class="h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                    <div
+                      class="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/60 to-transparent"
+                    ></div>
+                    <div
+                      class="absolute bottom-2 left-2 grid h-5 w-5 place-items-center rounded-full bg-white"
                     >
-                      <path
-                        :d="PlatformRegistry.get(item.platform)?.icon"
-                      />
-                    </svg>
+                      <svg
+                        class="h-3 w-3"
+                        :style="{ color: PlatformRegistry.get(item.platform)?.colors?.icon }"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                      >
+                        <path
+                          :d="PlatformRegistry.get(item.platform)?.icon"
+                        />
+                      </svg>
+                    </div>
+                    <!-- Индикатор удаления -->
+                    <div 
+                      x-show="translateY < -20"
+                      x-transition:enter="transition ease-out duration-150"
+                      x-transition:enter-start="opacity-0"
+                      x-transition:enter-end="opacity-100"
+                      class="absolute inset-0 flex items-center justify-center bg-red-500/90"
+                    >
+                      <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                      </svg>
+                    </div>
                   </div>
-                </div>
-                <p
-                  class="truncate text-left text-xs text-muted"
-                  x-text="item.author"
-                ></p>
-              </button>
+                  <p
+                    class="truncate text-left text-xs text-muted"
+                    x-text="item.author"
+                  ></p>
+                </button>
+              </div>
             </template>
           </div>
         </section>
@@ -496,9 +702,10 @@
         class="fade mt-auto pt-12"
         style="animation-delay: 150ms"
         x-show="!loading && !video"
+        x-transition
       >
         <p class="mb-4 text-center text-sm text-muted">
-          Поддерживаемые платформы (только для просмотра/своего контента)
+          Поддерживаемые платформы
         </p>
         <div class="flex flex-wrap justify-center gap-3">
           <template x-for="p in PlatformRegistry.all()" :key="p.name">
@@ -525,10 +732,7 @@
 
     <script>
       const FETCH_TIMEOUT = 15000;
-      const PROGRESS_INTERVAL = 100;
-      const PROGRESS_STEP_MIN = 2;
-      const PROGRESS_STEP_MAX = 10;
-      const PROGRESS_LIMIT = 95;
+      const TOAST_DURATION = 3000;
       const FALLBACK_AVATAR =
         "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 48 48%22><rect fill=%22%23e5e5e5%22 width=%2248%22 height=%2248%22/></svg>";
       const FALLBACK_COVER =
@@ -585,6 +789,8 @@
         }
       }
 
+      window.TelegramBridge = TelegramBridge;
+
       class Storage {
         static #KEY = "clipper_history";
         static #MAX = 20;
@@ -605,6 +811,13 @@
               this.#KEY,
               JSON.stringify(list.slice(0, this.#MAX))
             );
+          } catch {}
+        }
+
+        static remove(id) {
+          try {
+            const list = this.get().filter((i) => i.id !== id);
+            localStorage.setItem(this.#KEY, JSON.stringify(list));
           } catch {}
         }
 
@@ -745,25 +958,21 @@
           url: "",
           platform: null,
           loading: false,
-          progress: 0,
           video: null,
-          error: null,
           history: Storage.get(),
-          progressInterval: null,
+          toasts: [],
+          toastId: 0,
+          justLoaded: false,
 
           get statusText() {
             if (this.loading) return "Загрузка видео...";
-            if (this.error) return "Попробуйте другую ссылку";
             if (this.video) return "Видео готово к сохранению";
             if (this.platform) return `${this.platform.name} видео найдено`;
             return "Сохраняйте видео легко и быстро";
           },
 
           get loadingText() {
-            if (this.progress < 30) return "Подключение к серверу...";
-            if (this.progress < 60) return "Получение видео...";
-            if (this.progress < 90) return "Обработка данных...";
-            return "Почти готово...";
+            return "Получаем видео...";
           },
 
           get visibleStats() {
@@ -778,8 +987,20 @@
             TelegramBridge.init();
           },
 
+          showToast(message, type = "success") {
+            const id = ++this.toastId;
+            const toast = { id, message, type, visible: true };
+            this.toasts.push(toast);
+
+            setTimeout(() => {
+              toast.visible = false;
+              setTimeout(() => {
+                this.toasts = this.toasts.filter((t) => t.id !== id);
+              }, 200);
+            }, TOAST_DURATION);
+          },
+
           detect() {
-            this.error = null;
             this.platform = PlatformRegistry.detect(this.url);
             if (this.platform) TelegramBridge.haptic("light");
           },
@@ -788,15 +1009,8 @@
             this.url = "";
             this.platform = null;
             this.video = null;
-            this.error = null;
+            this.justLoaded = false;
             TelegramBridge.haptic("light");
-          },
-
-          stopProgress() {
-            if (this.progressInterval) {
-              clearInterval(this.progressInterval);
-              this.progressInterval = null;
-            }
           },
 
           async download() {
@@ -804,22 +1018,14 @@
 
             this.$refs.input?.blur();
             this.loading = true;
-            this.progress = 0;
-            this.error = null;
             this.video = null;
+            this.justLoaded = false;
             TelegramBridge.haptic("medium");
-
-            this.stopProgress();
-            this.progressInterval = setInterval(() => {
-              const step =
-                Math.floor(Math.random() * (PROGRESS_STEP_MAX - PROGRESS_STEP_MIN + 1)) +
-                PROGRESS_STEP_MIN;
-              this.progress = Math.min(this.progress + step, PROGRESS_LIMIT);
-            }, PROGRESS_INTERVAL);
 
             try {
               this.video = await this.platform.fetch(this.url);
-              this.progress = 100;
+              this.justLoaded = true;
+              setTimeout(() => (this.justLoaded = false), 500);
 
               Storage.add({
                 id: this.video.id || Date.now(),
@@ -834,15 +1040,15 @@
 
               this.history = Storage.get();
               TelegramBridge.notify("success");
+              this.showToast("Видео загружено", "success");
             } catch (err) {
-              if (err.name === "AbortError") {
-                this.error = "Превышено время ожидания";
-              } else {
-                this.error = err.message || "Произошла ошибка";
-              }
+              const message =
+                err.name === "AbortError"
+                  ? "Превышено время ожидания"
+                  : err.message || "Произошла ошибка";
+              this.showToast(message, "error");
               TelegramBridge.notify("error");
             } finally {
-              this.stopProgress();
               this.loading = false;
             }
           },
@@ -855,9 +1061,9 @@
 
             if (success) {
               TelegramBridge.notify("success");
+              this.showToast("Видео сохраняется", "success");
             } else {
-              this.error =
-                "Скачивание видео доступно только в мобильном приложении Telegram";
+              this.showToast("Доступно только в Telegram", "error");
               TelegramBridge.notify("error");
             }
           },
@@ -875,8 +1081,9 @@
 
             if (success) {
               TelegramBridge.notify("success");
+              this.showToast("Открываем истории", "success");
             } else {
-              this.error = "Истории доступны только в мобильном Telegram";
+              this.showToast("Доступно только в Telegram", "error");
               TelegramBridge.notify("error");
             }
           },
@@ -888,15 +1095,15 @@
               TelegramBridge.haptic("light");
               this.download();
             } else {
-              this.error = "Платформа больше не поддерживается";
+              this.showToast("Платформа не поддерживается", "error");
               TelegramBridge.notify("error");
             }
           },
 
-          clearHistory() {
-            Storage.clear();
-            this.history = [];
-            TelegramBridge.haptic("medium");
+          deleteHistoryItem(id) {
+            Storage.remove(id);
+            this.history = Storage.get();
+            this.showToast("Удалено", "success");
           },
         }));
       });
