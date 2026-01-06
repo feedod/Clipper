@@ -47,7 +47,7 @@
 <body x-data="App" class="flex min-h-dvh mt-5 flex-col select-none bg-bg text-text">
 
   <!-- Pull to Refresh -->
-  <div x-show="pulling" class="fixed inset-x-0 top-0 z-50 flex justify-center pt-4" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+  <div x-show="pulling" class="fixed inset-x-0 top-20 z-50 flex justify-center pt-4" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
     <div class="flex items-center gap-2 rounded-full bg-black/90 px-4 py-2 shadow-lg">
       <svg class="h-4 w-4 animate-spin text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
       <span class="text-sm font-medium text-white">Обновление...</span>
