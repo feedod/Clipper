@@ -967,7 +967,7 @@
           get statusText() {
             if (this.loading) return "Загрузка видео...";
             if (this.video) return "Видео готово к сохранению";
-            if (this.platform) return `${this.platform.name} видео найдено`;
+            if (this.platform) return this.platform.name;
             return "Сохраняйте видео легко и быстро";
           },
 
