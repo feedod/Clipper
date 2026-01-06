@@ -1,1 +1,1 @@
-# Clipper (beta)
+# Clipper
