@@ -1,432 +1,221 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
-  <meta name="color-scheme" content="light">
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
-  <style type="text/tailwindcss">
-    @theme {
-      --color-bg: #ffffff;
-      --color-surface: #f8f8f8;
-      --color-border: #ebebeb;
-      --color-text: #000000;
-      --color-muted: #8e8e93;
-    }
-
-    * { -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
-    html, body { background: var(--color-bg); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif; overscroll-behavior: none; -webkit-font-smoothing: antialiased; scrollbar-width: none; }
-    html::-webkit-scrollbar, body::-webkit-scrollbar { display: none; }
-    body { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
-    input { font-size: 16px; caret-color: #000; }
-    input:focus { outline: none; }
-
-    .press { transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.15s ease; }
-    .press:active { transform: scale(0.96); opacity: 0.85; }
-    .spring { transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
-    .glass { background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
-    .no-scrollbar { scrollbar-width: none; }
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-
-    .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.2s ease-in-out infinite; }
-    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-    .fade { animation: fadeIn 0.4s cubic-bezier(0.25, 1, 0.5, 1) both; }
-    @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.015); } }
-    .bounce { animation: bounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
-    @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-    .slide-up { animation: slideUp 0.3s cubic-bezier(0.25, 1, 0.5, 1) both; }
-    .swipe-delete { transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease; }
-    .swipe-delete.deleting { transform: translateY(100px) scale(0.8); opacity: 0; }
-
-    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
+<style type="text/tailwindcss">
+@theme{--color-bg:#fff;--color-surface:#f8f8f8;--color-border:#ebebeb;--color-text:#000;--color-muted:#8e8e93}
+*{-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+html,body{background:var(--color-bg);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;overscroll-behavior:none;-webkit-font-smoothing:antialiased}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+input{font-size:16px;caret-color:#000}
+input:focus{outline:none}
+::-webkit-scrollbar{display:none}
+.press{transition:transform .2s cubic-bezier(.34,1.56,.64,1),opacity .15s}
+.press:active{transform:scale(.96);opacity:.85}
+.glass{background:rgba(255,255,255,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.skeleton{background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);background-size:200% 100%;animation:shimmer 1.2s infinite}
+@keyframes shimmer{to{background-position:-200% 0}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fade{animation:fadeIn .3s ease-out both}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
 </head>
-<body x-data="App" class="flex min-h-dvh mt-5 flex-col select-none bg-bg text-text">
+<body x-data="Clipper" class="flex min-h-dvh flex-col select-none bg-bg text-text">
 
-  <!-- Pull to Refresh -->
-  <div x-show="pulling" class="fixed inset-x-0 top-20 z-50 flex justify-center pt-4" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
-    <div class="flex items-center gap-2 rounded-full bg-black/90 px-4 py-2 shadow-lg">
-      <svg class="h-4 w-4 animate-spin text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-      <span class="text-sm font-medium text-white">Обновление...</span>
-    </div>
-  </div>
+<div x-show="refreshing" x-transition.opacity.duration.200ms class="fixed inset-x-0 top-15 z-50 flex justify-center">
+<div class="flex items-center gap-2 rounded-full bg-black/90 px-4 py-2 shadow-lg">
+<svg class="h-4 w-4 animate-spin text-white" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+<span class="text-sm font-medium text-white">Обновление</span>
+</div>
+</div>
 
-  <!-- Toast -->
-  <div class="fixed inset-x-4 bottom-8 z-50 flex flex-col items-center gap-2">
-    <template x-for="t in toasts" :key="t.id">
-      <div x-show="t.visible" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 scale-95" x-transition:enter-end="opacity-100 translate-y-0 scale-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 scale-100" x-transition:leave-end="opacity-0 translate-y-4 scale-95" :class="t.type === 'error' ? 'bg-red-500' : 'bg-black/90'" class="flex items-center gap-2.5 rounded-2xl px-5 py-3.5 shadow-xl">
-        <template x-if="t.type === 'success'"><svg class="h-5 w-5 text-green-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg></template>
-        <template x-if="t.type === 'error'"><svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></template>
-        <span class="text-sm font-medium text-white" x-text="t.message"></span>
-      </div>
-    </template>
-  </div>
+<div class="fixed inset-x-4 bottom-8 z-50 flex flex-col items-center gap-2 pointer-events-none">
+<template x-for="t in toasts" :key="t.id">
+<div x-show="t.show" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 scale-95" x-transition:enter-end="opacity-100 translate-y-0 scale-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0 translate-y-4" :class="t.err ? 'bg-red-500' : 'bg-black/90'" class="pointer-events-auto flex items-center gap-2.5 rounded-2xl px-5 py-3.5 shadow-xl">
+<svg x-show="!t.err" class="h-5 w-5 text-green-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>
+<svg x-show="t.err" class="h-5 w-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+<span class="text-sm font-medium text-white" x-text="t.msg"></span>
+</div>
+</template>
+</div>
 
-  <main x-ref="main" @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd" class="mx-auto flex w-full max-w-md flex-1 flex-col overflow-y-auto px-5 pb-32">
-    
-    <header class="fade pb-8 pt-10 text-center">
-      <h1 class="text-3xl font-bold tracking-tight">Clipper</h1>
-      <p class="mt-2 text-sm text-muted" x-text="statusText"></p>
-    </header>
+<main x-ref="main" class="mx-auto flex w-full max-w-md flex-1 flex-col overflow-y-auto px-5 pb-32 scrollbar-none">
 
-    <!-- Input -->
-    <section class="fade space-y-3" style="animation-delay:50ms">
-      <div class="relative">
-        <div class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2">
-          <svg class="h-5 w-5 text-muted" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"/></svg>
-        </div>
-        <input x-ref="input" x-model="url" @input.debounce.150ms="onInput" @paste="$nextTick(() => onInput())" @keydown.enter.prevent="download" :disabled="loading" type="url" placeholder="Вставьте ссылку на видео" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" class="h-14 w-full rounded-2xl border border-border bg-surface pl-12 pr-24 text-text transition-all duration-200 placeholder:text-muted focus:border-text/20 focus:ring-4 focus:ring-black/5 disabled:opacity-40">
-        <div class="absolute right-3 top-1/2 flex -translate-y-1/2 gap-1">
-          <button x-show="!url" @click="paste" type="button" class="press rounded-xl bg-black px-3 py-1.5 text-xs font-semibold text-white">Вставить</button>
-          <button x-show="url" x-transition.scale.origin.right @click="clear" :disabled="loading" type="button" aria-label="Очистить" class="press grid h-8 w-8 place-items-center rounded-full bg-border disabled:opacity-40">
-            <svg class="h-4 w-4 text-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
-          </button>
-        </div>
-      </div>
+<header class="fade pb-8 pt-10 text-center">
+<h1 class="text-3xl font-bold tracking-tight">Clipper</h1>
+<p class="mt-2 text-sm text-muted" x-text="status"></p>
+</header>
 
-      <button x-show="detectedPlatform && !loading && !video" x-transition.scale.origin.top @click="download" :disabled="loading" :style="{ backgroundColor: detectedPlatform?.colors?.primary }" type="button" class="press flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl font-semibold text-white shadow-lg disabled:opacity-40">
-        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
-        <span>Скачать видео</span>
-      </button>
-    </section>
+<section class="fade space-y-3" style="animation-delay:50ms">
+<div class="relative">
+<div class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2">
+<svg class="h-5 w-5 text-muted" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"/></svg>
+</div>
+<input x-ref="input" x-model="url" @input.debounce.150ms="onUrlChange" @paste="$nextTick(()=>onUrlChange())" @keydown.enter.prevent="fetch" :disabled="loading" type="url" inputmode="url" placeholder="Вставьте ссылку на видео" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" class="h-14 w-full rounded-2xl border border-border bg-surface pl-12 pr-14 text-text transition-all placeholder:text-muted focus:border-text/20 focus:ring-4 focus:ring-black/5 disabled:opacity-40">
+<div class="absolute right-3 top-1/2 -translate-y-1/2">
+<button x-show="!url" @click="paste" type="button" aria-label="Вставить" class="press grid h-9 w-9 place-items-center rounded-xl bg-black">
+<svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z"/></svg>
+</button>
+<button x-show="url" x-transition.scale @click="clear" :disabled="loading" type="button" aria-label="Очистить" class="press grid h-8 w-8 place-items-center rounded-full bg-border disabled:opacity-40">
+<svg class="h-4 w-4 text-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+</button>
+</div>
+</div>
+<button x-show="detected && !loading && !video" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" @click="fetch" :style="{backgroundColor:detected?.c?.primary}" type="button" class="press flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl font-semibold text-white shadow-lg">
+<svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+<span>Скачать видео</span>
+</button>
+</section>
 
-    <!-- Skeleton -->
-    <template x-if="loading">
-      <section class="fade mt-6 space-y-4">
-        <div class="skeleton h-[56dvh] w-full rounded-2xl"></div>
-        <div class="flex items-center gap-3 rounded-2xl border border-border bg-surface p-4">
-          <div class="skeleton h-12 w-12 rounded-full"></div>
-          <div class="flex-1 space-y-2"><div class="skeleton h-4 w-32 rounded-lg"></div><div class="skeleton h-3 w-24 rounded-lg"></div></div>
-        </div>
-        <div class="grid grid-cols-4 gap-2 rounded-2xl border border-border bg-surface p-3">
-          <template x-for="i in 4"><div class="flex flex-col items-center gap-2 py-2"><div class="skeleton h-9 w-9 rounded-full"></div><div class="skeleton h-3 w-8 rounded"></div></div></template>
-        </div>
-      </section>
-    </template>
+<template x-if="loading">
+<section class="fade mt-6 space-y-4">
+<div class="skeleton h-[56dvh] w-full rounded-2xl"></div>
+<div class="flex items-center gap-3 rounded-2xl border border-border bg-surface p-4">
+<div class="skeleton h-12 w-12 shrink-0 rounded-full"></div>
+<div class="flex-1 space-y-2"><div class="skeleton h-4 w-32 rounded-lg"></div><div class="skeleton h-3 w-24 rounded-lg"></div></div>
+</div>
+<div class="grid grid-cols-4 gap-2 rounded-2xl border border-border bg-surface p-3">
+<template x-for="i in 4"><div class="flex flex-col items-center gap-2 py-2"><div class="skeleton h-9 w-9 rounded-full"></div><div class="skeleton h-3 w-10 rounded"></div></div></template>
+</div>
+</section>
+</template>
 
-    <!-- Video -->
-    <template x-if="video && !loading">
-      <section class="mt-6 space-y-4" :class="justLoaded ? 'bounce' : 'fade'">
-        <div class="overflow-hidden rounded-2xl border border-border bg-black shadow-sm">
-          <div class="relative h-[56dvh] w-full">
-            <video :src="video.play" :poster="video.cover" class="absolute inset-0 h-full w-full object-contain" controls playsinline webkit-playsinline></video>
-            <div class="glass absolute left-3 top-3 flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 shadow-sm">
-              <svg class="h-4 w-4" :style="{ color: videoPlatform?.colors?.icon }" viewBox="0 0 24 24" fill="currentColor"><path :d="videoPlatform?.icon"/></svg>
-              <span class="text-xs font-semibold text-text" x-text="videoPlatform?.name"></span>
-            </div>
-            <div x-show="video.duration" class="glass absolute right-3 top-3 flex h-7 items-center justify-center rounded-xl px-2.5 shadow-sm">
-              <span class="text-xs font-semibold text-text" x-text="formatTime(video.duration)"></span>
-            </div>
-          </div>
-        </div>
+<template x-if="video && !loading">
+<section class="fade mt-6 space-y-4">
+<div class="overflow-hidden rounded-2xl border border-border bg-black shadow-sm">
+<div class="relative h-[56dvh] w-full">
+<video :src="video.play" :poster="video.cover" class="absolute inset-0 h-full w-full object-contain" controls playsinline webkit-playsinline></video>
+<div class="glass absolute left-3 top-3 flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 shadow-sm">
+<svg class="h-4 w-4" :style="{color:platform?.c?.icon}" viewBox="0 0 24 24" fill="currentColor"><path :d="platform?.icon"/></svg>
+<span class="text-xs font-semibold" x-text="platform?.name"></span>
+</div>
+<div x-show="video.duration" class="glass absolute right-3 top-3 flex h-7 items-center rounded-xl px-2.5 shadow-sm">
+<span class="text-xs font-semibold tabular-nums" x-text="fmt.time(video.duration)"></span>
+</div>
+</div>
+</div>
 
-        <div class="flex items-center gap-3 rounded-2xl border border-border bg-surface p-4">
-          <img :src="video.author?.avatar || FALLBACK.avatar" @error="$el.src = FALLBACK.avatar" class="h-12 w-12 rounded-full border border-border object-cover" alt="">
-          <div class="min-w-0 flex-1">
-            <p class="truncate font-semibold text-text" x-text="video.author?.nickname || 'Автор'"></p>
-            <p class="truncate text-sm text-muted" x-text="video.author?.unique_id ? '@' + video.author.unique_id : ''"></p>
-          </div>
-          <svg class="h-5 w-5" :style="{ color: videoPlatform?.colors?.icon }" viewBox="0 0 24 24" fill="currentColor"><path :d="videoPlatform?.icon"/></svg>
-        </div>
+<div class="flex items-center gap-3 rounded-2xl border border-border bg-surface p-4">
+<img :src="video.author?.avatar||FALLBACK.avatar" @error="$el.src=FALLBACK.avatar" class="h-12 w-12 shrink-0 rounded-full border border-border object-cover" alt="">
+<div class="min-w-0 flex-1">
+<p class="truncate font-semibold" x-text="video.author?.nickname||'Автор'"></p>
+<p x-show="video.author?.unique_id" class="truncate text-sm text-muted" x-text="'@'+video.author.unique_id"></p>
+</div>
+<svg class="h-5 w-5 shrink-0" :style="{color:platform?.c?.icon}" viewBox="0 0 24 24" fill="currentColor"><path :d="platform?.icon"/></svg>
+</div>
 
-        <p x-show="video.title" x-transition class="line-clamp-2 px-1 text-sm leading-relaxed text-text" x-text="video.title"></p>
+<p x-show="video.title" class="line-clamp-2 text-sm leading-relaxed" x-text="video.title"></p>
 
-        <template x-if="stats.length">
-          <div class="grid gap-2 rounded-2xl border border-border bg-surface p-3" :style="{ gridTemplateColumns: `repeat(${stats.length}, 1fr)` }">
-            <template x-for="s in stats" :key="s.key">
-              <div class="py-2 text-center">
-                <div class="mx-auto grid h-9 w-9 place-items-center rounded-full" :style="{ backgroundColor: videoPlatform?.colors?.statsBg }">
-                  <svg class="h-4 w-4" :style="{ color: videoPlatform?.colors?.statsIcon }" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" :d="s.icon"/></svg>
-                </div>
-                <p class="mt-1 text-sm font-semibold text-text" x-text="formatNumber(video[s.key])"></p>
-                <p class="mt-0.5 text-[10px] text-muted" x-text="s.label"></p>
-              </div>
-            </template>
-          </div>
-        </template>
+<template x-if="visibleStats.length">
+<div class="grid gap-2 rounded-2xl border border-border bg-surface p-3" :style="{gridTemplateColumns:`repeat(${visibleStats.length},1fr)`}">
+<template x-for="s in visibleStats" :key="s.k">
+<div class="py-2 text-center">
+<div class="mx-auto grid h-9 w-9 place-items-center rounded-full" :style="{backgroundColor:platform?.c?.statsBg}">
+<svg class="h-4 w-4" :style="{color:platform?.c?.statsIcon}" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" :d="s.icon"/></svg>
+</div>
+<p class="mt-1 text-sm font-semibold tabular-nums" x-text="fmt.num(video[s.k])"></p>
+<p class="mt-0.5 text-[10px] text-muted" x-text="s.label"></p>
+</div>
+</template>
+</div>
+</template>
 
-        <div class="grid grid-cols-2 gap-3 pt-2">
-          <button @click="save" :style="{ backgroundColor: videoPlatform?.colors?.save }" class="press flex h-14 items-center justify-center gap-2 rounded-2xl font-semibold text-white shadow-lg">
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
-            <span>Сохранить</span>
-          </button>
-          <button @click="story" :style="{ backgroundColor: videoPlatform?.colors?.story }" class="press flex h-14 items-center justify-center gap-2 rounded-2xl font-semibold text-white shadow-lg">
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
-            <span>В историю</span>
-          </button>
-        </div>
-      </section>
-    </template>
+<div class="grid grid-cols-2 gap-3 pt-2">
+<button @click="save" :style="{backgroundColor:platform?.c?.save}" class="press flex h-14 items-center justify-center gap-2 rounded-2xl font-semibold text-white shadow-lg">
+<svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
+<span>Сохранить</span>
+</button>
+<button @click="story" :style="{backgroundColor:platform?.c?.story}" class="press flex h-14 items-center justify-center gap-2 rounded-2xl font-semibold text-white shadow-lg">
+<svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+<span>В историю</span>
+</button>
+</div>
+</section>
+</template>
 
-    <!-- Empty History -->
-    <template x-if="!history.length && !loading && !video">
-      <div class="fade mt-8 flex flex-col items-center py-8 text-center" style="animation-delay:100ms">
-        <div class="mb-4 grid h-16 w-16 place-items-center rounded-full bg-surface">
-          <svg class="h-8 w-8 text-muted" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
-        </div>
-        <p class="text-sm text-muted">История пуста</p>
-        <p class="mt-1 text-xs text-muted/60">Сохранённые видео появятся здесь</p>
-      </div>
-    </template>
+<template x-if="!history.length && !loading && !video">
+<div class="fade mt-8 flex flex-col items-center py-8 text-center" style="animation-delay:100ms">
+<div class="mb-4 grid h-16 w-16 place-items-center rounded-full bg-surface">
+<svg class="h-8 w-8 text-muted" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+</div>
+<p class="text-sm text-muted">История пуста</p>
+<p class="mt-1 text-xs text-muted/60">Сохранённые видео появятся здесь</p>
+</div>
+</template>
 
-    <!-- History -->
-    <template x-if="history.length && !loading">
-      <section class="fade mt-8" style="animation-delay:100ms">
-        <div class="mb-4 flex items-center gap-2">
-          <svg class="h-5 w-5 text-muted" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
-          <h2 class="font-semibold text-text">Недавние</h2>
-          <span class="ml-auto text-xs text-muted">↑ удалить</span>
-        </div>
-        <div class="no-scrollbar -mx-5 flex gap-3 overflow-x-auto px-5 pb-2">
-          <template x-for="(item, i) in history" :key="item.id">
-            <div x-data="swipeItem()" @touchstart="start($event)" @touchmove="move($event)" @touchend="end(item.id)" :style="style" :class="{ deleting }" class="swipe-delete w-[88px] shrink-0 slide-up" :style="{ animationDelay: `${i * 40}ms` }">
-              <button @click="!swiping && load(item)" class="press w-full">
-                <div class="relative mb-2 h-[120px] w-[88px] overflow-hidden rounded-xl border border-border">
-                  <img :src="item.cover" @error="$el.src = FALLBACK.cover" class="h-full w-full object-cover" loading="lazy" alt="">
-                  <div class="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/60 to-transparent"></div>
-                  <div class="absolute bottom-2 left-2 grid h-5 w-5 place-items-center rounded-full bg-white">
-                    <svg class="h-3 w-3" :style="{ color: getPlatform(item.platform)?.colors?.icon }" viewBox="0 0 24 24" fill="currentColor"><path :d="getPlatform(item.platform)?.icon"/></svg>
-                  </div>
-                  <div x-show="ty < -20" x-transition.opacity class="absolute inset-0 flex items-center justify-center bg-red-500/90">
-                    <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/></svg>
-                  </div>
-                </div>
-                <p class="truncate text-left text-xs text-muted" x-text="item.author"></p>
-              </button>
-            </div>
-          </template>
-        </div>
-      </section>
-    </template>
+<template x-if="history.length && !loading">
+<section class="fade mt-8" style="animation-delay:100ms">
+<div class="mb-4 flex items-center gap-2">
+<svg class="h-5 w-5 text-muted" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+<h2 class="font-semibold">Недавние</h2>
+<span class="ml-auto text-xs text-muted">↑ удалить</span>
+</div>
+<div class="no-scrollbar -mx-5 flex gap-3 overflow-x-auto px-5 pb-2">
+<template x-for="(item,i) in history" :key="item.id">
+<div x-data="{y:0,active:false,del:false}" @touchstart.passive="y=0;active=true" @touchmove.passive="if(active){const d=$event.touches[0].clientY-$event.target.closest('[x-data]').getBoundingClientRect().top-60;y=Math.min(0,d);if(y<-50)haptic('rigid')}" @touchend="if(y<-50){del=true;haptic('medium');setTimeout(()=>removeHistory(item.id),200)}else{y=0}active=false" :style="{transform:del?'translateY(100px) scale(.8)':`translateY(${y}px)`,opacity:del?0:1+y/100,transition:active?'none':'all .3s cubic-bezier(.34,1.56,.64,1)'}" class="w-[88px] shrink-0">
+<button @click="y===0 && loadHistory(item)" type="button" class="press w-full">
+<div class="relative mb-2 h-[120px] w-[88px] overflow-hidden rounded-xl border border-border">
+<img :src="item.cover" @error="$el.src=FALLBACK.cover" class="h-full w-full object-cover" loading="lazy" alt="">
+<div class="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/60 to-transparent"></div>
+<div class="absolute bottom-2 left-2 grid h-5 w-5 place-items-center rounded-full bg-white">
+<svg class="h-3 w-3" :style="{color:getPlatform(item.platform)?.c?.icon}" viewBox="0 0 24 24" fill="currentColor"><path :d="getPlatform(item.platform)?.icon"/></svg>
+</div>
+<div x-show="y<-20" x-transition.opacity class="absolute inset-0 flex items-center justify-center bg-red-500/90">
+<svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/></svg>
+</div>
+</div>
+<p class="truncate text-left text-xs text-muted" x-text="item.author"></p>
+</button>
+</div>
+</template>
+</div>
+</section>
+</template>
 
-    <!-- Footer -->
-    <footer class="fade mt-auto pt-12" style="animation-delay:150ms" x-show="!loading && !video" x-transition>
-      <p class="mb-4 text-center text-sm text-muted">Поддерживаемые платформы</p>
-      <div class="flex flex-wrap justify-center gap-3">
-        <template x-for="p in platforms" :key="p.name">
-          <div class="flex items-center gap-2.5 rounded-xl border border-border bg-surface px-5 py-3">
-            <svg class="h-5 w-5" :style="{ color: p.colors?.icon }" viewBox="0 0 24 24" fill="currentColor"><path :d="p.icon"/></svg>
-            <span class="text-sm font-semibold text-text" x-text="p.name"></span>
-          </div>
-        </template>
-      </div>
-    </footer>
-  </main>
+<footer class="fade mt-auto pt-12" style="animation-delay:150ms" x-show="!loading && !video">
+<p class="mb-4 text-center text-sm text-muted">Поддерживаемые платформы</p>
+<div class="flex flex-wrap justify-center gap-3">
+<template x-for="p in PLATFORMS" :key="p.name">
+<div class="flex items-center gap-2.5 rounded-xl border border-border bg-surface px-5 py-3">
+<svg class="h-5 w-5" :style="{color:p.c?.icon}" viewBox="0 0 24 24" fill="currentColor"><path :d="p.icon"/></svg>
+<span class="text-sm font-semibold" x-text="p.name"></span>
+</div>
+</template>
+</div>
+</footer>
+</main>
 
-  <script>
-    const TG = window.Telegram?.WebApp;
-    const FALLBACK = {
-      avatar: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><rect fill='%23e5e5e5' width='48' height='48'/></svg>",
-      cover: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 88 120'><rect fill='%23e5e5e5' width='88' height='120'/></svg>"
-    };
-    window.FALLBACK = FALLBACK;
-
-    const PLATFORMS = [{
-      name: "TikTok",
-      colors: { primary: "#fe2c55", icon: "#000", save: "#fe2c55", story: "#000", statsBg: "#fe2c5520", statsIcon: "#fe2c55" },
-      icon: "M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.88.13V9.4a6.33 6.33 0 0 0-5.36 10.7 6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4c-.35-.05-.7-.08-1.04-.1z",
-      patterns: [/tiktok\.com\/@[\w.-]+\/video\/\d+/i, /tiktok\.com\/t\/[\w-]+/i, /vm\.tiktok\.com\/[\w-]+/i, /vt\.tiktok\.com\/[\w-]+/i],
-      stats: [
-        { key: "play_count", label: "Просмотры", icon: "M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" },
-        { key: "digg_count", label: "Лайки", icon: "M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" },
-        { key: "comment_count", label: "Комменты", icon: "M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 0 1-.923 1.785A5.969 5.969 0 0 0 6 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337Z" },
-        { key: "share_count", label: "Репосты", icon: "M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" }
-      ],
-      async fetch(url, signal) {
-        const res = await fetch("https://www.tikwm.com/api/", {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({ url, hd: 1 }),
-          signal
-        });
-        if (!res.ok) throw new Error("Ошибка сети");
-        const json = await res.json();
-        if (json.code !== 0) throw new Error("Видео не найдено");
-        return json.data;
-      }
-    }];
-
-    const Storage = {
-      KEY: "clipper_history",
-      MAX: 20,
-      get() { try { return JSON.parse(localStorage.getItem(this.KEY)) || []; } catch { return []; } },
-      add(item) { try { const list = this.get().filter(i => i.id !== item.id); list.unshift(item); localStorage.setItem(this.KEY, JSON.stringify(list.slice(0, this.MAX))); } catch {} },
-      remove(id) { try { localStorage.setItem(this.KEY, JSON.stringify(this.get().filter(i => i.id !== id))); } catch {} }
-    };
-
-    document.addEventListener("alpine:init", () => {
-      Alpine.data("App", () => ({
-        url: "",
-        loading: false,
-        video: null,
-        videoPlatform: null,
-        history: Storage.get(),
-        toasts: [],
-        toastId: 0,
-        justLoaded: false,
-        pulling: false,
-        pullStart: 0,
-        platforms: PLATFORMS,
-
-        get detectedPlatform() { return PLATFORMS.find(p => p.patterns.some(r => r.test(this.url))) || null; },
-        get statusText() {
-          if (this.loading) return "Загрузка...";
-          if (this.video) return "Готово к сохранению";
-          if (this.detectedPlatform) return `${this.detectedPlatform.name} обнаружен`;
-          return "Сохраняйте видео легко";
-        },
-        get stats() {
-          if (!this.videoPlatform?.stats || !this.video) return [];
-          return this.videoPlatform.stats.filter(s => this.video[s.key] > 0);
-        },
-
-        init() {
-          if (TG) { TG.ready(); TG.requestFullscreen?.(); TG.disableVerticalSwipes?.(); TG.setHeaderColor("#ffffff"); TG.setBackgroundColor("#ffffff"); }
-          this.$nextTick(() => this.$refs.input?.focus());
-        },
-
-        haptic(type = "light") { TG?.HapticFeedback?.impactOccurred(type); },
-        notify(type) { TG?.HapticFeedback?.notificationOccurred(type); },
-
-        toast(message, type = "success") {
-          const id = ++this.toastId;
-          const t = { id, message, type, visible: true };
-          this.toasts.push(t);
-          setTimeout(() => { t.visible = false; setTimeout(() => this.toasts = this.toasts.filter(x => x.id !== id), 300); }, 3000);
-        },
-
-        formatTime(s) { if (!s) return ""; const m = Math.floor(s / 60); return `${m}:${String(Math.floor(s % 60)).padStart(2, "0")}`; },
-        formatNumber(n) { if (!n) return "0"; if (n >= 1e6) return (n / 1e6).toFixed(1) + "M"; if (n >= 1e3) return (n / 1e3).toFixed(1) + "K"; return String(n); },
-        getPlatform(name) { return PLATFORMS.find(p => p.name === name); },
-
-        onInput() { if (this.detectedPlatform) this.haptic("light"); },
-
-        async paste() {
-          try {
-            const text = await navigator.clipboard.readText();
-            if (text) { this.url = text; this.onInput(); this.haptic("medium"); }
-          } catch { this.toast("Не удалось вставить", "error"); }
-        },
-
-        clear() { this.url = ""; this.video = null; this.videoPlatform = null; this.haptic("light"); },
-
-        async download() {
-          const platform = this.detectedPlatform;
-          if (!platform || this.loading) return;
-          this.$refs.input?.blur();
-          this.loading = true;
-          this.video = null;
-          this.justLoaded = false;
-          this.haptic("medium");
-
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 15000);
-
-          try {
-            const data = await platform.fetch(this.url, controller.signal);
-            if (!data?.play) throw new Error("Видео недоступно");
-            this.video = data;
-            this.videoPlatform = platform;
-            this.justLoaded = true;
-            setTimeout(() => this.justLoaded = false, 500);
-            Storage.add({ id: data.id || Date.now(), cover: data.cover, author: data.author?.nickname || "Автор", url: this.url, platform: platform.name });
-            this.history = Storage.get();
-            this.notify("success");
-            this.toast("Видео загружено");
-          } catch (e) {
-            this.toast(e.name === "AbortError" ? "Таймаут" : (e.message || "Ошибка"), "error");
-            this.notify("error");
-          } finally {
-            clearTimeout(timeout);
-            this.loading = false;
-          }
-        },
-
-        save() {
-          if (!this.video?.play) return;
-          const filename = `${this.videoPlatform.name.toLowerCase()}_${this.video.id || Date.now()}.mp4`;
-          if (TG?.downloadFile) { TG.downloadFile({ url: this.video.play, file_name: filename }); this.notify("success"); this.toast("Сохраняется"); }
-          else { this.toast("Только в Telegram", "error"); this.notify("error"); }
-        },
-
-        story() {
-          if (!this.video?.play || !TG?.shareToStory) { this.toast("Только в Telegram", "error"); return; }
-          TG.shareToStory(this.video.play, { text: this.video.title || "", widget_link: { url: "https://t.me/ClipperAppBot", name: "Clipper" } });
-          this.notify("success");
-          this.toast("Открываем истории");
-        },
-
-        load(item) {
-          this.url = item.url;
-          const p = this.getPlatform(item.platform);
-          if (p) { this.haptic("light"); this.download(); }
-          else { this.toast("Платформа не поддерживается", "error"); }
-        },
-
-        deleteItem(id) {
-          Storage.remove(id);
-          this.history = Storage.get();
-          this.toast("Удалено");
-        },
-
-        // Pull to refresh
-        handleTouchStart(e) {
-          if (this.$refs.main.scrollTop === 0) this.pullStart = e.touches[0].clientY;
-        },
-        handleTouchMove(e) {
-          if (!this.pullStart) return;
-          const diff = e.touches[0].clientY - this.pullStart;
-          if (diff > 80 && !this.pulling && !this.loading) {
-            this.pulling = true;
-            this.haptic("medium");
-          }
-        },
-        handleTouchEnd() {
-          if (this.pulling) {
-            this.refresh();
-          }
-          this.pullStart = 0;
-        },
-        async refresh() {
-          if (this.video && this.videoPlatform) {
-            this.loading = true;
-            try {
-              const controller = new AbortController();
-              setTimeout(() => controller.abort(), 15000);
-              const data = await this.videoPlatform.fetch(this.url, controller.signal);
-              if (data?.play) { this.video = data; this.toast("Обновлено"); this.notify("success"); }
-            } catch { this.toast("Не удалось обновить", "error"); }
-            this.loading = false;
-          }
-          this.pulling = false;
-        }
-      }));
-
-      Alpine.data("swipeItem", () => ({
-        sy: 0, ty: 0, swiping: false, deleting: false, triggered: false,
-        get style() { return { transform: this.deleting ? "" : `translateY(${Math.min(0, this.ty)}px)`, opacity: this.deleting ? 0 : 1 + this.ty / 120 }; },
-        start(e) { this.sy = e.touches[0].clientY; this.ty = 0; this.swiping = true; this.triggered = false; },
-        move(e) {
-          if (!this.swiping) return;
-          const y = e.touches[0].clientY - this.sy;
-          if (y < 0) {
-            this.ty = y;
-            if (!this.triggered && y < -60) { this.triggered = true; TG?.HapticFeedback?.impactOccurred("rigid"); }
-          }
-        },
-        end(id) {
-          if (this.ty < -60) {
-            this.deleting = true;
-            TG?.HapticFeedback?.impactOccurred("medium");
-            setTimeout(() => this.$root.__x.$data.deleteItem(id), 200);
-          } else { this.ty = 0; }
-          this.swiping = false;
-        }
-      }));
-    });
-  </script>
+<script>
+const TG=Telegram.WebApp,FALLBACK={avatar:"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><rect fill='%23e5e5e5' width='48' height='48'/></svg>",cover:"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 88 120'><rect fill='%23e5e5e5' width='88' height='120'/></svg>"};
+const PLATFORMS=[{name:"TikTok",c:{primary:"#fe2c55",icon:"#000",save:"#fe2c55",story:"#000",statsBg:"#fe2c5520",statsIcon:"#fe2c55"},icon:"M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.88.13V9.4a6.33 6.33 0 0 0-5.36 10.7 6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4c-.35-.05-.7-.08-1.04-.1z",patterns:[/tiktok\.com/i,/vm\.tiktok/i,/vt\.tiktok/i],stats:[{k:"play_count",label:"Просмотры",icon:"M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z"},{k:"digg_count",label:"Лайки",icon:"M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"},{k:"comment_count",label:"Комменты",icon:"M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 0 1-.923 1.785A5.969 5.969 0 0 0 6 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337Z"},{k:"share_count",label:"Репосты",icon:"M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"}],fetch:async(url,signal)=>{const r=await fetch("https://www.tikwm.com/api/",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams({url,hd:1}),signal});if(!r.ok)throw Error("Ошибка сети");const j=await r.json();if(j.code!==0)throw Error("Видео не найдено");return j.data}}];
+const Storage={K:"clipper_h",M:20,get(){try{return JSON.parse(localStorage.getItem(this.K))||[]}catch{return[]}},set(d){try{localStorage.setItem(this.K,JSON.stringify(d))}catch{}},add(i){const l=this.get().filter(x=>x.id!==i.id);l.unshift(i);this.set(l.slice(0,this.M))},rm(id){this.set(this.get().filter(x=>x.id!==id))}};
+const fmt={time:s=>s?`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`:'',num:n=>n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(1)+'K':String(n||0)};
+window.FALLBACK=FALLBACK;window.PLATFORMS=PLATFORMS;window.fmt=fmt;
+document.addEventListener("alpine:init",()=>{
+Alpine.data("Clipper",()=>({
+url:"",loading:false,video:null,platform:null,history:Storage.get(),toasts:[],tid:0,refreshing:false,
+get detected(){return PLATFORMS.find(p=>p.patterns.some(r=>r.test(this.url)))},
+get status(){return this.loading?"Загрузка...":this.video?"Готово":this.detected?this.detected.name+" ✓":"Сохраняйте видео легко"},
+get visibleStats(){return this.platform?.stats?.filter(s=>this.video?.[s.k]>0)||[]},
+init(){TG.ready();TG.expand();TG.disableVerticalSwipes?.();TG.setHeaderColor?.("#ffffff");TG.setBackgroundColor?.("#ffffff");this.$nextTick(()=>this.$refs.input?.focus())},
+haptic(t="light"){TG.HapticFeedback?.impactOccurred(t)},
+notify(t){TG.HapticFeedback?.notificationOccurred(t)},
+toast(msg,err=false){const id=++this.tid,t={id,msg,err,show:true};this.toasts.push(t);setTimeout(()=>{t.show=false;setTimeout(()=>this.toasts=this.toasts.filter(x=>x.id!==id),300)},3000)},
+onUrlChange(){if(this.detected)this.haptic()},
+paste(){TG.readTextFromClipboard?.(t=>{if(t){this.url=t;this.onUrlChange();this.haptic("medium")}})},
+clear(){this.url="";this.video=null;this.platform=null;this.haptic()},
+async fetch(){const p=this.detected;if(!p||this.loading)return;this.$refs.input?.blur();this.loading=true;this.video=null;this.haptic("medium");const ctrl=new AbortController,tm=setTimeout(()=>ctrl.abort(),15000);try{const d=await p.fetch(this.url,ctrl.signal);if(!d?.play)throw Error("Видео недоступно");this.video=d;this.platform=p;Storage.add({id:d.id||Date.now(),cover:d.cover,author:d.author?.nickname||"Автор",url:this.url,platform:p.name});this.history=Storage.get();this.notify("success");this.toast("Видео загружено")}catch(e){this.toast(e.name==="AbortError"?"Таймаут":e.message||"Ошибка",true);this.notify("error")}finally{clearTimeout(tm);this.loading=false}},
+save(){if(!this.video?.play)return;TG.downloadFile?.({url:this.video.play,file_name:`${this.platform.name.toLowerCase()}_${this.video.id||Date.now()}.mp4`});this.notify("success");this.toast("Сохраняется")},
+story(){if(!this.video?.play)return;TG.shareToStory?.(this.video.play,{text:this.video.title||"",widget_link:{url:"https://t.me/ClipperAppBot",name:"Clipper"}});this.notify("success");this.toast("Открываем")},
+getPlatform(n){return PLATFORMS.find(p=>p.name===n)},
+loadHistory(i){this.url=i.url;this.haptic();this.fetch()},
+removeHistory(id){Storage.rm(id);this.history=Storage.get();this.toast("Удалено")}
+}))});
+</script>
 </body>
 </html>
