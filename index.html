@@ -1198,37 +1198,37 @@ detect() {
           },
 
           shareLink() {
-            if (!this.platform || !this.video) {
-              this.error = "Нет данных для создания ссылки";
-              TelegramBridge.notify("error");
-              return;
-            }
+  if (!this.platform || !this.video) {
+    this.error = "Нет данных для создания ссылки";
+    TelegramBridge.notify("error");
+    return;
+  }
 
-            try {
-              const shareParam = this.platform.getShareParam(this.video, this.url);
-              
-              if (!shareParam) {
-                this.error = "Не удалось создать ссылку";
-                TelegramBridge.notify("error");
-                return;
-              }
+  try {
+    const shareParam = this.platform.getShareParam(this.video, this.url);
+    
+    if (!shareParam) {
+      this.error = "Не удалось создать ссылку";
+      TelegramBridge.notify("error");
+      return;
+    }
 
-              const shareUrl = `https://t.me/${BOT_USERNAME}?start=${shareParam}`;
-              const shareText = `Скачай это видео с ${this.platform.name} через Clipper!`;
+    const shareUrl = `https://t.me/${BOT_USERNAME}/?startapp=${shareParam}`;
+    const shareText = `Скачай это видео с ${this.platform.name} через Clipper!`;
 
-              const success = TelegramBridge.shareUrl(shareUrl, shareText);
+    const success = TelegramBridge.shareUrl(shareUrl, shareText);
 
-              if (success) {
-                TelegramBridge.notify("success");
-              } else {
-                this.error = "Не удалось поделиться ссылкой";
-                TelegramBridge.notify("error");
-              }
-            } catch (err) {
-              this.error = "Ошибка при создании ссылки";
-              TelegramBridge.notify("error");
-            }
-          },
+    if (success) {
+      TelegramBridge.notify("success");
+    } else {
+      this.error = "Не удалось поделиться ссылкой";
+      TelegramBridge.notify("error");
+    }
+  } catch (err) {
+    this.error = "Ошибка при создании ссылки";
+    TelegramBridge.notify("error");
+  }
+},
 
           openAuthorProfile() {
             if (!this.platform || !this.video?.author) {
