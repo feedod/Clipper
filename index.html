@@ -620,7 +620,6 @@
       const PROGRESS_STEP_MIN = 2;
       const PROGRESS_STEP_MAX = 10;
       const PROGRESS_LIMIT = 95;
-const FASTSAVER_API_KEY = "Z8e7f8T1YEunlJ3YipJqe4wn";
       const BOT_USERNAME = "ClipperAppBot";
       const FALLBACK_AVATAR =
         "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 48 48%22><rect fill=%22%23e5e5e5%22 width=%2248%22 height=%2248%22/></svg>";
@@ -1000,101 +999,6 @@ const FASTSAVER_API_KEY = "Z8e7f8T1YEunlJ3YipJqe4wn";
           return json.data;
         },
       });
-
-PlatformRegistry.register({
-  name: "Instagram",
-  colors: {
-    primary: "#E1306C",
-    progress: "#000000",
-    icon: "#000000",
-    save: "#E1306C",
-    story: "#000000",
-    statsBg: "#E1306C20",
-    statsIcon: "#E1306C",
-  },
-  icon: "M7.75 2h8.5A5.75 5.75 0 0 1 22 7.75v8.5A5.75 5.75 0 0 1 16.25 22h-8.5A5.75 5.75 0 0 1 2 16.25v-8.5A5.75 5.75 0 0 1 7.75 2Z",
-
-  patterns: [
-    /^https?:\/\/(?:www\.)?instagram\.com\/reel\/([\w-]+)/i,
-    /^https?:\/\/(?:www\.)?instagram\.com\/p\/([\w-]+)/i,
-  ],
-
-  authorUrlTemplate: "https://www.instagram.com/{username}",
-
-  stats: [
-    {
-      key: "play_count",
-      label: "Просмотры",
-      icon: "M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z",
-    },
-    {
-      key: "digg_count",
-      label: "Лайки",
-      icon: "M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z",
-    },
-    {
-      key: "comment_count",
-      label: "Комменты",
-      icon: "M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 0 1-.923 1.785A5.969 5.969 0 0 0 6 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337Z",
-    },
-    {
-      key: "share_count",
-      label: "Репосты",
-      icon: "M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z",
-    },
-  ],
-
-  extractId(url) {
-    const match = url.match(/\/(reel|p)\/([\w-]+)/i);
-    return match?.[2] || null;
-  },
-
-  buildUrlFromId(id) {
-    return `https://www.instagram.com/reel/${id}`;
-  },
-
-  async fetch(url, signal) {
-    const res = await fetch("https://api.fastsaverapi.com/download", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${FASTSAVER_API_KEY}`,
-      },
-      body: JSON.stringify({ url }),
-      signal,
-    });
-
-    if (!res.ok) {
-      throw new Error("FastSaver API error");
-    }
-
-    const data = await res.json();
-    const media = data?.media?.[0];
-
-    if (!media?.url) {
-      throw new Error("Видео не найдено");
-    }
-
-    return {
-      id: data.id,
-      play: media.url,
-      cover: data.thumbnail,
-      title: data.title,
-      duration: data.duration,
-
-      author: data.author && {
-        nickname: data.author.name,
-        unique_id: data.author.username,
-        avatar: data.author.avatar,
-      },
-
-      play_count: data.stats?.views,
-      digg_count: data.stats?.likes,
-      comment_count: data.stats?.comments,
-      share_count: data.stats?.shares,
-    };
-  },
-});
 
       window.Formatter = Formatter;
       window.PlatformRegistry = PlatformRegistry;
