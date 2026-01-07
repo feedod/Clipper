@@ -577,7 +577,7 @@
         x-show="!loading && !video"
       >
         <p class="mb-4 text-center text-sm text-muted">
-          Поддерживаемые платформы
+          Поддерживаемые платформы (только для просмотра/своего контента)
         </p>
         <div class="flex flex-wrap justify-center gap-3">
           <template x-for="p in PlatformRegistry.all()" :key="p.name">
@@ -861,7 +861,7 @@ class URLValidator {
         }
         
         buildUrlFromId(id) {
-  return `https://vm.tiktok.com/${id}`;
+    return this._buildUrlFromId?.(id) || null;
   }
       }
 
@@ -965,8 +965,8 @@ patterns: [
           return match?.[1] || null;
         },
         buildUrlFromId(id) {
-          return `https://www.tiktok.com/@./video/${id}`;
-        },
+  return `https://vm.tiktok.com/${id}`;
+},
         async fetch(url, signal) {
           const response = await fetch("https://www.tikwm.com/api/", {
             method: "POST",
@@ -1219,7 +1219,7 @@ detect() {
     }
 
     const shareUrl = `https://t.me/${BOT_USERNAME}/?startapp=${shareParam}`;
-    const shareText = `Скачай это видео с ${this.platform.name} через Clipper!`;
+    const shareText = `Сохрани это видео с ${this.platform.name} через @${BOT_USERNAME}`;
 
     const success = TelegramBridge.shareUrl(shareUrl, shareText);
 
