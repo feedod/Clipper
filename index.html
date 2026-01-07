@@ -799,6 +799,7 @@ class URLValidator {
           this.authorUrlTemplate = config.authorUrlTemplate;
           this._fetch = config.fetch;
           this._extractId = config.extractId;
+          this._buildUrlFromId = config.buildUrlFromId;
         }
 
         match(url) {
@@ -858,6 +859,10 @@ class URLValidator {
             return null;
           }
         }
+        
+        buildUrlFromId(id) {
+    return this._buildUrlFromId?.(id) || null;
+  }
       }
 
       class PlatformRegistry {
