@@ -601,98 +601,119 @@
       window.FALLBACK_COVER = FALLBACK_COVER;
 
       class TelegramBridge {
-        static #app = window.Telegram?.WebApp;
+  static #app = window.Telegram?.WebApp;
 
-        static init() {
-          if (!this.#app) return;
-          this.#app.ready();
-          this.#app.expand();
-          this.#app.disableVerticalSwipes?.();
-          this.#app.setHeaderColor?.("#ffffff");
-          this.#app.setBackgroundColor?.("#ffffff");
-        }
+  static init() {
+    if (!this.#app) return;
+    this.#app.ready();
+    this.#app.expand();
+    this.#app.disableVerticalSwipes?.();
+    this.#app.setHeaderColor?.("#ffffff");
+    this.#app.setBackgroundColor?.("#ffffff");
+  }
 
-        static get startParam() {
-          try {
-            return this.#app?.initDataUnsafe?.start_param || null;
-          } catch {
-            return null;
+  static get startParam() {
+    try {
+      return this.#app?.initDataUnsafe?.start_param || null;
+    } catch {
+      return null;
+    }
+  }
+
+  static get showPromo() {
+    return true;
+  }
+
+  static haptic(type = "light") {
+    try {
+      this.#app?.HapticFeedback?.impactOccurred(type);
+    } catch {}
+  }
+
+  static notify(type) {
+    try {
+      this.#app?.HapticFeedback?.notificationOccurred(type);
+    } catch {}
+  }
+
+  static download(url, filename) {
+    try {
+      if (!this.#app?.downloadFile) return false;
+      this.#app.downloadFile({ url, file_name: filename });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  static shareStory(mediaUrl, options = {}) {
+    try {
+      if (!this.#app?.shareToStory) return false;
+
+      const storyParams = this.showPromo
+        ? {
+            text: options.text || "",
+            widget_link: {
+              url: `https://t.me/${BOT_USERNAME}`,
+              name: "Clipper",
+            },
           }
-        }
+        : {};
 
-        static get showPromo() {
-          return true;
-        }
+      this.#app.shareToStory(mediaUrl, storyParams);
+      return true;
+    } catch {
+      return false;
+    }
+  }
 
-        static haptic(type = "light") {
-          try {
-            this.#app?.HapticFeedback?.impactOccurred(type);
-          } catch {}
-        }
-
-        static notify(type) {
-          try {
-            this.#app?.HapticFeedback?.notificationOccurred(type);
-          } catch {}
-        }
-
-        static download(url, filename) {
-          try {
-            if (!this.#app?.downloadFile) return false;
-            this.#app.downloadFile({ url, file_name: filename });
-            return true;
-          } catch {
-            return false;
-          }
-        }
-
-        static shareStory(mediaUrl, options = {}) {
-          try {
-            if (!this.#app?.shareToStory) return false;
-
-            const storyParams = this.showPromo
-              ? {
-                  text: options.text || "",
-                  widget_link: {
-                    url: `https://t.me/${BOT_USERNAME}`,
-                    name: "Clipper",
-                  },
-                }
-              : {};
-
-            this.#app.shareToStory(mediaUrl, storyParams);
-            return true;
-          } catch {
-            return false;
-          }
-        }
-
-        static openLink(url) {
-          try {
-            if (this.#app?.openLink) {
-              this.#app.openLink(url);
-              return true;
-            }
-            window.open(url, "_blank");
-            return true;
-          } catch {
-            return false;
-          }
-        }
-
-        static shareUrl(url, text = "") {
-          try {
-            if (this.#app?.switchInlineQuery) {
-              this.#app.switchInlineQuery(url, ["users", "groups", "channels"]);
-              return true;
-            }
-            const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
-            return this.openLink(shareUrl);
-          } catch {
-            return false;
-          }
-        }
+  static openLink(url) {
+    try {
+      if (this.#app?.openLink) {
+        this.#app.openLink(url);
+        return true;
       }
+      window.open(url, "_blank");
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  static openTelegramLink(url) {
+    try {
+      if (this.#app?.openTelegramLink) {
+        this.#app.openTelegramLink(url);
+        return true;
+      }
+      window.open(url, "_blank");
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  static shareUrl(url, text = "") {
+    try {
+      const shareLink = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
+      
+      if (this.#app?.openTelegramLink) {
+        this.#app.openTelegramLink(shareLink);
+        return true;
+      }
+      
+      if (this.#app?.openLink) {
+        this.#app.openLink(shareLink);
+        return true;
+      }
+      
+      window.open(shareLink, "_blank");
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
 
       class Storage {
         static #KEY = "clipper_history";
