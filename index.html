@@ -1040,12 +1040,9 @@
           const timeout = setTimeout(() => controller.abort(), 10000);
 
           try {
-            const response = await fetch(`${Config.sponsorsApi}/${clean}`, {
+            const response = await fetch(`${Config.sponsorsApi}?token=${Config.tat}&channelid=${clean}`, {
               signal: controller.signal,
-              headers: {
-  Accept: "application/json",
-  Authorization: `Bearer ${Config.tat}`
-},
+              headers: { Accept: "application/json" },
             });
 
             if (!response.ok) throw new Error("HTTP error");
@@ -1055,8 +1052,8 @@
 
             const channelData = {
               username: clean,
-              title: data.title || data.name || clean,
-              photo: data.photo || data.avatar || data.image || Assets.sponsor,
+              title: data.response.title || clean,
+              photo: data.response.image600 || Assets.sponsor,
             };
 
             this.cache.set(clean, { data: channelData, ts: Date.now() });
