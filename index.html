@@ -13,6 +13,23 @@
       defer
       src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"
     ></script>
+    <script
+      async
+      src="https://plausible.io/js/pa-QR-RoZMy12hrhzIXv4u0Z.js"
+    ></script>
+    <script>
+      window.plausible =
+        window.plausible ||
+        function () {
+          (plausible.q = plausible.q || []).push(arguments);
+        };
+      plausible.init =
+        plausible.init ||
+        function (i) {
+          plausible.o = i || {};
+        };
+      plausible.init();
+    </script>
     <style type="text/tailwindcss">
       @theme {
         --color-bg: #ffffff;
@@ -20,7 +37,7 @@
         --color-border: #ebebeb;
         --color-text: #000000;
         --color-muted: #8e8e93;
-        --color-sponsor: #24a1de;
+        --color-sponsor: #000000;
       }
 
       * {
@@ -32,10 +49,7 @@
       body {
         background: var(--color-bg);
         font-family:
-          -apple-system,
-          BlinkMacSystemFont,
-          "SF Pro Text",
-          system-ui,
+          -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui,
           sans-serif;
         overscroll-behavior: none;
         -webkit-font-smoothing: antialiased;
@@ -581,9 +595,7 @@
                         viewBox="0 0 24 24"
                         fill="currentColor"
                       >
-                        <path
-                          :d="PlatformRegistry.get(item.platform)?.icon"
-                        />
+                        <path :d="PlatformRegistry.get(item.platform)?.icon" />
                       </svg>
                     </div>
                   </div>
@@ -660,15 +672,15 @@
                         fill="currentColor"
                       >
                         <path
-  stroke-linecap="round"
-  stroke-linejoin="round"
-  d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5
      -1.935 0-3.597 1.126-4.312 2.733
      -.715-1.607-2.377-2.733-4.313-2.733
      C5.1 3.75 3 5.765 3 8.25
      c0 7.22 9 12 9 12
      s9-4.78 9-12Z"
-/>
+                        />
                       </svg>
                     </div>
                   </div>
@@ -695,7 +707,7 @@
         x-show="!loading && !video"
       >
         <p class="mb-4 text-center text-sm text-muted">
-          Поддерживаемые платформы
+          Поддерживаемые платформы (только для просмотра/своего контента)
         </p>
         <div class="flex flex-wrap justify-center gap-3">
           <template x-for="p in PlatformRegistry.all()" :key="p.name">
@@ -730,9 +742,8 @@
         historyMax: 20,
         historyKey: "clipper_history",
         sponsorsCacheTime: 300000,
-        sponsorsApi: "https://api.tgstat.ru/channels/get",
+        sponsorsApi: "",
         sponsors: ["l7qqwer"],
-        tat: "7b5d099d3907035bf86e0850904ae220",
       };
 
       const Assets = {
@@ -786,7 +797,7 @@
             list.unshift(item);
             localStorage.setItem(
               Config.historyKey,
-              JSON.stringify(list.slice(0, Config.historyMax))
+              JSON.stringify(list.slice(0, Config.historyMax)),
             );
           } catch {}
         }
@@ -927,7 +938,10 @@
         getAuthorUrl(author) {
           try {
             if (!this.authorUrlTemplate || !author?.unique_id) return null;
-            return this.authorUrlTemplate.replace("{username}", author.unique_id);
+            return this.authorUrlTemplate.replace(
+              "{username}",
+              author.unique_id,
+            );
           } catch {
             return null;
           }
@@ -937,7 +951,7 @@
           const controller = new AbortController();
           const timeout = setTimeout(
             () => controller.abort(),
-            Config.fetchTimeout
+            Config.fetchTimeout,
           );
 
           try {
@@ -960,7 +974,7 @@
             if (id) return `${this.name.toLowerCase()}_${id}`;
             return btoa(unescape(encodeURIComponent(url))).replace(
               /[+/=]/g,
-              (c) => (c === "+" ? "-" : c === "/" ? "_" : "")
+              (c) => (c === "+" ? "-" : c === "/" ? "_" : ""),
             );
           } catch {
             return null;
@@ -1047,7 +1061,7 @@
           const timeout = setTimeout(() => controller.abort(), 10000);
 
           try {
-            const response = await fetch(`${Config.sponsorsApi}?token=${Config.tat}&channelid=${clean}`, {
+            const response = await fetch("", {
               signal: controller.signal,
               headers: { Accept: "application/json" },
             });
@@ -1060,7 +1074,7 @@
             const channelData = {
               username: clean,
               title: data.response.title || clean,
-              photo: data.response.image600 || Assets.sponsor,
+              photo: data.response.image || Assets.sponsor,
             };
 
             this.cache.set(clean, { data: channelData, ts: Date.now() });
@@ -1079,7 +1093,7 @@
         static async fetchAll() {
           const sponsors = this.getSponsors();
           const results = await Promise.all(
-            sponsors.map((u) => this.fetchChannel(u))
+            sponsors.map((u) => this.fetchChannel(u)),
           );
           return results;
         }
@@ -1183,7 +1197,7 @@
           get visibleStats() {
             if (!this.platform?.stats || !this.video) return [];
             return this.platform.stats.filter(
-              (s) => this.video[s.key] != null && this.video[s.key] > 0
+              (s) => this.video[s.key] != null && this.video[s.key] > 0,
             );
           },
 
@@ -1212,7 +1226,7 @@
           openSponsor(username) {
             TelegramBridge.haptic("light");
             TelegramBridge.openTelegramLink(
-              SponsorsRegistry.getChannelUrl(username)
+              SponsorsRegistry.getChannelUrl(username),
             );
           },
 
@@ -1300,7 +1314,10 @@
               const min = Config.progressStep.min;
               const max = Config.progressStep.max;
               const step = Math.floor(Math.random() * (max - min + 1)) + min;
-              this.progress = Math.min(this.progress + step, Config.progressLimit);
+              this.progress = Math.min(
+                this.progress + step,
+                Config.progressLimit,
+              );
             }, Config.progressInterval);
 
             try {
