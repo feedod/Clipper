@@ -74,16 +74,6 @@
         outline: none;
       }
 
-      .selection-black::selection {
-        background-color: rgba(0, 0, 0, 0.15);
-        color: #000000;
-      }
-
-      .selection-black::-moz-selection {
-        background-color: rgba(0, 0, 0, 0.15);
-        color: #000000;
-      }
-
       .press {
         transition:
           transform 80ms ease,
@@ -377,7 +367,7 @@
                 >
               </div>
               <p
-                class="text-sm leading-relaxed text-text select-text caret-black selection-black"
+                class="text-sm leading-relaxed text-text"
                 x-text="video.title"
               ></p>
             </div>
