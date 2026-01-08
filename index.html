@@ -39,6 +39,19 @@
         --color-muted: #8e8e93;
       }
 
+      @layer utilities {
+        .selection-black {
+          ::selection {
+            background-color: rgba(0, 0, 0, 0.15);
+            color: #000000;
+          }
+          ::-moz-selection {
+            background-color: rgba(0, 0, 0, 0.15);
+            color: #000000;
+          }
+        }
+      }
+
       * {
         -webkit-tap-highlight-color: transparent;
         -webkit-touch-callout: none;
@@ -367,7 +380,7 @@
                 >
               </div>
               <p
-                class="text-sm leading-relaxed text-text select-text caret-black"
+                class="text-sm leading-relaxed text-text select-text selection-black"
                 x-text="video.title"
               ></p>
             </div>
