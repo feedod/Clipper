@@ -496,7 +496,7 @@
                   d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
                 />
               </svg>
-              <h2 class="font-semibold text-text">Недавние видео</h2>
+              <h2 class="font-semibold text-text">Недавние</h2>
             </div>
             <button
               x-show="history.length > 0"
@@ -1018,7 +1018,7 @@
             if (this.loading) return "Загрузка видео...";
             if (this.error) return "Попробуйте другую ссылку";
             if (this.video) return "Видео готово к сохранению";
-            if (this.platform) return `${this.platform.name} видео найдено`;
+            if (this.platform) return this.platform.name;
             return "Сохраняйте видео легко и быстро";
           },
 
