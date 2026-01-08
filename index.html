@@ -40,15 +40,13 @@
       }
 
       @layer utilities {
-        .selection-black {
-          ::selection {
+        .selection-black::selection {
             background-color: rgba(0, 0, 0, 0.15);
             color: #000000;
-          }
-          ::-moz-selection {
+        }
+        .selection-black::-moz-selection {
             background-color: rgba(0, 0, 0, 0.15);
             color: #000000;
-          }
         }
       }
 
