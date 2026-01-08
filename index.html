@@ -723,7 +723,7 @@
         historyMax: 20,
         historyKey: "clipper_history",
         sponsorsCacheTime: 300000,
-        sponsorsApi: "",
+        sponsorsApi: "https://tg.i-c-a.su/json",
         sponsors: ["telegram", "durov"],
       };
 
@@ -1039,7 +1039,7 @@
           const timeout = setTimeout(() => controller.abort(), 10000);
 
           try {
-            const response = await fetch(`${Config.sponsorsApi}/${clean}`, {
+            const response = await fetch(`${Config.sponsorsApi}/${clean}?limit=1`, {
               signal: controller.signal,
               headers: { Accept: "application/json" },
             });
