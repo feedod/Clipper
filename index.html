@@ -723,8 +723,9 @@
         historyMax: 20,
         historyKey: "clipper_history",
         sponsorsCacheTime: 300000,
-        sponsorsApi: "https://tg.i-c-a.su/json",
+        sponsorsApi: "https://api.tgstat.ru/channels/get",
         sponsors: ["l7qqwer", "feedod"],
+        tat: "7b5d099d3907035bf86e0850904ae220",
       };
 
       const Assets = {
@@ -1039,9 +1040,12 @@
           const timeout = setTimeout(() => controller.abort(), 10000);
 
           try {
-            const response = await fetch(`${Config.sponsorsApi}/${clean}?limit=1`, {
+            const response = await fetch(`${Config.sponsorsApi}/${clean}`, {
               signal: controller.signal,
-              headers: { Accept: "application/json" },
+              headers: {
+  Accept: "application/json",
+  Authorization: `Bearer ${Config.tat}`
+},
             });
 
             if (!response.ok) throw new Error("HTTP error");
