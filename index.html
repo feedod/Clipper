@@ -621,16 +621,16 @@
     <p class="mb-4 text-sm text-muted">Для загрузки видео подпишитесь на каналы спонсоров</p>
 
     <template x-if="sponsorsLoading">
-      <div class="grid grid-cols-3 gap-3">
-        <template x-for="i in 3" :key="i">
-          <div class="flex flex-col items-center gap-3 rounded-2xl border border-border bg-surface p-4">
-            <div class="h-14 w-14 rounded-full skeleton"></div>
-            <div class="h-4 w-16 rounded skeleton"></div>
-            <div class="h-3 w-12 rounded skeleton"></div>
-          </div>
-        </template>
+  <div class="grid gap-3" :class="{ 'grid-cols-1': sponsorsCount === 1, 'grid-cols-2': sponsorsCount === 2, 'grid-cols-3': sponsorsCount >= 3 }">
+    <template x-for="i in sponsorsCount" :key="i">
+      <div class="flex flex-col items-center gap-3 rounded-2xl border border-border bg-surface p-4">
+        <div class="h-14 w-14 rounded-full skeleton"></div>
+        <div class="h-4 w-16 rounded skeleton"></div>
+        <div class="h-3 w-12 rounded skeleton"></div>
       </div>
     </template>
+  </div>
+</template>
 
     <template x-if="!sponsorsLoading">
       <div class="grid gap-3" :class="{ 'grid-cols-1': unsubscribedSponsors.length === 1, 'grid-cols-2': unsubscribedSponsors.length === 2, 'grid-cols-3': unsubscribedSponsors.length >= 3 }">
@@ -1021,35 +1021,36 @@
   }
 
   static async fetchChannel(username) {
-    const clean = username.replace(/^@/, "").trim();
-    const cached = this.cache.get(clean);
-    if (cached) return cached;
+  const clean = username.replace(/^@/, "").trim();
+  const cached = this.cache.get(clean);
+  if (cached) return cached;
 
-    try {
-      const chat = await this.apiCall("getChat", { chat_id: `@${clean}` });
-      if (!chat.ok || !chat.result) throw new Error();
+  try {
+    const chat = await this.apiCall("getChat", { chat_id: `@${clean}` });
+    if (!chat.ok || !chat.result) throw new Error();
 
-      let photoUrl = Assets.sponsor;
+    let photoUrl = Assets.sponsor;
 
-      if (chat.result.photo?.big_file_id) {
-        const file = await this.apiCall("getFile", { file_id: chat.result.photo.big_file_id });
-        if (file.ok && file.result?.file_path) {
-          photoUrl = `${Config.apiUrl}/file/${file.result.file_path}`;
-        }
+    if (chat.result.photo?.big_file_id) {
+      const file = await this.apiCall("getFile", { file_id: chat.result.photo.big_file_id });
+      if (file.ok && file.result?.file_path) {
+        const botToken = Config.apiUrl.split('/bot')[1];
+        photoUrl = `https://api.telegram.org/file/bot${botToken}/${file.result.file_path}`;
       }
-
-      const channelData = {
-        username: clean,
-        title: chat.result.title || clean,
-        photo: photoUrl,
-      };
-
-      this.cache.set(clean, channelData);
-      return channelData;
-    } catch {
-      return { username: clean, title: clean, photo: Assets.sponsor };
     }
+
+    const channelData = {
+      username: clean,
+      title: chat.result.title || clean,
+      photo: photoUrl,
+    };
+
+    this.cache.set(clean, channelData);
+    return channelData;
+  } catch {
+    return { username: clean, title: clean, photo: Assets.sponsor };
   }
+}
 
   static async checkSubscription(username) {
     const userId = this.getUserId();
@@ -1201,6 +1202,10 @@
 
 get hasUnsubscribedSponsors() {
   return this.unsubscribedSponsors.length > 0;
+},
+
+get sponsorsCount() {
+  return Config.sponsors.length;
 },
 
           init() {
