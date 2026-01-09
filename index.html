@@ -263,15 +263,184 @@
       </template>
 
       <template x-if="error && !loading">
-        <section
-          class="fade mt-6 rounded-2xl border border-red-100 bg-red-50 p-4"
+  <section
+    x-ref="errorSection"
+    x-init="$nextTick(() => scrollToError())"
+    class="fade mt-6 rounded-2xl border border-red-100 bg-red-50 p-4"
+  >
+    <div class="flex items-start gap-3">
+      <div
+        class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-red-100"
+      >
+        <svg
+          class="h-5 w-5 text-red-500"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          viewBox="0 0 24 24"
         >
-          <div class="flex items-start gap-3">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0zm-9 3.75h.008v.008H12v-.008z"
+          />
+        </svg>
+      </div>
+      <div class="min-w-0 flex-1 pt-0.5">
+        <p class="text-sm font-semibold text-red-600">Ошибка</p>
+        <p class="mt-0.5 text-sm text-red-500" x-text="error"></p>
+      </div>
+    </div>
+  </section>
+</template>
+
+      <template x-if="video && !loading">
+  <section class="fade mt-6 space-y-4">
+    <div
+      class="overflow-hidden rounded-2xl border border-border bg-surface"
+    >
+      <div class="relative h-[56dvh] w-full bg-black">
+        <video
+          :src="video.play"
+          :poster="video.cover"
+          class="absolute inset-0 h-full w-full object-contain"
+          controls
+          playsinline
+          webkit-playsinline
+        ></video>
+        <div
+          class="absolute left-3 top-3 flex items-center gap-1.5 rounded-lg bg-white/95 px-2.5 py-1.5 shadow-sm"
+        >
+          <svg
+            class="h-4 w-4"
+            :style="{ color: platform?.colors?.icon }"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path :d="platform?.icon" />
+          </svg>
+          <span
+            class="text-xs font-semibold text-text"
+            x-text="platform?.name"
+          ></span>
+        </div>
+        <div
+          class="absolute right-3 top-3 flex items-center justify-center rounded-lg bg-white/95 px-2.5 py-1.5 shadow-sm"
+        >
+          <span
+            class="text-xs font-semibold leading-none text-text"
+            x-text="NumberFormatter.formatDuration(video.duration)"
+          ></span>
+        </div>
+        <div
+          class="absolute bottom-3 right-3 flex items-center justify-center rounded-lg bg-white/95 px-2.5 py-1.5 shadow-sm"
+        >
+          <span
+            class="text-xs font-semibold leading-none text-text"
+            x-text="currentQualityLabel"
+          ></span>
+        </div>
+      </div>
+    </div>
+
+    <template x-if="hasMultipleQualities">
+      <div class="flex gap-2">
+        <template x-for="q in availableQualities" :key="q.key">
+          <button
+            @click="selectQuality(q.key)"
+            :class="selectedQuality === q.key ? 'border-text bg-text text-white' : 'border-border bg-surface text-text'"
+            class="flex-1 rounded-xl border py-2.5 text-sm font-semibold transition-all duration-75 ease-out active:scale-[0.97]"
+            x-text="q.label"
+          ></button>
+        </template>
+      </div>
+    </template>
+
+    <button
+      @click="openAuthorProfile"
+      class="flex w-full items-center gap-3 rounded-2xl border border-border bg-surface p-4 text-left transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80"
+    >
+      <img
+        :src="video.author?.avatar"
+        :alt="video.author?.nickname"
+        @error="$event.target.src = AppAssets.avatar"
+        class="h-12 w-12 rounded-full border border-border object-cover"
+      />
+      <div class="min-w-0 flex-1">
+        <p
+          class="truncate font-semibold text-text"
+          x-text="video.author?.nickname || 'Неизвестный автор'"
+        ></p>
+        <p
+          class="truncate text-sm text-muted"
+          x-text="video.author?.unique_id ? '@' + video.author.unique_id : ''"
+        ></p>
+      </div>
+      <svg
+        class="h-5 w-5 shrink-0"
+        :style="{ color: platform?.colors?.icon }"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+      >
+        <path :d="platform?.icon" />
+      </svg>
+      <svg
+        class="h-4 w-4 shrink-0 text-muted"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="m8.25 4.5 7.5 7.5-7.5 7.5"
+        />
+      </svg>
+    </button>
+
+    <template x-if="video.title">
+      <div class="rounded-2xl border border-border bg-surface p-4">
+        <div class="mb-2 flex items-center gap-2">
+          <svg
+            class="h-4 w-4 text-muted"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M4.5 6.75h15M4.5 12h15M4.5 17.25h9"
+            />
+          </svg>
+          <span
+            class="text-xs font-semibold uppercase tracking-wide text-muted"
+            >Описание</span
+          >
+        </div>
+        <p
+          class="text-sm leading-relaxed text-text"
+          x-text="video.title"
+        ></p>
+      </div>
+    </template>
+
+    <template x-if="visibleStats.length > 0">
+      <div
+        class="grid gap-2 rounded-2xl border border-border bg-surface p-3"
+        :style="{ gridTemplateColumns: 'repeat(' + visibleStats.length + ', minmax(0, 1fr))' }"
+      >
+        <template x-for="stat in visibleStats" :key="stat.key">
+          <div class="py-2 text-center">
             <div
-              class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-red-100"
+              class="mx-auto grid h-9 w-9 place-items-center rounded-full"
+              :style="{ backgroundColor: platform?.colors?.statsBg }"
             >
               <svg
-                class="h-5 w-5 text-red-500"
+                class="h-4 w-4"
+                :style="{ color: platform?.colors?.statsIcon }"
                 fill="none"
                 stroke="currentColor"
                 stroke-width="1.5"
@@ -280,433 +449,305 @@
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
-                  d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0zm-9 3.75h.008v.008H12v-.008z"
+                  :d="stat.icon"
                 />
               </svg>
             </div>
-            <div class="min-w-0 flex-1 pt-0.5">
-              <p class="text-sm font-semibold text-red-600">Ошибка</p>
-              <p class="mt-0.5 text-sm text-red-500" x-text="error"></p>
-            </div>
+            <p
+              class="mt-1 text-sm font-semibold text-text"
+              x-text="NumberFormatter.formatCompact(video[stat.key])"
+            ></p>
+            <p
+              class="mt-0.5 text-[10px] text-muted"
+              x-text="stat.label"
+            ></p>
           </div>
-        </section>
-      </template>
+        </template>
+      </div>
+    </template>
 
-      <template x-if="video && !loading">
-        <section class="fade mt-6 space-y-4">
+    <div class="grid grid-cols-2 gap-3 pt-2">
+      <button
+        @click="saveVideo"
+        :style="{ backgroundColor: platform?.colors?.save }"
+        class="flex h-14 items-center justify-center gap-2 rounded-2xl font-semibold text-white transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80"
+      >
+        <svg
+          class="h-5 w-5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"
+          />
+        </svg>
+        <span>Сохранить</span>
+      </button>
+      <button
+        @click="shareStory"
+        :style="{ backgroundColor: platform?.colors?.story }"
+        class="flex h-14 items-center justify-center gap-2 rounded-2xl font-semibold text-white transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80"
+      >
+        <svg
+          class="h-5 w-5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+          />
+        </svg>
+        <span>В историю</span>
+      </button>
+    </div>
+
+    <button
+      @click="shareLink"
+      class="flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl border border-border bg-surface font-semibold text-text transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80"
+    >
+      <svg
+        class="h-5 w-5 text-muted"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"
+        />
+      </svg>
+      <span>Поделиться ссылкой</span>
+    </button>
+  </section>
+</template>
+
+      <template x-if="!loading && !video">
+  <section
+    x-ref="sponsorSection"
+    x-show="sponsorsLoading || unsubscribedSponsors.length > 0"
+    x-transition:enter="transition-all duration-300 ease-out"
+    x-transition:enter-start="opacity-0 max-h-0 overflow-hidden"
+    x-transition:enter-end="opacity-100 max-h-[500px]"
+    x-transition:leave="transition-all duration-300 ease-in"
+    x-transition:leave-start="opacity-100 max-h-[500px]"
+    x-transition:leave-end="opacity-0 max-h-0 overflow-hidden"
+    class="fade mt-8"
+    style="animation-delay: 120ms"
+  >
+    <div class="mb-4 flex items-center gap-2">
+      <svg
+        class="h-5 w-5 text-muted"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"
+        />
+      </svg>
+      <h2 class="font-semibold text-text">Подпишитесь на спонсоров</h2>
+    </div>
+
+    <p class="mb-4 text-sm text-muted">
+      Для загрузки видео подпишитесь на каналы спонсоров
+    </p>
+
+    <template x-if="sponsorsLoading">
+      <div
+        class="grid gap-3"
+        :class="{ 'grid-cols-1': sponsorsCount === 1, 'grid-cols-2': sponsorsCount === 2, 'grid-cols-3': sponsorsCount >= 3 }"
+      >
+        <template x-for="i in sponsorsCount" :key="i">
           <div
-            class="overflow-hidden rounded-2xl border border-border bg-surface"
+            class="flex flex-col items-center gap-3 rounded-2xl border border-border bg-surface p-4"
           >
-            <div class="relative h-[56dvh] w-full bg-black">
-              <video
-                :src="video.play"
-                :poster="video.cover"
-                class="absolute inset-0 h-full w-full object-contain"
-                controls
-                playsinline
-                webkit-playsinline
-              ></video>
+            <div class="h-14 w-14 rounded-full skeleton"></div>
+            <div class="h-4 w-16 rounded skeleton"></div>
+            <div class="h-3 w-12 rounded skeleton"></div>
+          </div>
+        </template>
+      </div>
+    </template>
+
+    <template x-if="!sponsorsLoading">
+      <div
+        class="grid gap-3"
+        :class="{ 'grid-cols-1': unsubscribedSponsors.length === 1, 'grid-cols-2': unsubscribedSponsors.length === 2, 'grid-cols-3': unsubscribedSponsors.length >= 3 }"
+      >
+        <template
+          x-for="sponsor in unsubscribedSponsors"
+          :key="sponsor.username"
+        >
+          <button
+            @click="openSponsor(sponsor.username)"
+            class="flex flex-col items-center gap-3 rounded-2xl border border-border bg-surface p-4 text-center transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80"
+          >
+            <img
+              :src="sponsor.photo"
+              :alt="sponsor.title"
+              @error="$event.target.src = AppAssets.sponsor"
+              class="h-14 w-14 rounded-full border-2 border-border object-cover"
+            />
+            <div class="w-full min-w-0">
+              <p
+                class="truncate text-sm font-semibold text-text"
+                x-text="sponsor.title"
+              ></p>
+              <p
+                class="truncate text-xs text-muted"
+                x-text="'@' + sponsor.username"
+              ></p>
+            </div>
+          </button>
+        </template>
+      </div>
+    </template>
+
+    <button
+      @click="refreshSubscriptions"
+      :disabled="sponsorsLoading"
+      class="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-border bg-surface font-semibold text-text transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80 disabled:opacity-40"
+    >
+      <svg
+        class="h-5 w-5 text-muted"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
+        />
+      </svg>
+      <span>Проверить подписки</span>
+    </button>
+  </section>
+</template>
+
+      <template x-if="!loading && !video">
+  <section class="fade mt-8" style="animation-delay: 100ms">
+    <div class="mb-4 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <svg
+          class="h-5 w-5 text-muted"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+          />
+        </svg>
+        <h2 class="font-semibold text-text">Недавние видео</h2>
+      </div>
+      <button
+        x-show="history.length > 0"
+        @click="clearHistory"
+        class="text-sm text-muted transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80"
+      >
+        Очистить
+      </button>
+    </div>
+
+    <template x-if="history.length === 0">
+      <div
+        class="rounded-2xl border border-border bg-surface p-6 text-center"
+      >
+        <div
+          class="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-border"
+        >
+          <svg
+            class="h-7 w-7 text-muted"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z"
+            />
+          </svg>
+        </div>
+        <p class="font-semibold text-text">История пуста</p>
+        <p class="mt-1 text-sm text-muted">
+          Сохраните видео, чтобы оно появилось здесь
+        </p>
+      </div>
+    </template>
+
+    <template x-if="history.length > 0">
+      <div
+        class="-mx-5 flex gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden"
+      >
+        <template x-for="item in history" :key="item.id">
+          <button
+            @click="loadFromHistory(item)"
+            class="w-[88px] shrink-0 transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80"
+          >
+            <div
+              class="relative mb-2 h-[120px] w-[88px] overflow-hidden rounded-xl border border-border"
+            >
+              <img
+                :src="item.cover"
+                @error="$event.target.src = AppAssets.cover"
+                class="h-full w-full object-cover"
+                loading="lazy"
+              />
               <div
-                class="absolute left-3 top-3 flex items-center gap-1.5 rounded-lg bg-white/95 px-2.5 py-1.5 shadow-sm"
+                class="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/60 to-transparent"
+              ></div>
+              <div
+                class="absolute bottom-2 left-2 grid h-5 w-5 place-items-center rounded-full bg-white"
               >
                 <svg
-                  class="h-4 w-4"
-                  :style="{ color: platform?.colors?.icon }"
+                  class="h-3 w-3"
+                  :style="{ color: PlatformRegistry.get(item.platform)?.colors?.icon }"
                   viewBox="0 0 24 24"
                   fill="currentColor"
                 >
-                  <path :d="platform?.icon" />
+                  <path :d="PlatformRegistry.get(item.platform)?.icon" />
                 </svg>
-                <span
-                  class="text-xs font-semibold text-text"
-                  x-text="platform?.name"
-                ></span>
               </div>
               <div
-                class="absolute right-3 top-3 flex items-center justify-center rounded-lg bg-white/95 px-2.5 py-1.5 shadow-sm"
+                x-show="item.quality"
+                class="absolute bottom-2 right-2 rounded bg-white/90 px-1 py-0.5"
               >
                 <span
-                  class="text-xs font-semibold leading-none text-text"
-                  x-text="Formatter.time(video.duration)"
+                  class="text-[9px] font-semibold leading-none text-text"
+                  x-text="item.quality"
                 ></span>
               </div>
             </div>
-          </div>
-
-          <button
-            @click="openAuthorProfile"
-            class="press flex w-full items-center gap-3 rounded-2xl border border-border bg-surface p-4 text-left"
-          >
-            <img
-              :src="video.author?.avatar"
-              :alt="video.author?.nickname"
-              @error="$event.target.src = Assets.avatar"
-              class="h-12 w-12 rounded-full border border-border object-cover"
-            />
-            <div class="min-w-0 flex-1">
-              <p
-                class="truncate font-semibold text-text"
-                x-text="video.author?.nickname || 'Неизвестный автор'"
-              ></p>
-              <p
-                class="truncate text-sm text-muted"
-                x-text="video.author?.unique_id ? '@' + video.author.unique_id : ''"
-              ></p>
-            </div>
-            <svg
-              class="h-5 w-5 shrink-0"
-              :style="{ color: platform?.colors?.icon }"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-            >
-              <path :d="platform?.icon" />
-            </svg>
-            <svg
-              class="h-4 w-4 shrink-0 text-muted"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="m8.25 4.5 7.5 7.5-7.5 7.5"
-              />
-            </svg>
+            <p
+              class="truncate text-left text-xs text-muted"
+              x-text="item.author"
+            ></p>
           </button>
-
-          <template x-if="video.title">
-            <div class="rounded-2xl border border-border bg-surface p-4">
-              <div class="mb-2 flex items-center gap-2">
-                <svg
-                  class="h-4 w-4 text-muted"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M4.5 6.75h15M4.5 12h15M4.5 17.25h9"
-                  />
-                </svg>
-                <span
-                  class="text-xs font-semibold uppercase tracking-wide text-muted"
-                  >Описание</span
-                >
-              </div>
-              <p
-                class="text-sm leading-relaxed text-text"
-                x-text="video.title"
-              ></p>
-            </div>
-          </template>
-
-          <template x-if="visibleStats.length > 0">
-            <div
-              class="grid gap-2 rounded-2xl border border-border bg-surface p-3"
-              :style="{ gridTemplateColumns: 'repeat(' + visibleStats.length + ', minmax(0, 1fr))' }"
-            >
-              <template x-for="stat in visibleStats" :key="stat.key">
-                <div class="py-2 text-center">
-                  <div
-                    class="mx-auto grid h-9 w-9 place-items-center rounded-full"
-                    :style="{ backgroundColor: platform?.colors?.statsBg }"
-                  >
-                    <svg
-                      class="h-4 w-4"
-                      :style="{ color: platform?.colors?.statsIcon }"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.5"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        :d="stat.icon"
-                      />
-                    </svg>
-                  </div>
-                  <p
-                    class="mt-1 text-sm font-semibold text-text"
-                    x-text="Formatter.number(video[stat.key])"
-                  ></p>
-                  <p
-                    class="mt-0.5 text-[10px] text-muted"
-                    x-text="stat.label"
-                  ></p>
-                </div>
-              </template>
-            </div>
-          </template>
-
-          <div class="grid grid-cols-2 gap-3 pt-2">
-            <button
-              @click="saveVideo"
-              :style="{ backgroundColor: platform?.colors?.save }"
-              class="press flex h-14 items-center justify-center gap-2 rounded-2xl font-semibold text-white"
-            >
-              <svg
-                class="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"
-                />
-              </svg>
-              <span>Сохранить</span>
-            </button>
-            <button
-              @click="shareStory"
-              :style="{ backgroundColor: platform?.colors?.story }"
-              class="press flex h-14 items-center justify-center gap-2 rounded-2xl font-semibold text-white"
-            >
-              <svg
-                class="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                />
-              </svg>
-              <span>В историю</span>
-            </button>
-          </div>
-
-          <button
-            @click="shareLink"
-            class="press flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl border border-border bg-surface font-semibold text-text"
-          >
-            <svg
-              class="h-5 w-5 text-muted"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"
-              />
-            </svg>
-            <span>Поделиться ссылкой</span>
-          </button>
-        </section>
-      </template>
-
-      <template
-        x-if="!loading && !video && (sponsorsLoading || unsubscribedSponsors.length > 0)"
-      >
-        <section class="fade mt-8" style="animation-delay: 120ms">
-          <div class="mb-4 flex items-center gap-2">
-            <svg
-              class="h-5 w-5 text-muted"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"
-              />
-            </svg>
-            <h2 class="font-semibold text-text">Подпишитесь на спонсоров</h2>
-          </div>
-
-          <p class="mb-4 text-sm text-muted">
-            Для загрузки видео подпишитесь на каналы спонсоров
-          </p>
-
-          <template x-if="sponsorsLoading">
-            <div
-              class="grid gap-3"
-              :class="{ 'grid-cols-1': sponsorsCount === 1, 'grid-cols-2': sponsorsCount === 2, 'grid-cols-3': sponsorsCount >= 3 }"
-            >
-              <template x-for="i in sponsorsCount" :key="i">
-                <div
-                  class="flex flex-col items-center gap-3 rounded-2xl border border-border bg-surface p-4"
-                >
-                  <div class="h-14 w-14 rounded-full skeleton"></div>
-                  <div class="h-4 w-16 rounded skeleton"></div>
-                  <div class="h-3 w-12 rounded skeleton"></div>
-                </div>
-              </template>
-            </div>
-          </template>
-
-          <template x-if="!sponsorsLoading">
-            <div
-              class="grid gap-3"
-              :class="{ 'grid-cols-1': unsubscribedSponsors.length === 1, 'grid-cols-2': unsubscribedSponsors.length === 2, 'grid-cols-3': unsubscribedSponsors.length >= 3 }"
-            >
-              <template
-                x-for="sponsor in unsubscribedSponsors"
-                :key="sponsor.username"
-              >
-                <button
-                  @click="openSponsor(sponsor.username)"
-                  class="sponsor-card flex flex-col items-center gap-3 rounded-2xl border border-border bg-surface p-4 text-center"
-                >
-                  <img
-                    :src="sponsor.photo"
-                    :alt="sponsor.title"
-                    @error="$event.target.src = Assets.sponsor"
-                    class="h-14 w-14 rounded-full border-2 border-border object-cover"
-                  />
-                  <div class="w-full min-w-0">
-                    <p
-                      class="truncate text-sm font-semibold text-text"
-                      x-text="sponsor.title"
-                    ></p>
-                    <p
-                      class="truncate text-xs text-muted"
-                      x-text="'@' + sponsor.username"
-                    ></p>
-                  </div>
-                </button>
-              </template>
-            </div>
-          </template>
-
-          <button
-            @click="refreshSubscriptions"
-            :disabled="sponsorsLoading"
-            class="press mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-border bg-surface font-semibold text-text disabled:opacity-40"
-          >
-            <svg
-              class="h-5 w-5 text-muted"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
-              />
-            </svg>
-            <span>Проверить подписки</span>
-          </button>
-        </section>
-      </template>
-
-      <template x-if="!loading && !video">
-        <section class="fade mt-8" style="animation-delay: 100ms">
-          <div class="mb-4 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <svg
-                class="h-5 w-5 text-muted"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.5"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                />
-              </svg>
-              <h2 class="font-semibold text-text">Недавние видео</h2>
-            </div>
-            <button
-              x-show="history.length > 0"
-              @click="clearHistory"
-              class="press text-sm text-muted"
-            >
-              Очистить
-            </button>
-          </div>
-
-          <template x-if="history.length === 0">
-            <div
-              class="rounded-2xl border border-border bg-surface p-6 text-center"
-            >
-              <div
-                class="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-border"
-              >
-                <svg
-                  class="h-7 w-7 text-muted"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z"
-                  />
-                </svg>
-              </div>
-              <p class="font-semibold text-text">История пуста</p>
-              <p class="mt-1 text-sm text-muted">
-                Сохраните видео, чтобы оно появилось здесь
-              </p>
-            </div>
-          </template>
-
-          <template x-if="history.length > 0">
-            <div
-              class="no-scrollbar -mx-5 flex gap-3 overflow-x-auto px-5 pb-2"
-            >
-              <template x-for="item in history" :key="item.id">
-                <button
-                  @click="loadHistory(item)"
-                  class="press w-[88px] shrink-0"
-                >
-                  <div
-                    class="relative mb-2 h-[120px] w-[88px] overflow-hidden rounded-xl border border-border"
-                  >
-                    <img
-                      :src="item.cover"
-                      @error="$event.target.src = Assets.cover"
-                      class="h-full w-full object-cover"
-                      loading="lazy"
-                    />
-                    <div
-                      class="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/60 to-transparent"
-                    ></div>
-                    <div
-                      class="absolute bottom-2 left-2 grid h-5 w-5 place-items-center rounded-full bg-white"
-                    >
-                      <svg
-                        class="h-3 w-3"
-                        :style="{ color: PlatformRegistry.get(item.platform)?.colors?.icon }"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                      >
-                        <path :d="PlatformRegistry.get(item.platform)?.icon" />
-                      </svg>
-                    </div>
-                  </div>
-                  <p
-                    class="truncate text-left text-xs text-muted"
-                    x-text="item.author"
-                  ></p>
-                </button>
-              </template>
-            </div>
-          </template>
-        </section>
-      </template>
+        </template>
+      </div>
+    </template>
+  </section>
+</template>
 
       <footer
         class="fade mt-auto pt-12"
