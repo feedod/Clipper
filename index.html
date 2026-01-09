@@ -609,7 +609,7 @@
         </section>
       </template>
 
-      <template x-if="!loading && !video && unsubscribedSponsors.length > 0">
+      <template x-if="!loading && !video && (sponsorsLoading || unsubscribedSponsors.length > 0)">
   <section class="fade mt-8" style="animation-delay: 120ms">
     <div class="mb-4 flex items-center gap-2">
       <svg class="h-5 w-5 text-muted" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
