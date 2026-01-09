@@ -699,6 +699,27 @@
   sponsors: ["chernoviki_zhizni"],
 };
 
+const Config = {
+  bot: "ClipperAppBot",
+  
+  // Режим API: "direct" (небезопасно, для разработки) или "server" (продакшен)
+  apiMode: "direct",
+  
+  // Для режима "server"
+  serverUrl: "",
+  
+  // (ТОЛЬКО ДЛЯ РАЗРАБОТКИ!)
+  botApiUrl: "https://api.telegram.org/bot8552683939:AAHHXzouRwj23IOG9qqFg1W301uwMnbenlc",
+  
+  fetchTimeout: 15000,
+  progressInterval: 100,
+  progressStep: { min: 2, max: 10 },
+  progressLimit: 95,
+  historyMax: 20,
+  historyKey: "clipper_history",
+  sponsors: ["chernoviki_zhizni"],
+};
+
       const Assets = {
         avatar:
           "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 48 48%22><rect fill=%22%23e5e5e5%22 width=%2248%22 height=%2248%22/></svg>",
@@ -995,14 +1016,69 @@
         }
       }
 
-      class SponsorsRegistry {
+class ApiClient {
+  static async request(endpoint, data = {}) {
+    const url = this.buildUrl(endpoint);
+    const options = this.buildOptions(endpoint, data);
+    
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), Config.fetchTimeout);
+    
+    try {
+      const response = await fetch(url, { ...options, signal: controller.signal });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
+      return await response.json();
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+  
+  static buildUrl(endpoint) {
+    if (Config.apiMode === "server") {
+      // Серверный режим
+      return `${Config.serverUrl}/${endpoint}`;
+    }
+    
+    // Прямой режим (небезопасно!)
+    return `${Config.botApiUrl}/${endpoint}`;
+  }
+  
+  static buildOptions(endpoint, data) {
+    const baseOptions = {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    };
+    
+    if (Config.apiMode === "server") {
+      return {
+        ...baseOptions,
+        body: JSON.stringify({
+          ...data,
+          initData: TelegramBridge.app?.initData || "",
+        }),
+      };
+    }
+    
+    // Прямой режим (небезопасно!)
+    return {
+      ...baseOptions,
+      body: JSON.stringify(data),
+    };
+  }
+}
+
+class SponsorsService {
   static cache = new Map();
   static subscriptionCache = new Map();
-
+  
   static getSponsors() {
     return Config.sponsors.slice(0, 3);
   }
-
+  
   static getUserId() {
     try {
       return TelegramBridge.app?.initDataUnsafe?.user?.id || null;
@@ -1010,78 +1086,146 @@
       return null;
     }
   }
-
-  static async apiCall(method, data) {
-    const response = await fetch(`${Config.apiUrl}/${method}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    return response.json();
-  }
-
+  
   static async fetchChannel(username) {
-  const clean = username.replace(/^@/, "").trim();
-  const cached = this.cache.get(clean);
-  if (cached) return cached;
-
-  try {
-    const chat = await this.apiCall("getChat", { chat_id: `@${clean}` });
+    const clean = username.replace(/^@/, "").trim();
+    const cached = this.cache.get(clean);
+    if (cached) return cached;
+    
+    try {
+      if (Config.apiMode === "server") {
+        // Серверный режим
+        const result = await ApiClient.request("sponsors/channel", { username: clean });
+        
+        if (!result.ok) throw new Error();
+        
+        const channelData = {
+          username: clean,
+          title: result.data.title || clean,
+          photo: result.data.photo || Assets.sponsor,
+        };
+        
+        this.cache.set(clean, channelData);
+        return channelData;
+      }
+      
+      // Прямой режим (небезопасно!)
+      return await this._fetchChannelDirect(clean);
+    } catch {
+      return { username: clean, title: clean, photo: Assets.sponsor };
+    }
+  }
+  
+  // Прямой режим (небезопасно!)
+  static async _fetchChannelDirect(clean) {
+    const chat = await ApiClient.request("getChat", { chat_id: `@${clean}` });
+    
     if (!chat.ok || !chat.result) throw new Error();
-
+    
     let photoUrl = Assets.sponsor;
-
+    
     if (chat.result.photo?.big_file_id) {
-      const file = await this.apiCall("getFile", { file_id: chat.result.photo.big_file_id });
+      const file = await ApiClient.request("getFile", { 
+        file_id: chat.result.photo.big_file_id 
+      });
+      
       if (file.ok && file.result?.file_path) {
-        const botToken = Config.apiUrl.split('/bot')[1];
+        const botToken = Config.botApiUrl.split('/bot')[1];
         photoUrl = `https://api.telegram.org/file/bot${botToken}/${file.result.file_path}`;
       }
     }
-
+    
     const channelData = {
       username: clean,
       title: chat.result.title || clean,
       photo: photoUrl,
     };
-
+    
     this.cache.set(clean, channelData);
     return channelData;
-  } catch {
-    return { username: clean, title: clean, photo: Assets.sponsor };
   }
-}
-
+  
   static async checkSubscription(username) {
     const userId = this.getUserId();
     if (!userId) return false;
-
+    
     const clean = username.replace(/^@/, "").trim();
     const cacheKey = `${userId}_${clean}`;
     const cached = this.subscriptionCache.get(cacheKey);
     if (cached !== undefined) return cached;
-
+    
     try {
-      const member = await this.apiCall("getChatMember", { chat_id: `@${clean}`, user_id: userId });
-
-      if (!member.ok || !member.result) {
-        this.subscriptionCache.set(cacheKey, false);
-        return false;
+      if (Config.apiMode === "server") {
+        // Серверный режим
+        const result = await ApiClient.request("sponsors/check", { 
+          username: clean 
+        });
+        
+        const isSubscribed = result.ok && result.subscribed === true;
+        this.subscriptionCache.set(cacheKey, isSubscribed);
+        return isSubscribed;
       }
-
-      const isSubscribed = ["creator", "administrator", "member"].includes(member.result.status);
-      this.subscriptionCache.set(cacheKey, isSubscribed);
-      return isSubscribed;
+      
+      // Прямой режим (небезопасно!)
+      return await this._checkSubscriptionDirect(clean, userId, cacheKey);
     } catch {
       this.subscriptionCache.set(cacheKey, false);
       return false;
     }
   }
-
+  
+  // Прямой режим (небезопасно!)
+  static async _checkSubscriptionDirect(clean, userId, cacheKey) {
+    const member = await ApiClient.request("getChatMember", { 
+      chat_id: `@${clean}`, 
+      user_id: userId 
+    });
+    
+    if (!member.ok || !member.result) {
+      this.subscriptionCache.set(cacheKey, false);
+      return false;
+    }
+    
+    const isSubscribed = ["creator", "administrator", "member"].includes(
+      member.result.status
+    );
+    this.subscriptionCache.set(cacheKey, isSubscribed);
+    return isSubscribed;
+  }
+  
   static async fetchAllWithSubscription() {
     const sponsors = this.getSponsors();
     if (sponsors.length === 0) return [];
-
+    
+    if (Config.apiMode === "server") {
+      // Серверный режим
+      try {
+        const result = await ApiClient.request("sponsors/list");
+        
+        if (result.ok && Array.isArray(result.data)) {
+          result.data.forEach(sponsor => {
+            this.cache.set(sponsor.username, {
+              username: sponsor.username,
+              title: sponsor.title,
+              photo: sponsor.photo,
+            });
+            
+            const userId = this.getUserId();
+            if (userId) {
+              this.subscriptionCache.set(
+                `${userId}_${sponsor.username}`, 
+                sponsor.subscribed
+              );
+            }
+          });
+          
+          return result.data;
+        }
+      } catch {}
+      return [];
+    }
+    
+    // Прямой режим (небезопасно!)
     return Promise.all(
       sponsors.map(async (username) => {
         const channel = await this.fetchChannel(username);
@@ -1090,15 +1234,18 @@
       })
     );
   }
-
+  
   static clearSubscriptionCache() {
     this.subscriptionCache.clear();
   }
-
+  
   static getChannelUrl(username) {
     return `https://t.me/${username.replace(/^@/, "").trim()}`;
   }
 }
+
+const SponsorsRegistry = SponsorsService;
+
       PlatformRegistry.register({
         name: "TikTok",
         colors: {
