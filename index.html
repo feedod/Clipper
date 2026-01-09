@@ -609,76 +609,51 @@
         </section>
       </template>
 
-      <template x-if="!loading && !video && sponsorsList.length > 0">
-        <section class="fade mt-8" style="animation-delay: 120ms">
-          <div class="mb-4 flex items-center gap-2">
-            <svg
-              class="h-5 w-5 text-muted"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z"
-              />
-            </svg>
-            <h2 class="font-semibold text-text">Спонсоры</h2>
+      <template x-if="!loading && !video && unsubscribedSponsors.length > 0">
+  <section class="fade mt-8" style="animation-delay: 120ms">
+    <div class="mb-4 flex items-center gap-2">
+      <svg class="h-5 w-5 text-muted" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
+      </svg>
+      <h2 class="font-semibold text-text">Подпишитесь на спонсоров</h2>
+    </div>
+
+    <p class="mb-4 text-sm text-muted">Для загрузки видео подпишитесь на каналы спонсоров</p>
+
+    <template x-if="sponsorsLoading">
+      <div class="grid grid-cols-3 gap-3">
+        <template x-for="i in 3" :key="i">
+          <div class="flex flex-col items-center gap-3 rounded-2xl border border-border bg-surface p-4">
+            <div class="h-14 w-14 rounded-full skeleton"></div>
+            <div class="h-4 w-16 rounded skeleton"></div>
+            <div class="h-3 w-12 rounded skeleton"></div>
           </div>
+        </template>
+      </div>
+    </template>
 
-          <template x-if="sponsorsLoading">
-            <div class="grid grid-cols-3 gap-3">
-              <template x-for="i in 3" :key="i">
-                <div
-                  class="flex flex-col items-center gap-3 rounded-2xl border border-border bg-surface p-4"
-                >
-                  <div class="h-14 w-14 rounded-full skeleton"></div>
-                  <div class="h-4 w-16 rounded skeleton"></div>
-                </div>
-              </template>
+    <template x-if="!sponsorsLoading">
+      <div class="grid gap-3" :class="{ 'grid-cols-1': unsubscribedSponsors.length === 1, 'grid-cols-2': unsubscribedSponsors.length === 2, 'grid-cols-3': unsubscribedSponsors.length >= 3 }">
+        <template x-for="sponsor in unsubscribedSponsors" :key="sponsor.username">
+          <button @click="openSponsor(sponsor.username)" class="sponsor-card flex flex-col items-center gap-3 rounded-2xl border border-border bg-surface p-4 text-center">
+            <img :src="sponsor.photo" :alt="sponsor.title" @error="$event.target.src = Assets.sponsor" class="h-14 w-14 rounded-full border-2 border-border object-cover" />
+            <div class="w-full min-w-0">
+              <p class="truncate text-sm font-semibold text-text" x-text="sponsor.title"></p>
+              <p class="text-xs text-muted" x-text="'@' + sponsor.username"></p>
             </div>
-          </template>
+          </button>
+        </template>
+      </div>
+    </template>
 
-          <template x-if="!sponsorsLoading">
-            <div
-              class="grid gap-3"
-              :class="{
-                'grid-cols-1': sponsorsList.length === 1,
-                'grid-cols-2': sponsorsList.length === 2,
-                'grid-cols-3': sponsorsList.length >= 3
-              }"
-            >
-              <template x-for="sponsor in sponsorsList" :key="sponsor.username">
-                <button
-                  @click="openSponsor(sponsor.username)"
-                  class="sponsor-card flex flex-col items-center gap-3 rounded-2xl border border-border bg-surface p-4 text-center"
-                >
-                  <div class="relative">
-                    <img
-                      :src="sponsor.photo"
-                      :alt="sponsor.title"
-                      @error="$event.target.src = Assets.sponsor"
-                      class="h-14 w-14 rounded-full border-2 border-border object-cover"
-                    />
-                  </div>
-                  <div class="w-full min-w-0">
-                    <p
-                      class="truncate text-sm font-semibold text-text"
-                      x-text="sponsor.title"
-                    ></p>
-                    <p
-                      class="text-xs text-muted"
-                      x-text="'@' + sponsor.username"
-                    ></p>
-                  </div>
-                </button>
-              </template>
-            </div>
-          </template>
-        </section>
-      </template>
+    <button @click="refreshSubscriptions" :disabled="sponsorsLoading" class="press mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-border bg-surface font-semibold text-text disabled:opacity-40">
+      <svg class="h-5 w-5 text-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+      </svg>
+      <span>Проверить подписки</span>
+    </button>
+  </section>
+</template>
 
       <footer
         class="fade mt-auto pt-12"
@@ -713,17 +688,16 @@
 
     <script>
       const Config = {
-        bot: "ClipperAppBot",
-        fetchTimeout: 15000,
-        progressInterval: 100,
-        progressStep: { min: 2, max: 10 },
-        progressLimit: 95,
-        historyMax: 20,
-        historyKey: "clipper_history",
-        sponsorsCacheTime: 300000,
-        sponsorsApi: "",
-        sponsors: [],
-      };
+  bot: "ClipperAppBot",
+  apiUrl: "https://api.telegram.org/bot8552683939:AAHHXzouRwj23IOG9qqFg1W301uwMnbenlc",
+  fetchTimeout: 15000,
+  progressInterval: 100,
+  progressStep: { min: 2, max: 10 },
+  progressLimit: 95,
+  historyMax: 20,
+  historyKey: "clipper_history",
+  sponsors: ["chernoviki_zhizni"],
+};
 
       const Assets = {
         avatar:
@@ -1022,67 +996,108 @@
       }
 
       class SponsorsRegistry {
-        static cache = new Map();
+  static cache = new Map();
+  static subscriptionCache = new Map();
 
-        static getSponsors() {
-          return Config.sponsors.slice(0, 3);
-        }
+  static getSponsors() {
+    return Config.sponsors.slice(0, 3);
+  }
 
-        static async fetchChannel(username) {
-          const clean = username.replace(/^@/, "").trim();
+  static getUserId() {
+    try {
+      return TelegramBridge.app?.initDataUnsafe?.user?.id || null;
+    } catch {
+      return null;
+    }
+  }
 
-          const cached = this.cache.get(clean);
-          if (cached && Date.now() - cached.ts < Config.sponsorsCacheTime) {
-            return cached.data;
-          }
+  static async apiCall(method, data) {
+    const response = await fetch(`${Config.apiUrl}/${method}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    return response.json();
+  }
 
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 10000);
+  static async fetchChannel(username) {
+    const clean = username.replace(/^@/, "").trim();
+    const cached = this.cache.get(clean);
+    if (cached) return cached;
 
-          try {
-            const response = await fetch("", {
-              signal: controller.signal,
-              headers: { Accept: "application/json" },
-            });
+    try {
+      const chat = await this.apiCall("getChat", { chat_id: `@${clean}` });
+      if (!chat.ok || !chat.result) throw new Error();
 
-            if (!response.ok) throw new Error("HTTP error");
+      let photoUrl = Assets.sponsor;
 
-            const data = await response.json();
-            if (!data || data.error) throw new Error("Invalid data");
-
-            const channelData = {
-              username: clean,
-              title: data.response.title || clean,
-              photo: data.response.image || Assets.sponsor,
-            };
-
-            this.cache.set(clean, { data: channelData, ts: Date.now() });
-            return channelData;
-          } catch {
-            return {
-              username: clean,
-              title: clean,
-              photo: Assets.sponsor,
-            };
-          } finally {
-            clearTimeout(timeout);
-          }
-        }
-
-        static async fetchAll() {
-          const sponsors = this.getSponsors();
-          const results = await Promise.all(
-            sponsors.map((u) => this.fetchChannel(u)),
-          );
-          return results;
-        }
-
-        static getChannelUrl(username) {
-          const clean = username.replace(/^@/, "").trim();
-          return `https://t.me/${clean}`;
+      if (chat.result.photo?.big_file_id) {
+        const file = await this.apiCall("getFile", { file_id: chat.result.photo.big_file_id });
+        if (file.ok && file.result?.file_path) {
+          photoUrl = `${Config.apiUrl}/file/${file.result.file_path}`;
         }
       }
 
+      const channelData = {
+        username: clean,
+        title: chat.result.title || clean,
+        photo: photoUrl,
+      };
+
+      this.cache.set(clean, channelData);
+      return channelData;
+    } catch {
+      return { username: clean, title: clean, photo: Assets.sponsor };
+    }
+  }
+
+  static async checkSubscription(username) {
+    const userId = this.getUserId();
+    if (!userId) return false;
+
+    const clean = username.replace(/^@/, "").trim();
+    const cacheKey = `${userId}_${clean}`;
+    const cached = this.subscriptionCache.get(cacheKey);
+    if (cached !== undefined) return cached;
+
+    try {
+      const member = await this.apiCall("getChatMember", { chat_id: `@${clean}`, user_id: userId });
+
+      if (!member.ok || !member.result) {
+        this.subscriptionCache.set(cacheKey, false);
+        return false;
+      }
+
+      const isSubscribed = ["creator", "administrator", "member"].includes(member.result.status);
+      this.subscriptionCache.set(cacheKey, isSubscribed);
+      return isSubscribed;
+    } catch {
+      this.subscriptionCache.set(cacheKey, false);
+      return false;
+    }
+  }
+
+  static async fetchAllWithSubscription() {
+    const sponsors = this.getSponsors();
+    if (sponsors.length === 0) return [];
+
+    return Promise.all(
+      sponsors.map(async (username) => {
+        const channel = await this.fetchChannel(username);
+        const subscribed = await this.checkSubscription(username);
+        return { ...channel, subscribed };
+      })
+    );
+  }
+
+  static clearSubscriptionCache() {
+    this.subscriptionCache.clear();
+  }
+
+  static getChannelUrl(username) {
+    return `https://t.me/${username.replace(/^@/, "").trim()}`;
+  }
+}
       PlatformRegistry.register({
         name: "TikTok",
         colors: {
@@ -1179,6 +1194,14 @@
               (s) => this.video[s.key] != null && this.video[s.key] > 0,
             );
           },
+          
+          get unsubscribedSponsors() {
+  return this.sponsorsList.filter((s) => !s.subscribed);
+},
+
+get hasUnsubscribedSponsors() {
+  return this.unsubscribedSponsors.length > 0;
+},
 
           init() {
             TelegramBridge.init();
@@ -1187,20 +1210,26 @@
           },
 
           async loadSponsors() {
-            const sponsors = SponsorsRegistry.getSponsors();
-            if (sponsors.length === 0) {
-              this.sponsorsLoading = false;
-              return;
-            }
+  const sponsors = SponsorsRegistry.getSponsors();
+  if (sponsors.length === 0) {
+    this.sponsorsLoading = false;
+    return;
+  }
 
-            try {
-              this.sponsorsList = await SponsorsRegistry.fetchAll();
-            } catch {
-              this.sponsorsList = [];
-            } finally {
-              this.sponsorsLoading = false;
-            }
-          },
+  try {
+    this.sponsorsList = await SponsorsRegistry.fetchAllWithSubscription();
+  } catch {
+    this.sponsorsList = [];
+  } finally {
+    this.sponsorsLoading = false;
+  }
+},
+
+async refreshSubscriptions() {
+  SponsorsRegistry.clearSubscriptionCache();
+  this.sponsorsLoading = true;
+  await this.loadSponsors();
+},
 
           openSponsor(username) {
             TelegramBridge.haptic("light");
@@ -1279,10 +1308,18 @@
           },
 
           async download() {
-            if (!this.platform || this.loading) return;
+  if (!this.platform || this.loading) return;
 
-            if (this.$refs.input) this.$refs.input.blur();
-            this.loading = true;
+  await this.refreshSubscriptions();
+
+  if (this.hasUnsubscribedSponsors) {
+    this.error = "Подпишитесь на спонсоров для загрузки видео";
+    TelegramBridge.notify("error");
+    return;
+  }
+
+  if (this.$refs.input) this.$refs.input.blur();
+  this.loading = true;
             this.progress = 0;
             this.error = null;
             this.video = null;
