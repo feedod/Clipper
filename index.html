@@ -270,10 +270,11 @@
             class="overflow-hidden rounded-2xl border border-border bg-surface"
           >
             <div class="relative h-[56dvh] w-full bg-black">
-              <video
+<video
   x-ref="videoPlayer"
   :src="currentVideoUrl"
   :poster="video.cover"
+  :key="selectedQuality"
   @loadeddata="$el.currentTime = 0"
   class="absolute inset-0 h-full w-full object-contain"
   controls
@@ -315,15 +316,24 @@
             </div>
           </div>
 
-          <div x-show="hasMultipleQualities" x-transition class="flex gap-2">
+          <div x-show="hasMultipleQualities && !isChangingQuality" x-transition class="flex gap-2">
   <template x-for="q in availableQualities" :key="q.key">
     <button
       @click="selectQuality(q.key)"
+      :disabled="isChangingQuality"
       :class="selectedQuality === q.key ? 'border-text bg-text text-white' : 'border-border bg-surface text-text'"
-      class="flex-1 rounded-xl border py-2.5 text-sm font-semibold transition-all duration-75 ease-out active:scale-[0.97]"
+      class="flex-1 rounded-xl border py-2.5 text-sm font-semibold transition-all duration-75 ease-out active:scale-[0.97] disabled:opacity-50"
       x-text="q.label"
     ></button>
   </template>
+</div>
+
+<div x-show="isChangingQuality" class="flex items-center justify-center gap-2 py-2.5">
+  <svg class="h-4 w-4 animate-spin text-muted" fill="none" viewBox="0 0 24 24">
+    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+  </svg>
+  <span class="text-sm text-muted">Смена качества...</span>
 </div>
 
           <button
@@ -438,9 +448,9 @@
           </template>
 
           <div class="grid grid-cols-2 gap-3 pt-2">
-  <button
-    @click="saveVideo"
-    :disabled="!currentVideoUrl"
+<button
+  @click="saveVideo"
+  :disabled="!currentVideoUrl || isSaving"
     :style="{ backgroundColor: platform?.colors?.save }"
     class="flex h-14 items-center justify-center gap-2 rounded-2xl font-semibold text-white transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80 disabled:opacity-40 disabled:cursor-not-allowed"
   >
@@ -1457,21 +1467,27 @@ static parseStartParam(param) {
   if (!param || typeof param !== 'string') return null;
 
   try {
-    for (const platform of this.platforms) {
-      const prefix = `${platform.name.toLowerCase()}_`;
-      if (param.startsWith(prefix)) {
-        const id = param.slice(prefix.length);
-        if (id && /^\d+$/.test(id)) {
-          const url = platform.buildUrlFromId(id);
-          if (url) {
-            return {
-              platform: platform.name,
-              id,
-              url,
-            };
-          }
+    const platformMatch = param.match(/^([a-z]+)_(.+)$/i);
+    
+    if (platformMatch) {
+      const [, platformName, id] = platformMatch;
+      
+      const platform = this.platforms.find(
+        p => p.name.toLowerCase() === platformName.toLowerCase()
+      );
+      
+      if (!platform) {
+        return { error: "unsupported_platform", platformName };
+      }
+      
+      if (/^\d+$/.test(id)) {
+        const url = platform.buildUrlFromId(id);
+        if (url) {
+          return { platform: platform.name, id, url };
         }
       }
+      
+      return { error: "invalid_id", platformName: platform.name };
     }
 
     if (param.length > 10) {
@@ -1489,6 +1505,7 @@ static parseStartParam(param) {
           if (platform) {
             return { platform: platform.name, id: null, url: decoded };
           }
+          return { error: "unsupported_platform", url: decoded };
         }
       } catch {
       }
@@ -1497,9 +1514,62 @@ static parseStartParam(param) {
     ErrorHandler.log("PlatformRegistry.parseStartParam", err);
   }
 
-  return null;
+  return { error: "invalid_format" };
 }
       }
+      
+class TikTokErrorHandler {
+  static ERROR_MAP = {
+    "url parsing failed": "Не удалось обработать ссылку. Проверьте правильность URL",
+    "video not found": "Видео не найдено",
+    "video is private": "Это приватное видео",
+    "video has been removed": "Видео было удалено",
+    "video is unavailable": "Видео недоступно",
+    "user not found": "Пользователь не найден",
+    "account is private": "Аккаунт приватный",
+    "video under review": "Видео на проверке",
+    "content not available": "Контент недоступен в вашем регионе",
+    "rate limit exceeded": "Слишком много запросов. Попробуйте позже",
+    "invalid url": "Неверный формат ссылки",
+    "empty url": "Ссылка не указана",
+  };
+
+  static translate(message) {
+    if (!message) return "Произошла неизвестная ошибка";
+    
+    const lowerMessage = message.toLowerCase().trim();
+    
+    for (const [key, value] of Object.entries(this.ERROR_MAP)) {
+      if (lowerMessage.includes(key.toLowerCase())) {
+        return value;
+      }
+    }
+    
+    if (lowerMessage.includes("private")) {
+      return "Это приватное видео";
+    }
+    if (lowerMessage.includes("not found") || lowerMessage.includes("not exist")) {
+      return "Видео не найдено";
+    }
+    if (lowerMessage.includes("removed") || lowerMessage.includes("deleted")) {
+      return "Видео было удалено";
+    }
+    if (lowerMessage.includes("unavailable")) {
+      return "Видео недоступно";
+    }
+    if (lowerMessage.includes("parsing") || lowerMessage.includes("parse")) {
+      return "Не удалось обработать ссылку. Убедитесь, что это корректная ссылка TikTok";
+    }
+    if (lowerMessage.includes("region") || lowerMessage.includes("country")) {
+      return "Видео недоступно в вашем регионе";
+    }
+    if (lowerMessage.includes("limit") || lowerMessage.includes("too many")) {
+      return "Слишком много запросов. Подождите минуту и попробуйте снова";
+    }
+    
+    return "Не удалось загрузить видео. Попробуйте другую ссылку";
+  }
+}
 
       PlatformRegistry.register({
         name: "TikTok",
@@ -1554,27 +1624,52 @@ static parseStartParam(param) {
         _buildUrlFromId(id) {
           return `https://www.tiktok.com/@_/video/${id}`;
         },
-        async _fetch(url, signal, quality = "hd") {
+async _fetch(url, signal, quality = "hd") {
   if (!url || typeof url !== 'string') {
-    throw new Error("Некорректная ссылка");
+    throw new Error("Вставьте ссылку на видео");
   }
 
-  const response = await fetch("https://www.tikwm.com/api/", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ url: url.trim(), hd: 1 }),
-    signal,
-  });
+  const trimmedUrl = url.trim();
+  if (!trimmedUrl) {
+    throw new Error("Ссылка не может быть пустой");
+  }
 
-  if (!response.ok) throw new Error("Ошибка сети");
+  let response;
+  try {
+    response = await fetch("https://www.tikwm.com/api/", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ url: trimmedUrl, hd: 1 }),
+      signal,
+    });
+  } catch (err) {
+    if (err.name === 'AbortError') throw err;
+    throw new Error("Ошибка сети. Проверьте подключение к интернету");
+  }
 
-  const json = await response.json();
-  if (json.code !== 0) throw new Error(json.msg || "Видео не найдено");
+  if (!response.ok) {
+    throw new Error(`Сервер недоступен (${response.status})`);
+  }
+
+  let json;
+  try {
+    json = await response.json();
+  } catch {
+    throw new Error("Ошибка обработки ответа сервера");
+  }
+
+  if (json.code !== 0) {
+    throw new Error(TikTokErrorHandler.translate(json.msg));
+  }
   
   const data = json.data;
   
-  if (!data || !data.play) {
-    throw new Error("Видео недоступно");
+  if (!data) {
+    throw new Error("Сервер вернул пустой ответ");
+  }
+  
+  if (!data.play) {
+    throw new Error("Ссылка на видео недоступна. Возможно, видео приватное или удалено");
   }
   
   data.hdPlay = data.hdplay || null;
@@ -1601,6 +1696,8 @@ static parseStartParam(param) {
     featurePromptTimer: null,
     isRefreshing: false,
     downloadAbortController: null,
+    isChangingQuality: false,
+    isSaving: false,
 
     get statusText() {
       if (this.isLoading) return "Загрузка видео...";
@@ -1637,8 +1734,10 @@ static parseStartParam(param) {
     },
 
     get hasMultipleQualities() {
-      return this.platform?.supportsQuality === true && this.video?.hasHD === true;
-    },
+  if (!this.platform?.supportsQuality) return false;
+  if (!this.video?.hasHD) return false;
+  return this.video.hdPlay && this.video.hdPlay !== this.video.play;
+},
 
     get availableQualities() {
       if (!this.platform?.qualities) return [];
@@ -1655,12 +1754,15 @@ static parseStartParam(param) {
     },
 
     get currentVideoUrl() {
-      if (!this.video?.play) return null;
-      if (this.selectedQuality === "hd" && this.video.hdPlay) {
-        return this.video.hdPlay;
-      }
-      return this.video.play;
-    },
+  if (!this.video?.play) return null;
+  
+  if (this.selectedQuality === "hd" && this.video.hdPlay) {
+    if (this.video.hdPlay !== this.video.play) {
+      return this.video.hdPlay;
+    }
+  }
+  return this.video.play;
+},
 
     init() {
       TelegramWebApp.initialize();
@@ -1747,30 +1849,42 @@ static parseStartParam(param) {
     },
 
     handleStartParam() {
-      const param = TelegramWebApp.startParam;
-      if (!param) return;
+  const param = TelegramWebApp.startParam;
+  if (!param) return;
 
-      const parsed = PlatformRegistry.parseStartParam(param);
-      if (!parsed) {
+  const parsed = PlatformRegistry.parseStartParam(param);
+  
+  if (!parsed || parsed.error) {
+    switch (parsed?.error) {
+      case "unsupported_platform":
+        this.setError(`Платформа "${parsed.platformName || 'неизвестная'}" не поддерживается`);
+        break;
+      case "invalid_id":
+        this.setError("Неверный идентификатор видео");
+        break;
+      case "invalid_format":
+      default:
         this.setError("Неверная ссылка");
-        return;
-      }
+        break;
+    }
+    return;
+  }
 
-      const platform = PlatformRegistry.get(parsed.platform);
-      if (!platform) {
-        this.setError("Платформа не поддерживается");
-        return;
-      }
+  const platform = PlatformRegistry.get(parsed.platform);
+  if (!platform) {
+    this.setError("Платформа не поддерживается");
+    return;
+  }
 
-      const url = parsed.url || platform.buildUrlFromId(parsed.id);
-      if (url) {
-        this.url = url;
-        this.platform = platform;
-        this.$nextTick(() => this.download());
-      } else {
-        this.setError("Не удалось восстановить ссылку");
-      }
-    },
+  const url = parsed.url || platform.buildUrlFromId(parsed.id);
+  if (url) {
+    this.url = url;
+    this.platform = platform;
+    this.$nextTick(() => this.download());
+  } else {
+    this.setError("Не удалось восстановить ссылку");
+  }
+},
 
     detect() {
       this.error = null;
@@ -1855,17 +1969,65 @@ static parseStartParam(param) {
       }
     },
 
-    selectQuality(quality) {
-      if (!this.video || !this.platform) return;
-      if (quality === "hd" && !this.video.hasHD) return;
-      if (this.selectedQuality === quality) return;
+async selectQuality(quality) {
+  if (!this.video || !this.platform) return;
+  if (quality === "hd" && !this.video.hasHD) return;
+  if (this.selectedQuality === quality) return;
+  if (this.isChangingQuality) return;
+  
+  this.isChangingQuality = true;
+  
+  const videoPlayer = this.$refs.videoPlayer;
+  const wasPlaying = videoPlayer && !videoPlayer.paused;
+  const currentTime = videoPlayer?.currentTime || 0;
+  
+  const oldQuality = this.selectedQuality;
+  
+  this.selectedQuality = quality;
+  TelegramWebApp.hapticImpact("light");
+  AnalyticsService.trackQualityChange(quality);
+  
+  await this.$nextTick();
+  
+  if (videoPlayer) {
+    try {
+      videoPlayer.load();
       
-      this.selectedQuality = quality;
-      TelegramWebApp.hapticImpact("light");
-      AnalyticsService.trackQualityChange(quality);
+      await new Promise((resolve, reject) => {
+        const onLoaded = () => {
+          videoPlayer.removeEventListener('loadeddata', onLoaded);
+          videoPlayer.removeEventListener('error', onError);
+          resolve();
+        };
+        const onError = () => {
+          videoPlayer.removeEventListener('loadeddata', onLoaded);
+          videoPlayer.removeEventListener('error', onError);
+          reject(new Error('Ошибка загрузки видео'));
+        };
+        
+        videoPlayer.addEventListener('loadeddata', onLoaded);
+        videoPlayer.addEventListener('error', onError);
+        
+        setTimeout(resolve, 3000);
+      });
       
-      this.updateHistoryQuality();
-    },
+      videoPlayer.currentTime = currentTime;
+      
+      if (wasPlaying) {
+        try {
+          await videoPlayer.play();
+        } catch {
+        }
+      }
+    } catch (err) {
+      ErrorHandler.log("selectQuality", err);
+      this.selectedQuality = oldQuality;
+    }
+  }
+  
+  this.updateHistoryQuality();
+  this.isChangingQuality = false;
+},
 
     updateHistoryQuality() {
   if (!this.video || !this.platform) return;
@@ -1951,8 +2113,8 @@ static parseStartParam(param) {
   }
 },
 
-    saveVideo() {
-  if (!this.video || this.isLoading || !this.platform) {
+saveVideo() {
+  if (!this.video || !this.platform || this.isSaving) {
     return;
   }
 
@@ -1961,14 +2123,22 @@ static parseStartParam(param) {
     return;
   }
 
-  const filename = this.platform.getFilename(this.video, this.selectedQuality);
-  const success = TelegramWebApp.downloadFile(videoUrl, filename);
+  this.isSaving = true;
 
-  if (success) {
-    TelegramWebApp.hapticNotification("success");
-    AnalyticsService.trackDownload(this.platform.name, this.selectedQuality);
-  } else {
-    this.setError("Скачивание доступно только в мобильном Telegram");
+  try {
+    const filename = this.platform.getFilename(this.video, this.selectedQuality);
+    const success = TelegramWebApp.downloadFile(videoUrl, filename);
+
+    if (success) {
+      TelegramWebApp.hapticNotification("success");
+      AnalyticsService.trackDownload(this.platform.name, this.selectedQuality);
+    } else {
+      this.setError("Скачивание доступно только в мобильном Telegram");
+    }
+  } finally {
+    setTimeout(() => {
+      this.isSaving = false;
+    }, 500);
   }
 },
 
