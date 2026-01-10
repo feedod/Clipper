@@ -1522,9 +1522,10 @@
           if (json.code !== 0) throw new Error("Видео не найдено");
 
           const data = json.data;
-          data.hdPlay = data.hdplay || data.play;
+          data.hdPlay = data.hdplay || null;
           data.sdPlay = data.play;
-          data.currentQuality = hdParam === 1 && data.hdplay ? "hd" : "sd";
+          data.hasHD = Boolean(data.hdplay);
+          data.currentQuality = hdParam === 1 && data.hasHD ? "hd" : "sd";
 
           return data;
         },
@@ -1579,7 +1580,7 @@
           },
 
           get hasMultipleQualities() {
-            return this.platform?.supportsQuality && this.video?.hdPlay;
+            return this.platform?.supportsQuality && this.video?.hasHD;
           },
 
           get availableQualities() {
