@@ -703,9 +703,9 @@
                       class="absolute bottom-2 right-2 flex items-center rounded bg-white/90 px-1.5 py-px"
                     >
                       <span
-                        class="text-[9px] font-semibold leading-none text-text"
-                        x-text="item.quality"
-                      ></span>
+  class="text-[9px] font-semibold leading-none text-text"
+  x-text="item.quality?.toUpperCase()"
+></span>
                     </div>
                   </div>
                   <p
@@ -1793,16 +1793,16 @@
               }
 
               HistoryStorage.add({
-                id: this.video.id || Date.now(),
-                cover: this.video.cover,
-                author:
-                  this.video.author?.nickname ||
-                  this.video.author?.unique_id ||
-                  "Неизвестный автор",
-                url: this.url,
-                platform: this.platform.name,
-                quality: this.currentQualityLabel,
-              });
+  id: this.video.id || Date.now(),
+  cover: this.video.cover,
+  author:
+    this.video.author?.nickname ||
+    this.video.author?.unique_id ||
+    "Неизвестный автор",
+  url: this.url,
+  platform: this.platform.name,
+  quality: this.selectedQuality,
+});
 
               this.history = HistoryStorage.getAll();
               TelegramWebApp.hapticNotification("success");
@@ -1895,21 +1895,25 @@
           },
 
           loadFromHistory(item) {
-            if (!item?.url || !item?.platform) {
-              this.setError("Некорректные данные");
-              return;
-            }
+  if (!item?.url || !item?.platform) {
+    this.setError("Некорректные данные");
+    return;
+  }
 
-            this.url = item.url;
-            this.platform = PlatformRegistry.get(item.platform);
+  this.url = item.url;
+  this.platform = PlatformRegistry.get(item.platform);
+  
+  if (item.quality) {
+    this.selectedQuality = item.quality.toLowerCase();
+  }
 
-            if (this.platform) {
-              TelegramWebApp.hapticImpact("light");
-              this.download();
-            } else {
-              this.setError("Платформа не поддерживается");
-            }
-          },
+  if (this.platform) {
+    TelegramWebApp.hapticImpact("light");
+    this.download();
+  } else {
+    this.setError("Платформа не поддерживается");
+  }
+},
 
           clearHistory() {
             HistoryStorage.clear();
