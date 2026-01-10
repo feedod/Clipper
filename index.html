@@ -270,13 +270,14 @@
     >
       <div class="relative h-[56dvh] w-full bg-black">
         <video
-          :src="video.play"
-          :poster="video.cover"
-          class="absolute inset-0 h-full w-full object-contain"
-          controls
-          playsinline
-          webkit-playsinline
-        ></video>
+  :key="selectedQuality"
+  :src="currentVideoUrl"
+  :poster="video.cover"
+  class="absolute inset-0 h-full w-full object-contain"
+  controls
+  playsinline
+  webkit-playsinline
+></video>
         <div
           class="absolute left-3 top-3 flex items-center gap-1.5 rounded-lg bg-white/95 px-2.5 py-1.5 shadow-sm"
         >
@@ -698,14 +699,14 @@
                 </svg>
               </div>
               <div
-                x-show="item.quality"
-                class="absolute bottom-2 right-2 rounded bg-white/90 px-1 py-0.5"
-              >
-                <span
-                  class="text-[9px] font-semibold leading-none text-text"
-                  x-text="item.quality"
-                ></span>
-              </div>
+  x-show="item.quality"
+  class="absolute bottom-2 right-2 flex items-center rounded bg-white/90 px-1.5 py-px"
+>
+  <span
+    class="text-[9px] font-semibold leading-none text-text"
+    x-text="item.quality"
+  ></span>
+</div>
             </div>
             <p
               class="truncate text-left text-xs text-muted"
