@@ -125,151 +125,198 @@
 
       <section class="fade space-y-3" style="animation-delay: 50ms">
         <div class="relative">
-  <div
-    class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2"
-  >
-    <svg
-      class="h-5 w-5 text-muted"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="1.5"
-      viewBox="0 0 24 24"
-    >
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"
-      />
-    </svg>
-  </div>
-  <input
-    type="url"
-    x-ref="input"
-    x-model="url"
-    @input.debounce.300ms="detect(); saveToCloudDebounced()"
-    @paste="$nextTick(() => { detect(); saveToCloudDebounced(); })"
-    @keydown.enter.prevent="download"
-    :disabled="isLoading"
-    placeholder="Вставьте ссылку на видео"
-    autocomplete="off"
-    autocorrect="off"
-    autocapitalize="off"
-    spellcheck="false"
-    class="h-14 w-full rounded-2xl border border-border bg-surface pl-12 pr-24 text-text transition-colors placeholder:text-muted focus:border-text/20 disabled:opacity-40"
-  />
-  <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-    <button
-      x-show="url.length > 0"
-      x-transition.opacity.duration.100ms
-      @click="clear"
-      :disabled="isLoading"
-      class="grid h-8 w-8 place-items-center rounded-full bg-border transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80 disabled:opacity-40"
-      type="button"
-    >
-      <svg
-        class="h-4 w-4 text-muted"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          d="M6 18L18 6M6 6l12 12"
-        />
-      </svg>
-    </button>
-    <button
-      @click="toggleSyncPanel"
-      :disabled="isLoading"
-      class="grid h-8 w-8 place-items-center rounded-full transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80 disabled:opacity-40"
-      :class="showSyncPanel ? 'bg-text' : 'bg-border'"
-      type="button"
-    >
-      <svg
-        class="h-4 w-4 transition-transform duration-200"
-        :class="[showSyncPanel ? 'rotate-180 text-white' : 'text-muted']"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          d="m19.5 8.25-7.5 7.5-7.5-7.5"
-        />
-      </svg>
-    </button>
-  </div>
-</div>
-        
-<div
-  x-show="showSyncPanel"
-  x-transition:enter="transition-all duration-200 ease-out"
-  x-transition:enter-start="opacity-0 -translate-y-2"
-  x-transition:enter-end="opacity-100 translate-y-0"
-  x-transition:leave="transition-all duration-150 ease-in"
-  x-transition:leave-start="opacity-100 translate-y-0"
-  x-transition:leave-end="opacity-0 -translate-y-2"
-  class="space-y-3 rounded-2xl border border-border bg-surface p-4"
->
-  <div class="flex items-center justify-between">
-    <div class="flex items-center gap-2 text-sm font-semibold text-text">
-      <svg class="h-4 w-4 text-muted" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 0 0 4.5 4.5H18a3.75 3.75 0 0 0 1.332-7.257 3 3 0 0 0-3.758-3.848 5.25 5.25 0 0 0-10.233 2.33A4.502 4.502 0 0 0 2.25 15Z" />
-      </svg>
-      <span>В облаке</span>
-      <span class="text-xs font-normal text-muted" x-text="cloudClipboard.length + '/50'"></span>
-    </div>
-    <button
-      @click="loadCloudClipboard"
-      :disabled="isSyncing"
-      class="grid h-7 w-7 place-items-center rounded-full bg-border transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80 disabled:opacity-40"
-    >
-      <svg 
-        class="h-3.5 w-3.5 text-muted" 
-        :class="{ 'animate-spin': isSyncing }"
-        fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
-      >
-        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
-      </svg>
-    </button>
-  </div>
-  
-  <div class="rounded-xl bg-bg p-3 text-sm break-all min-h-[44px]" :class="cloudClipboard ? 'text-text' : 'text-muted'">
-    <span x-text="cloudClipboard || 'Пусто'"></span>
-  </div>
+          <div
+            class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2"
+          >
+            <svg
+              class="h-5 w-5 text-muted"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244"
+              />
+            </svg>
+          </div>
+          <input
+            type="url"
+            x-ref="input"
+            x-model="url"
+            @input.debounce.300ms="detect(); saveToCloudDebounced()"
+            @paste="$nextTick(() => { detect(); saveToCloudDebounced(); })"
+            @keydown.enter.prevent="download"
+            :disabled="isLoading"
+            placeholder="Вставьте ссылку на видео"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
+            class="h-14 w-full rounded-2xl border border-border bg-surface pl-12 pr-24 text-text transition-colors placeholder:text-muted focus:border-text/20 disabled:opacity-40"
+          />
+          <div
+            class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1"
+          >
+            <button
+              x-show="url.length > 0"
+              x-transition.opacity.duration.100ms
+              @click="clear"
+              :disabled="isLoading"
+              class="grid h-8 w-8 place-items-center rounded-full bg-border transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80 disabled:opacity-40"
+              type="button"
+            >
+              <svg
+                class="h-4 w-4 text-muted"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+            <button
+              @click="toggleSyncPanel"
+              :disabled="isLoading"
+              class="grid h-8 w-8 place-items-center rounded-full transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80 disabled:opacity-40"
+              :class="showSyncPanel ? 'bg-text' : 'bg-border'"
+              type="button"
+            >
+              <svg
+                class="h-4 w-4 transition-transform duration-200"
+                :class="[showSyncPanel ? 'rotate-180 text-white' : 'text-muted']"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="m19.5 8.25-7.5 7.5-7.5-7.5"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
 
-  <div class="grid grid-cols-2 gap-2">
-    <button
-      @click="syncFromCloud"
-      :disabled="isSyncing || !cloudClipboard"
-      class="flex h-11 items-center justify-center gap-2 rounded-xl bg-text font-semibold text-white transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80 disabled:opacity-40"
-    >
-      <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 7.5h-.75A2.25 2.25 0 0 0 4.5 9.75v7.5a2.25 2.25 0 0 0 2.25 2.25h7.5a2.25 2.25 0 0 0 2.25-2.25v-7.5a2.25 2.25 0 0 0-2.25-2.25h-.75m-6 3.75 3 3m0 0 3-3m-3 3V1.5m6 9h.75a2.25 2.25 0 0 1 2.25 2.25v7.5a2.25 2.25 0 0 1-2.25 2.25h-7.5a2.25 2.25 0 0 1-2.25-2.25v-.75" />
-      </svg>
-      <span>Заменить</span>
-    </button>
-    
-    <button
-      @click="appendFromCloud"
-      :disabled="isSyncing || !cloudClipboard"
-      class="flex h-11 items-center justify-center gap-2 rounded-xl border border-border bg-bg font-semibold text-text transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80 disabled:opacity-40"
-    >
-      <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-      </svg>
-      <span>Добавить</span>
-    </button>
-  </div>
+        <div
+          x-show="showSyncPanel"
+          x-transition:enter="transition-all duration-200 ease-out"
+          x-transition:enter-start="opacity-0 -translate-y-2"
+          x-transition:enter-end="opacity-100 translate-y-0"
+          x-transition:leave="transition-all duration-150 ease-in"
+          x-transition:leave-start="opacity-100 translate-y-0"
+          x-transition:leave-end="opacity-0 -translate-y-2"
+          class="space-y-3 rounded-2xl border border-border bg-surface p-4"
+        >
+          <div class="flex items-center justify-between">
+            <div
+              class="flex items-center gap-2 text-sm font-semibold text-text"
+            >
+              <svg
+                class="h-4 w-4 text-muted"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M2.25 15a4.5 4.5 0 0 0 4.5 4.5H18a3.75 3.75 0 0 0 1.332-7.257 3 3 0 0 0-3.758-3.848 5.25 5.25 0 0 0-10.233 2.33A4.502 4.502 0 0 0 2.25 15Z"
+                />
+              </svg>
+              <span>В облаке</span>
+              <span
+                class="text-xs font-normal text-muted"
+                x-text="cloudClipboard.length + '/50'"
+              ></span>
+            </div>
+            <button
+              @click="loadCloudClipboard"
+              :disabled="isSyncing"
+              class="grid h-7 w-7 place-items-center rounded-full bg-border transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80 disabled:opacity-40"
+            >
+              <svg
+                class="h-3.5 w-3.5 text-muted"
+                :class="{ 'animate-spin': isSyncing }"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"
+                />
+              </svg>
+            </button>
+          </div>
 
-  <p class="text-xs text-center text-muted">
-    Синхронизация между устройствами (до 50 символов)
-  </p>
-</div>
+          <div
+            class="rounded-xl bg-bg p-3 text-sm break-all min-h-[44px]"
+            :class="cloudClipboard ? 'text-text' : 'text-muted'"
+          >
+            <span x-text="cloudClipboard || 'Пусто'"></span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button
+              @click="syncFromCloud"
+              :disabled="isSyncing || !cloudClipboard"
+              class="flex h-11 items-center justify-center gap-2 rounded-xl bg-text font-semibold text-white transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80 disabled:opacity-40"
+            >
+              <svg
+                class="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M7.5 7.5h-.75A2.25 2.25 0 0 0 4.5 9.75v7.5a2.25 2.25 0 0 0 2.25 2.25h7.5a2.25 2.25 0 0 0 2.25-2.25v-7.5a2.25 2.25 0 0 0-2.25-2.25h-.75m-6 3.75 3 3m0 0 3-3m-3 3V1.5m6 9h.75a2.25 2.25 0 0 1 2.25 2.25v7.5a2.25 2.25 0 0 1-2.25 2.25h-7.5a2.25 2.25 0 0 1-2.25-2.25v-.75"
+                />
+              </svg>
+              <span>Заменить</span>
+            </button>
+
+            <button
+              @click="appendFromCloud"
+              :disabled="isSyncing || !cloudClipboard"
+              class="flex h-11 items-center justify-center gap-2 rounded-xl border border-border bg-bg font-semibold text-text transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80 disabled:opacity-40"
+            >
+              <svg
+                class="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 4.5v15m7.5-7.5h-15"
+                />
+              </svg>
+              <span>Добавить</span>
+            </button>
+          </div>
+
+          <p class="text-xs text-center text-muted">
+            Синхронизация между устройствами (до 50 символов)
+          </p>
+        </div>
 
         <button
           x-show="platform && !isLoading && !video"
@@ -735,118 +782,118 @@
       </template>
 
       <template x-if="!isLoading && !video">
-  <section class="fade mt-8" style="animation-delay: 100ms">
-    <div class="mb-4 flex items-center justify-between">
-      <div class="flex items-center gap-2">
-        <svg
-          class="h-5 w-5 text-muted"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.5"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-          />
-        </svg>
-        <h2 class="font-semibold text-text">Недавние видео</h2>
-      </div>
-      <button
-        x-show="history.length > 0"
-        @click="clearHistory"
-        class="text-sm text-muted transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80"
-      >
-        Очистить
-      </button>
-    </div>
-
-    <p class="mb-4 text-sm text-muted">
-      Синхронизируются между всеми вашими устройствами
-    </p>
-
-    <template x-if="history.length === 0">
-      <div
-        class="rounded-2xl border border-border bg-surface p-6 text-center"
-      >
-        <div
-          class="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-border"
-        >
-          <svg
-            class="h-7 w-7 text-muted"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z"
-            />
-          </svg>
-        </div>
-        <p class="font-semibold text-text">История пуста</p>
-        <p class="mt-1 text-sm text-muted">
-          Сохраните видео, чтобы оно появилось здесь
-        </p>
-      </div>
-    </template>
-
-    <template x-if="history.length > 0">
-      <div
-        class="-mx-5 flex gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden"
-      >
-        <template x-for="item in history" :key="item.id">
-          <button
-            @click="loadFromHistory(item)"
-            class="w-[88px] shrink-0 transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80"
-          >
-            <div
-              class="relative mb-2 h-[120px] w-[88px] overflow-hidden rounded-xl border border-border"
+        <section class="fade mt-8" style="animation-delay: 100ms">
+          <div class="mb-4 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <svg
+                class="h-5 w-5 text-muted"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                />
+              </svg>
+              <h2 class="font-semibold text-text">Недавние видео</h2>
+            </div>
+            <button
+              x-show="history.length > 0"
+              @click="clearHistory"
+              class="text-sm text-muted transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80"
             >
-              <img
-                :src="item.cover"
-                @error="if ($event.target.src !== AppAssets.cover) $event.target.src = AppAssets.cover"
-                class="h-full w-full object-cover"
-                loading="lazy"
-              />
+              Очистить
+            </button>
+          </div>
+
+          <p class="mb-4 text-sm text-muted">
+            Синхронизируются между всеми вашими устройствами
+          </p>
+
+          <template x-if="history.length === 0">
+            <div
+              class="rounded-2xl border border-border bg-surface p-6 text-center"
+            >
               <div
-                class="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/60 to-transparent"
-              ></div>
-              <div
-                class="absolute bottom-2 left-2 grid h-5 w-5 place-items-center rounded-full bg-white"
+                class="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-border"
               >
                 <svg
-                  class="h-3 w-3"
-                  :style="{ color: PlatformRegistry.get(item.platform)?.colors?.icon }"
+                  class="h-7 w-7 text-muted"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
                   viewBox="0 0 24 24"
-                  fill="currentColor"
                 >
-                  <path :d="PlatformRegistry.get(item.platform)?.icon" />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z"
+                  />
                 </svg>
               </div>
-              <div
-                x-show="item.quality"
-                class="absolute bottom-2 right-2 flex items-center"
-              >
-                <span
-                  class="text-[9px] font-semibold tracking-wide leading-none text-white drop-shadow-sm"
-                  x-text="item.quality?.toUpperCase()"
-                ></span>
-              </div>
+              <p class="font-semibold text-text">История пуста</p>
+              <p class="mt-1 text-sm text-muted">
+                Сохраните видео, чтобы оно появилось здесь
+              </p>
             </div>
-            <p
-              class="truncate text-left text-xs text-muted"
-              x-text="item.author"
-            ></p>
-          </button>
-        </template>
-      </div>
-    </template>
-  </section>
-</template>
+          </template>
+
+          <template x-if="history.length > 0">
+            <div
+              class="-mx-5 flex gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden"
+            >
+              <template x-for="item in history" :key="item.id">
+                <button
+                  @click="loadFromHistory(item)"
+                  class="w-[88px] shrink-0 transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80"
+                >
+                  <div
+                    class="relative mb-2 h-[120px] w-[88px] overflow-hidden rounded-xl border border-border"
+                  >
+                    <img
+                      :src="item.cover"
+                      @error="if ($event.target.src !== AppAssets.cover) $event.target.src = AppAssets.cover"
+                      class="h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                    <div
+                      class="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/60 to-transparent"
+                    ></div>
+                    <div
+                      class="absolute bottom-2 left-2 grid h-5 w-5 place-items-center rounded-full bg-white"
+                    >
+                      <svg
+                        class="h-3 w-3"
+                        :style="{ color: PlatformRegistry.get(item.platform)?.colors?.icon }"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                      >
+                        <path :d="PlatformRegistry.get(item.platform)?.icon" />
+                      </svg>
+                    </div>
+                    <div
+                      x-show="item.quality"
+                      class="absolute bottom-2 right-2 flex items-center"
+                    >
+                      <span
+                        class="text-[9px] font-semibold tracking-wide leading-none text-white drop-shadow-sm"
+                        x-text="item.quality?.toUpperCase()"
+                      ></span>
+                    </div>
+                  </div>
+                  <p
+                    class="truncate text-left text-xs text-muted"
+                    x-text="item.author"
+                  ></p>
+                </button>
+              </template>
+            </div>
+          </template>
+        </section>
+      </template>
 
       <footer
         class="fade mt-auto pt-12"
@@ -1058,84 +1105,84 @@
           }
         }
       }
-      
+
       class ClipboardSync {
-  static CLIPBOARD_KEY = "clipper_clipboard";
-  static SAVE_DEBOUNCE = 500;
-  static MAX_LENGTH = 50;
-  static saveTimer = null;
+        static CLIPBOARD_KEY = "clipper_clipboard";
+        static SAVE_DEBOUNCE = 500;
+        static MAX_LENGTH = 50;
+        static saveTimer = null;
 
-  static get cloudStorage() {
-    return window.Telegram?.WebApp?.CloudStorage;
-  }
-
-  static async get() {
-    const storage = this.cloudStorage;
-    if (!storage) {
-      console.warn("CloudStorage not available");
-      return localStorage.getItem(this.CLIPBOARD_KEY) || "";
-    }
-
-    return new Promise((resolve) => {
-      storage.getItem(this.CLIPBOARD_KEY, (err, value) => {
-        if (err) {
-          ErrorHandler.log("ClipboardSync.get", err);
-          resolve("");
-          return;
+        static get cloudStorage() {
+          return window.Telegram?.WebApp?.CloudStorage;
         }
-        resolve(value || "");
-      });
-    });
-  }
 
-  static truncate(value) {
-    if (!value) return "";
-    return value.slice(0, this.MAX_LENGTH);
-  }
+        static async get() {
+          const storage = this.cloudStorage;
+          if (!storage) {
+            console.warn("CloudStorage not available");
+            return localStorage.getItem(this.CLIPBOARD_KEY) || "";
+          }
 
-  static async set(value) {
-    const storage = this.cloudStorage;
-    const data = this.truncate(value || "");
+          return new Promise((resolve) => {
+            storage.getItem(this.CLIPBOARD_KEY, (err, value) => {
+              if (err) {
+                ErrorHandler.log("ClipboardSync.get", err);
+                resolve("");
+                return;
+              }
+              resolve(value || "");
+            });
+          });
+        }
 
-    if (!storage) {
-      localStorage.setItem(this.CLIPBOARD_KEY, data);
-      return;
-    }
+        static truncate(value) {
+          if (!value) return "";
+          return value.slice(0, this.MAX_LENGTH);
+        }
 
-    return new Promise((resolve) => {
-      storage.setItem(this.CLIPBOARD_KEY, data, (err) => {
-        if (err) ErrorHandler.log("ClipboardSync.set", err);
-        resolve();
-      });
-    });
-  }
+        static async set(value) {
+          const storage = this.cloudStorage;
+          const data = this.truncate(value || "");
 
-  static setDebounced(value) {
-    if (this.saveTimer) {
-      clearTimeout(this.saveTimer);
-    }
-    this.saveTimer = setTimeout(() => {
-      this.set(value);
-      this.saveTimer = null;
-    }, this.SAVE_DEBOUNCE);
-  }
+          if (!storage) {
+            localStorage.setItem(this.CLIPBOARD_KEY, data);
+            return;
+          }
 
-  static async clear() {
-    const storage = this.cloudStorage;
+          return new Promise((resolve) => {
+            storage.setItem(this.CLIPBOARD_KEY, data, (err) => {
+              if (err) ErrorHandler.log("ClipboardSync.set", err);
+              resolve();
+            });
+          });
+        }
 
-    if (!storage) {
-      localStorage.removeItem(this.CLIPBOARD_KEY);
-      return;
-    }
+        static setDebounced(value) {
+          if (this.saveTimer) {
+            clearTimeout(this.saveTimer);
+          }
+          this.saveTimer = setTimeout(() => {
+            this.set(value);
+            this.saveTimer = null;
+          }, this.SAVE_DEBOUNCE);
+        }
 
-    return new Promise((resolve) => {
-      storage.removeItem(this.CLIPBOARD_KEY, (err) => {
-        if (err) ErrorHandler.log("ClipboardSync.clear", err);
-        resolve();
-      });
-    });
-  }
-}
+        static async clear() {
+          const storage = this.cloudStorage;
+
+          if (!storage) {
+            localStorage.removeItem(this.CLIPBOARD_KEY);
+            return;
+          }
+
+          return new Promise((resolve) => {
+            storage.removeItem(this.CLIPBOARD_KEY, (err) => {
+              if (err) ErrorHandler.log("ClipboardSync.clear", err);
+              resolve();
+            });
+          });
+        }
+      }
 
       class ErrorHandler {
         static log(context, error) {
@@ -1303,23 +1350,23 @@
             return false;
           }
         }
-        
+
         static showConfirm(message, callback) {
-  try {
-    if (this.instance?.showConfirm) {
-      this.instance.showConfirm(message, callback);
-      return true;
-    }
-    const result = confirm(message);
-    callback(result);
-    return true;
-  } catch (err) {
-    ErrorHandler.log("TelegramWebApp.showConfirm", err);
-    const result = confirm(message);
-    callback(result);
-    return false;
-  }
-}
+          try {
+            if (this.instance?.showConfirm) {
+              this.instance.showConfirm(message, callback);
+              return true;
+            }
+            const result = confirm(message);
+            callback(result);
+            return true;
+          } catch (err) {
+            ErrorHandler.log("TelegramWebApp.showConfirm", err);
+            const result = confirm(message);
+            callback(result);
+            return false;
+          }
+        }
 
         static requestWriteAccess() {
           try {
@@ -2022,8 +2069,8 @@
           isChangingQuality: false,
           isSaving: false,
           cloudClipboard: "",
-  isSyncing: false,
-  showSyncPanel: false,
+          isSyncing: false,
+          showSyncPanel: false,
 
           get statusText() {
             if (this.isLoading) return "Загрузка видео...";
@@ -2091,100 +2138,100 @@
             }
             return this.video.play;
           },
-          
-async loadCloudClipboard() {
-  try {
-    this.cloudClipboard = await ClipboardSync.get();
-  } catch (err) {
-    ErrorHandler.log("loadCloudClipboard", err);
-    this.cloudClipboard = "";
-  }
-},
 
-async saveToCloud() {
-  if (!this.url?.trim()) {
-    await ClipboardSync.clear();
-    this.cloudClipboard = "";
-    return;
-  }
-  await ClipboardSync.set(this.url.trim());
-  this.cloudClipboard = this.url.trim();
-},
+          async loadCloudClipboard() {
+            try {
+              this.cloudClipboard = await ClipboardSync.get();
+            } catch (err) {
+              ErrorHandler.log("loadCloudClipboard", err);
+              this.cloudClipboard = "";
+            }
+          },
 
-saveToCloudDebounced() {
-  const value = this.url?.trim() || "";
-  const truncated = ClipboardSync.truncate(value);
-  ClipboardSync.setDebounced(truncated);
-  this.cloudClipboard = truncated;
-},
+          async saveToCloud() {
+            if (!this.url?.trim()) {
+              await ClipboardSync.clear();
+              this.cloudClipboard = "";
+              return;
+            }
+            await ClipboardSync.set(this.url.trim());
+            this.cloudClipboard = this.url.trim();
+          },
 
-async syncFromCloud() {
-  if (this.isSyncing) return;
-  
-  this.isSyncing = true;
-  TelegramWebApp.hapticImpact("light");
-  
-  try {
-    await this.loadCloudClipboard();
-    
-    if (!this.cloudClipboard) {
-      this.setError("Облачный буфер пуст");
-      return;
-    }
-    
-    this.url = this.cloudClipboard;
-    this.detect();
-    TelegramWebApp.hapticNotification("success");
-  } catch (err) {
-    ErrorHandler.log("syncFromCloud", err);
-    this.setError("Ошибка синхронизации");
-  } finally {
-    this.isSyncing = false;
-  }
-},
+          saveToCloudDebounced() {
+            const value = this.url?.trim() || "";
+            const truncated = ClipboardSync.truncate(value);
+            ClipboardSync.setDebounced(truncated);
+            this.cloudClipboard = truncated;
+          },
 
-async appendFromCloud() {
-  if (this.isSyncing) return;
-  
-  this.isSyncing = true;
-  TelegramWebApp.hapticImpact("light");
-  
-  try {
-    await this.loadCloudClipboard();
-    
-    if (!this.cloudClipboard) {
-      this.setError("Облачный буфер пуст");
-      return;
-    }
-    
-    this.url = (this.url || "") + this.cloudClipboard;
-    this.detect();
-    this.saveToCloudDebounced();
-    TelegramWebApp.hapticNotification("success");
-  } catch (err) {
-    ErrorHandler.log("appendFromCloud", err);
-    this.setError("Ошибка синхронизации");
-  } finally {
-    this.isSyncing = false;
-  }
-},
+          async syncFromCloud() {
+            if (this.isSyncing) return;
 
-async toggleSyncPanel() {
-  this.showSyncPanel = !this.showSyncPanel;
-  if (this.showSyncPanel) {
-    await this.loadCloudClipboard();
-  }
-  TelegramWebApp.hapticImpact("light");
-},
+            this.isSyncing = true;
+            TelegramWebApp.hapticImpact("light");
+
+            try {
+              await this.loadCloudClipboard();
+
+              if (!this.cloudClipboard) {
+                this.setError("Облачный буфер пуст");
+                return;
+              }
+
+              this.url = this.cloudClipboard;
+              this.detect();
+              TelegramWebApp.hapticNotification("success");
+            } catch (err) {
+              ErrorHandler.log("syncFromCloud", err);
+              this.setError("Ошибка синхронизации");
+            } finally {
+              this.isSyncing = false;
+            }
+          },
+
+          async appendFromCloud() {
+            if (this.isSyncing) return;
+
+            this.isSyncing = true;
+            TelegramWebApp.hapticImpact("light");
+
+            try {
+              await this.loadCloudClipboard();
+
+              if (!this.cloudClipboard) {
+                this.setError("Облачный буфер пуст");
+                return;
+              }
+
+              this.url = (this.url || "") + this.cloudClipboard;
+              this.detect();
+              this.saveToCloudDebounced();
+              TelegramWebApp.hapticNotification("success");
+            } catch (err) {
+              ErrorHandler.log("appendFromCloud", err);
+              this.setError("Ошибка синхронизации");
+            } finally {
+              this.isSyncing = false;
+            }
+          },
+
+          async toggleSyncPanel() {
+            this.showSyncPanel = !this.showSyncPanel;
+            if (this.showSyncPanel) {
+              await this.loadCloudClipboard();
+            }
+            TelegramWebApp.hapticImpact("light");
+          },
 
           async init() {
-  TelegramWebApp.initialize();
-  this.history = await HistoryStorage.getAll();
-  await this.loadCloudClipboard();
-  this.handleStartParam();
-  this.loadSponsors();
-  this.promptTelegramFeatures();
-},
+            TelegramWebApp.initialize();
+            this.history = await HistoryStorage.getAll();
+            await this.loadCloudClipboard();
+            this.handleStartParam();
+            this.loadSponsors();
+            this.promptTelegramFeatures();
+          },
 
           destroy() {
             try {
@@ -2673,17 +2720,17 @@ async toggleSyncPanel() {
           },
 
           async clearHistory() {
-  TelegramWebApp.showConfirm(
-    "Вы уверены, что хотите очистить историю?",
-    async (confirmed) => {
-      if (confirmed) {
-        await HistoryStorage.clear();
-        this.history = [];
-        TelegramWebApp.hapticImpact("medium");
-      }
-    }
-  );
-},
+            TelegramWebApp.showConfirm(
+              "Вы уверены, что хотите очистить историю?",
+              async (confirmed) => {
+                if (confirmed) {
+                  await HistoryStorage.clear();
+                  this.history = [];
+                  TelegramWebApp.hapticImpact("medium");
+                }
+              },
+            );
+          },
         }));
       });
     </script>
