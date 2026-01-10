@@ -860,106 +860,110 @@
       }
 
       class HistoryStorage {
-  static get cloudStorage() {
-    return window.Telegram?.WebApp?.CloudStorage;
-  }
+        static get cloudStorage() {
+          return window.Telegram?.WebApp?.CloudStorage;
+        }
 
-  static async getAll() {
-    try {
-      const storage = this.cloudStorage;
-      if (!storage) {
-        console.warn("CloudStorage not available, using localStorage fallback");
-        return JSON.parse(localStorage.getItem(AppConfig.HISTORY_KEY)) || [];
-      }
-
-      return new Promise((resolve) => {
-        storage.getItem(AppConfig.HISTORY_KEY, (err, value) => {
-          if (err || !value) {
-            resolve([]);
-            return;
-          }
+        static async getAll() {
           try {
-            resolve(JSON.parse(value) || []);
+            const storage = this.cloudStorage;
+            if (!storage) {
+              console.warn(
+                "CloudStorage not available, using localStorage fallback",
+              );
+              return (
+                JSON.parse(localStorage.getItem(AppConfig.HISTORY_KEY)) || []
+              );
+            }
+
+            return new Promise((resolve) => {
+              storage.getItem(AppConfig.HISTORY_KEY, (err, value) => {
+                if (err || !value) {
+                  resolve([]);
+                  return;
+                }
+                try {
+                  resolve(JSON.parse(value) || []);
+                } catch {
+                  resolve([]);
+                }
+              });
+            });
           } catch {
-            resolve([]);
+            return [];
           }
-        });
-      });
-    } catch {
-      return [];
-    }
-  }
+        }
 
-  static async add(item) {
-    try {
-      const storage = this.cloudStorage;
-      const list = (await this.getAll()).filter((i) => i.id !== item.id);
-      list.unshift(item);
-      const data = JSON.stringify(list.slice(0, AppConfig.HISTORY_MAX));
+        static async add(item) {
+          try {
+            const storage = this.cloudStorage;
+            const list = (await this.getAll()).filter((i) => i.id !== item.id);
+            list.unshift(item);
+            const data = JSON.stringify(list.slice(0, AppConfig.HISTORY_MAX));
 
-      if (!storage) {
-        localStorage.setItem(AppConfig.HISTORY_KEY, data);
-        return;
+            if (!storage) {
+              localStorage.setItem(AppConfig.HISTORY_KEY, data);
+              return;
+            }
+
+            return new Promise((resolve) => {
+              storage.setItem(AppConfig.HISTORY_KEY, data, (err) => {
+                if (err) ErrorHandler.log("HistoryStorage.add", err);
+                resolve();
+              });
+            });
+          } catch (err) {
+            ErrorHandler.log("HistoryStorage.add", err);
+          }
+        }
+
+        static async updateQuality(id, quality) {
+          try {
+            const storage = this.cloudStorage;
+            const list = await this.getAll();
+            const item = list.find((i) => i.id === id);
+
+            if (!item) return;
+
+            item.quality = quality;
+            const data = JSON.stringify(list);
+
+            if (!storage) {
+              localStorage.setItem(AppConfig.HISTORY_KEY, data);
+              return;
+            }
+
+            return new Promise((resolve) => {
+              storage.setItem(AppConfig.HISTORY_KEY, data, (err) => {
+                if (err) ErrorHandler.log("HistoryStorage.updateQuality", err);
+                resolve();
+              });
+            });
+          } catch (err) {
+            ErrorHandler.log("HistoryStorage.updateQuality", err);
+          }
+        }
+
+        static async clear() {
+          try {
+            const storage = this.cloudStorage;
+
+            if (!storage) {
+              localStorage.removeItem(AppConfig.HISTORY_KEY);
+              return;
+            }
+
+            return new Promise((resolve) => {
+              storage.removeItem(AppConfig.HISTORY_KEY, (err) => {
+                if (err) ErrorHandler.log("HistoryStorage.clear", err);
+                resolve();
+              });
+            });
+          } catch (err) {
+            ErrorHandler.log("HistoryStorage.clear", err);
+          }
+        }
       }
-
-      return new Promise((resolve) => {
-        storage.setItem(AppConfig.HISTORY_KEY, data, (err) => {
-          if (err) ErrorHandler.log("HistoryStorage.add", err);
-          resolve();
-        });
-      });
-    } catch (err) {
-      ErrorHandler.log("HistoryStorage.add", err);
-    }
-  }
-
-  static async updateQuality(id, quality) {
-    try {
-      const storage = this.cloudStorage;
-      const list = await this.getAll();
-      const item = list.find((i) => i.id === id);
-
-      if (!item) return;
-
-      item.quality = quality;
-      const data = JSON.stringify(list);
-
-      if (!storage) {
-        localStorage.setItem(AppConfig.HISTORY_KEY, data);
-        return;
-      }
-
-      return new Promise((resolve) => {
-        storage.setItem(AppConfig.HISTORY_KEY, data, (err) => {
-          if (err) ErrorHandler.log("HistoryStorage.updateQuality", err);
-          resolve();
-        });
-      });
-    } catch (err) {
-      ErrorHandler.log("HistoryStorage.updateQuality", err);
-    }
-  }
-
-  static async clear() {
-    try {
-      const storage = this.cloudStorage;
-
-      if (!storage) {
-        localStorage.removeItem(AppConfig.HISTORY_KEY);
-        return;
-      }
-
-      return new Promise((resolve) => {
-        storage.removeItem(AppConfig.HISTORY_KEY, (err) => {
-          if (err) ErrorHandler.log("HistoryStorage.clear", err);
-          resolve();
-        });
-      });
-    } catch (err) {
-      ErrorHandler.log("HistoryStorage.clear", err);
-    }
-  }
-}
 
       class ErrorHandler {
         static log(context, error) {
@@ -1897,12 +1901,12 @@
           },
 
           async init() {
-  TelegramWebApp.initialize();
-  this.history = await HistoryStorage.getAll();
-  this.handleStartParam();
-  this.loadSponsors();
-  this.promptTelegramFeatures();
-},
+            TelegramWebApp.initialize();
+            this.history = await HistoryStorage.getAll();
+            this.handleStartParam();
+            this.loadSponsors();
+            this.promptTelegramFeatures();
+          },
 
           destroy() {
             try {
@@ -2178,29 +2182,30 @@
           },
 
           async updateHistoryQuality() {
-  if (!this.video || !this.platform) return;
+            if (!this.video || !this.platform) return;
 
-  const historyId = this.video.id || `${this.platform.name}_${Date.now()}`;
-  await HistoryStorage.updateQuality(historyId, this.selectedQuality);
-  this.history = await HistoryStorage.getAll();
-},
+            const historyId =
+              this.video.id || `${this.platform.name}_${Date.now()}`;
+            await HistoryStorage.updateQuality(historyId, this.selectedQuality);
+            this.history = await HistoryStorage.getAll();
+          },
 
           async saveToHistory() {
-  if (!this.video || !this.platform) return;
+            if (!this.video || !this.platform) return;
 
-  await HistoryStorage.add({
-    id: this.video.id || `${this.platform.name}_${Date.now()}`,
-    cover: this.video.cover,
-    author:
-      this.video.author?.nickname ||
-      this.video.author?.unique_id ||
-      "Неизвестный автор",
-    url: this.url,
-    platform: this.platform.name,
-    quality: this.selectedQuality,
-  });
-  this.history = await HistoryStorage.getAll();
-},
+            await HistoryStorage.add({
+              id: this.video.id || `${this.platform.name}_${Date.now()}`,
+              cover: this.video.cover,
+              author:
+                this.video.author?.nickname ||
+                this.video.author?.unique_id ||
+                "Неизвестный автор",
+              url: this.url,
+              platform: this.platform.name,
+              quality: this.selectedQuality,
+            });
+            this.history = await HistoryStorage.getAll();
+          },
 
           async download() {
             if (!this.platform || this.isLoading) return;
@@ -2214,7 +2219,7 @@
             this.isLoading = true;
 
             while (this.sponsorsLoading) {
-              await new Promise(r => setTimeout(r, 50));
+              await new Promise((r) => setTimeout(r, 50));
             }
 
             if (this.hasUnsubscribedSponsors) {
@@ -2390,10 +2395,10 @@
           },
 
           async clearHistory() {
-  await HistoryStorage.clear();
-  this.history = [];
-  TelegramWebApp.hapticImpact("medium");
-},
+            await HistoryStorage.clear();
+            this.history = [];
+            TelegramWebApp.hapticImpact("medium");
+          },
         }));
       });
     </script>
