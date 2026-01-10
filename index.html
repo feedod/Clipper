@@ -314,18 +314,16 @@
             </div>
           </div>
 
-          <template x-if="hasMultipleQualities">
-            <div class="flex gap-2">
-              <template x-for="q in availableQualities" :key="q.key">
-                <button
-                  @click="selectQuality(q.key)"
-                  :class="selectedQuality === q.key ? 'border-text bg-text text-white' : 'border-border bg-surface text-text'"
-                  class="flex-1 rounded-xl border py-2.5 text-sm font-semibold transition-all duration-75 ease-out active:scale-[0.97]"
-                  x-text="q.label"
-                ></button>
-              </template>
-            </div>
-          </template>
+          <div x-show="hasMultipleQualities" x-transition class="flex gap-2">
+  <template x-for="q in availableQualities" :key="q.key">
+    <button
+      @click="selectQuality(q.key)"
+      :class="selectedQuality === q.key ? 'border-text bg-text text-white' : 'border-border bg-surface text-text'"
+      class="flex-1 rounded-xl border py-2.5 text-sm font-semibold transition-all duration-75 ease-out active:scale-[0.97]"
+      x-text="q.label"
+    ></button>
+  </template>
+</div>
 
           <button
             @click="openAuthorProfile"
@@ -439,25 +437,26 @@
 
           <div class="grid grid-cols-2 gap-3 pt-2">
             <button
-              @click="saveVideo"
-              :style="{ backgroundColor: platform?.colors?.save }"
-              class="flex h-14 items-center justify-center gap-2 rounded-2xl font-semibold text-white transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80"
-            >
-              <svg
-                class="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"
-                />
-              </svg>
-              <span>Сохранить</span>
-            </button>
+  @click="saveVideo"
+  :disabled="!currentVideoUrl"
+  :style="{ backgroundColor: platform?.colors?.save }"
+  class="flex h-14 items-center justify-center gap-2 rounded-2xl font-semibold text-white transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80 disabled:opacity-40"
+>
+  <svg
+    class="h-5 w-5"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    viewBox="0 0 24 24"
+  >
+    <path
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"
+    />
+  </svg>
+  <span>Сохранить</span>
+</button>
             <button
               @click="shareStory"
               :style="{ backgroundColor: platform?.colors?.story }"
@@ -1902,22 +1901,25 @@ static parseStartParam(param) {
     },
 
     saveVideo() {
-      const videoUrl = this.currentVideoUrl;
-      if (!videoUrl) {
-        this.setError("Видео недоступно");
-        return;
-      }
+  if (!this.video || this.isLoading || !this.platform) {
+    return;
+  }
 
-      const filename = this.platform.getFilename(this.video, this.selectedQuality);
-      const success = TelegramWebApp.downloadFile(videoUrl, filename);
+  const videoUrl = this.currentVideoUrl;
+  if (!videoUrl) {
+    return;
+  }
 
-      if (success) {
-        TelegramWebApp.hapticNotification("success");
-        AnalyticsService.trackDownload(this.platform.name, this.selectedQuality);
-      } else {
-        this.setError("Скачивание доступно только в мобильном Telegram");
-      }
-    },
+  const filename = this.platform.getFilename(this.video, this.selectedQuality);
+  const success = TelegramWebApp.downloadFile(videoUrl, filename);
+
+  if (success) {
+    TelegramWebApp.hapticNotification("success");
+    AnalyticsService.trackDownload(this.platform.name, this.selectedQuality);
+  } else {
+    this.setError("Скачивание доступно только в мобильном Telegram");
+  }
+},
 
     shareStory() {
       const videoUrl = this.currentVideoUrl;
