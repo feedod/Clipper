@@ -1747,11 +1747,29 @@
           },
 
           selectQuality(quality) {
-            if (this.selectedQuality === quality) return;
-            this.selectedQuality = quality;
-            TelegramWebApp.hapticImpact("light");
-            AnalyticsService.trackQualityChange(quality);
-          },
+  if (this.selectedQuality === quality) return;
+  this.selectedQuality = quality;
+  TelegramWebApp.hapticImpact("light");
+  AnalyticsService.trackQualityChange(quality);
+  this.saveToHistory();
+},
+
+saveToHistory() {
+  if (!this.video || !this.platform) return;
+  
+  HistoryStorage.add({
+    id: this.video.id || Date.now(),
+    cover: this.video.cover,
+    author:
+      this.video.author?.nickname ||
+      this.video.author?.unique_id ||
+      "Неизвестный автор",
+    url: this.url,
+    platform: this.platform.name,
+    quality: this.selectedQuality,
+  });
+  this.history = HistoryStorage.getAll();
+},
 
           async download() {
             if (!this.platform || this.isLoading) return;
@@ -1792,19 +1810,7 @@
                 this.selectedQuality = this.video.currentQuality;
               }
 
-              HistoryStorage.add({
-  id: this.video.id || Date.now(),
-  cover: this.video.cover,
-  author:
-    this.video.author?.nickname ||
-    this.video.author?.unique_id ||
-    "Неизвестный автор",
-  url: this.url,
-  platform: this.platform.name,
-  quality: this.selectedQuality,
-});
-
-              this.history = HistoryStorage.getAll();
+              this.saveToHistory();
               TelegramWebApp.hapticNotification("success");
               AnalyticsService.trackDownload(
                 this.platform.name,
