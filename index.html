@@ -143,74 +143,74 @@
             </svg>
           </div>
           <input
-  type="url"
-  x-ref="input"
-  x-model="url"
-  @input.debounce.300ms="detect(); saveToCloudDebounced()"
-  @paste="$nextTick(() => { detect(); saveToCloudDebounced(); })"
-  @keydown.enter.prevent="download"
-  :disabled="isLoading"
-  placeholder="Вставьте ссылку"
-  autocomplete="off"
-  autocorrect="off"
-  autocapitalize="off"
-  spellcheck="false"
-  class="h-14 w-full rounded-2xl border border-border bg-surface pl-12 text-text transition-colors placeholder:text-muted focus:border-text/20 disabled:opacity-40"
-  :class="url.length > 0 ? 'pr-24' : 'pr-14'"
-/>
-<div
-  class="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2"
->
-  <button
-    x-show="url.length > 0"
-    x-transition:enter="transition ease-out duration-100"
-    x-transition:enter-start="opacity-0 scale-90"
-    x-transition:enter-end="opacity-100 scale-100"
-    x-transition:leave="transition ease-in duration-75"
-    x-transition:leave-start="opacity-100 scale-100"
-    x-transition:leave-end="opacity-0 scale-90"
-    @click="clear"
-    :disabled="isLoading"
-    class="grid h-8 w-8 place-items-center rounded-full bg-border transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80 disabled:opacity-40"
-    type="button"
-  >
-    <svg
-      class="h-4 w-4 text-muted"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2"
-      viewBox="0 0 24 24"
-    >
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        d="M6 18L18 6M6 6l12 12"
-      />
-    </svg>
-  </button>
-  <button
-    @click="toggleSyncPanel"
-    :disabled="isLoading"
-    class="grid h-8 w-8 place-items-center rounded-full transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80 disabled:opacity-40"
-    :class="showSyncPanel ? 'bg-text' : 'bg-border'"
-    type="button"
-  >
-    <svg
-      class="h-4 w-4 transition-transform duration-200"
-      :class="[showSyncPanel ? 'rotate-180 text-white' : 'text-muted']"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2"
-      viewBox="0 0 24 24"
-    >
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        d="m19.5 8.25-7.5 7.5-7.5-7.5"
-      />
-    </svg>
-  </button>
-</div>
+            type="url"
+            x-ref="input"
+            x-model="url"
+            @input.debounce.300ms="detect(); saveToCloudDebounced()"
+            @paste="$nextTick(() => { detect(); saveToCloudDebounced(); })"
+            @keydown.enter.prevent="download"
+            :disabled="isLoading"
+            placeholder="Вставьте ссылку"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
+            class="h-14 w-full rounded-2xl border border-border bg-surface pl-12 text-text transition-colors placeholder:text-muted focus:border-text/20 disabled:opacity-40"
+            :class="url.length > 0 ? 'pr-24' : 'pr-14'"
+          />
+          <div
+            class="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2"
+          >
+            <button
+              x-show="url.length > 0"
+              x-transition:enter="transition ease-out duration-100"
+              x-transition:enter-start="opacity-0 scale-90"
+              x-transition:enter-end="opacity-100 scale-100"
+              x-transition:leave="transition ease-in duration-75"
+              x-transition:leave-start="opacity-100 scale-100"
+              x-transition:leave-end="opacity-0 scale-90"
+              @click="clear"
+              :disabled="isLoading"
+              class="grid h-8 w-8 place-items-center rounded-full bg-border transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80 disabled:opacity-40"
+              type="button"
+            >
+              <svg
+                class="h-4 w-4 text-muted"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+            <button
+              @click="toggleSyncPanel"
+              :disabled="isLoading"
+              class="grid h-8 w-8 place-items-center rounded-full transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80 disabled:opacity-40"
+              :class="showSyncPanel ? 'bg-text' : 'bg-border'"
+              type="button"
+            >
+              <svg
+                class="h-4 w-4 transition-transform duration-200"
+                :class="[showSyncPanel ? 'rotate-180 text-white' : 'text-muted']"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="m19.5 8.25-7.5 7.5-7.5-7.5"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div
@@ -276,26 +276,26 @@
           </div>
 
           <div class="grid grid-cols-2 gap-2">
-  <button
-    @click="syncFromCloud"
-    :disabled="isSyncing || !cloudClipboard"
-    class="flex h-11 items-center justify-center rounded-xl bg-text font-semibold text-white transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80 disabled:opacity-40"
-  >
-    <span>Заменить</span>
-  </button>
+            <button
+              @click="syncFromCloud"
+              :disabled="isSyncing || !cloudClipboard"
+              class="flex h-11 items-center justify-center rounded-xl bg-text font-semibold text-white transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80 disabled:opacity-40"
+            >
+              <span>Заменить</span>
+            </button>
 
-  <button
-    @click="appendFromCloud"
-    :disabled="isSyncing || !cloudClipboard"
-    class="flex h-11 items-center justify-center rounded-xl border border-border bg-bg font-semibold text-text transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80 disabled:opacity-40"
-  >
-    <span>Добавить</span>
-  </button>
-</div>
+            <button
+              @click="appendFromCloud"
+              :disabled="isSyncing || !cloudClipboard"
+              class="flex h-11 items-center justify-center rounded-xl border border-border bg-bg font-semibold text-text transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80 disabled:opacity-40"
+            >
+              <span>Добавить</span>
+            </button>
+          </div>
 
-<p class="text-xs text-center text-muted">
-  Синхронизация между устройствами
-</p>
+          <p class="text-xs text-center text-muted">
+            Синхронизация между устройствами
+          </p>
         </div>
 
         <button
