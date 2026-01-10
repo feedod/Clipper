@@ -111,9 +111,10 @@
     </style>
   </head>
   <body
-    x-data="ClipperApp"
-    class="flex min-h-dvh flex-col select-none bg-bg text-text"
-  >
+  x-data="ClipperApp"
+  @beforeunload.window="destroy()"
+  class="flex min-h-dvh flex-col select-none bg-bg text-text"
+>
     <main
       class="mx-auto flex w-full max-w-md flex-1 flex-col overflow-y-auto px-5 pb-32"
     >
@@ -232,36 +233,36 @@
       </template>
 
       <template x-if="error && !isLoading">
-        <section
-          x-ref="errorSection"
-          x-init="$nextTick(() => scrollToError())"
-          class="fade mt-6 rounded-2xl border border-red-100 bg-red-50 p-4"
+  <section
+    x-ref="errorSection"
+    x-effect="if (error && !isLoading) scrollToError()"
+    class="fade mt-6 rounded-2xl border border-red-100 bg-red-50 p-4"
+  >
+    <div class="flex items-start gap-3">
+      <div
+        class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-red-100"
+      >
+        <svg
+          class="h-5 w-5 text-red-500"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          viewBox="0 0 24 24"
         >
-          <div class="flex items-start gap-3">
-            <div
-              class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-red-100"
-            >
-              <svg
-                class="h-5 w-5 text-red-500"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.5"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0zm-9 3.75h.008v.008H12v-.008z"
-                />
-              </svg>
-            </div>
-            <div class="min-w-0 flex-1 pt-0.5">
-              <p class="text-sm font-semibold text-red-600">Ошибка</p>
-              <p class="mt-0.5 text-sm text-red-500" x-text="error"></p>
-            </div>
-          </div>
-        </section>
-      </template>
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0zm-9 3.75h.008v.008H12v-.008z"
+          />
+        </svg>
+      </div>
+      <div class="min-w-0 flex-1 pt-0.5">
+        <p class="text-sm font-semibold text-red-600">Ошибка</p>
+        <p class="mt-0.5 text-sm text-red-500" x-text="error"></p>
+      </div>
+    </div>
+  </section>
+</template>
 
       <template x-if="video && !isLoading">
         <section class="fade mt-6 space-y-4">
@@ -989,29 +990,29 @@
           }
         }
 
-        static openExternalLink(url) {
-          try {
-            if (this.instance?.openLink) {
-              this.instance.openLink(url);
-            } else {
-              window.open(url, "_blank");
-            }
-          } catch (err) {
-            ErrorHandler.log("TelegramWebApp.openExternalLink", err);
-          }
-        }
+static openExternalLink(url) {
+  try {
+    if (this.instance?.openLink) {
+      this.instance.openLink(url);
+    } else {
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+  } catch (err) {
+    ErrorHandler.log("TelegramWebApp.openExternalLink", err);
+  }
+}
 
-        static openTelegramLink(url) {
-          try {
-            if (this.instance?.openTelegramLink) {
-              this.instance.openTelegramLink(url);
-            } else {
-              window.open(url, "_blank");
-            }
-          } catch (err) {
-            ErrorHandler.log("TelegramWebApp.openTelegramLink", err);
-          }
-        }
+static openTelegramLink(url) {
+  try {
+    if (this.instance?.openTelegramLink) {
+      this.instance.openTelegramLink(url);
+    } else {
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+  } catch (err) {
+    ErrorHandler.log("TelegramWebApp.openTelegramLink", err);
+  }
+}
 
         static shareUrl(url, text) {
           try {
@@ -1124,193 +1125,209 @@
       }
 
       class SponsorApiService {
-        static channelCache = new Map();
-        static subscriptionCache = new Map();
+  static channelCache = new Map();
+  static subscriptionCache = new Map();
+  static CACHE_TTL = 5 * 60 * 1000;
+  static cacheTimestamps = new Map();
 
-        static getSponsors() {
-          return AppConfig.SPONSORS.slice(0, 3);
-        }
+  static getCachedChannel(username) {
+    const cached = this.channelCache.get(username);
+    const timestamp = this.cacheTimestamps.get(`channel_${username}`);
+    if (cached && timestamp && Date.now() - timestamp < this.CACHE_TTL) {
+      return cached;
+    }
+    this.channelCache.delete(username);
+    this.cacheTimestamps.delete(`channel_${username}`);
+    return null;
+  }
 
-        static async fetchChannelInfo(username) {
-          const cleanUsername = username.replace(/^@/, "").trim();
-          const cached = this.channelCache.get(cleanUsername);
-          if (cached) return cached;
+  static setCachedChannel(username, data) {
+    this.channelCache.set(username, data);
+    this.cacheTimestamps.set(`channel_${username}`, Date.now());
+  }
 
-          try {
-            if (AppConfig.API_MODE === "server") {
-              return await this.fetchChannelFromServer(cleanUsername);
-            }
-            return await this.fetchChannelDirect(cleanUsername);
-          } catch (err) {
-            ErrorHandler.log("SponsorApiService.fetchChannelInfo", err);
-            return this.createFallbackChannel(cleanUsername);
-          }
-        }
+  static getCachedSubscription(cacheKey) {
+    const cached = this.subscriptionCache.get(cacheKey);
+    const timestamp = this.cacheTimestamps.get(`sub_${cacheKey}`);
+    if (cached !== undefined && timestamp && Date.now() - timestamp < this.CACHE_TTL) {
+      return cached;
+    }
+    this.subscriptionCache.delete(cacheKey);
+    this.cacheTimestamps.delete(`sub_${cacheKey}`);
+    return undefined;
+  }
 
-        static async fetchChannelFromServer(username) {
-          const result = await ApiClient.request("sponsors/channel", {
-            username,
-          });
+  static setCachedSubscription(cacheKey, value) {
+    this.subscriptionCache.set(cacheKey, value);
+    this.cacheTimestamps.set(`sub_${cacheKey}`, Date.now());
+  }
 
-          if (!result.ok) throw new Error("Channel not found");
+  static getSponsors() {
+    return AppConfig.SPONSORS.slice(0, 3);
+  }
 
-          const channelData = {
-            username,
-            title: result.data.title || username,
-            photo: result.data.photo || AppAssets.sponsor,
-          };
+  static async fetchChannelInfo(username) {
+    const cleanUsername = username.replace(/^@/, "").trim();
+    const cached = this.getCachedChannel(cleanUsername);
+    if (cached) return cached;
 
-          this.channelCache.set(username, channelData);
-          return channelData;
-        }
+    try {
+      if (AppConfig.API_MODE === "server") {
+        return await this.fetchChannelFromServer(cleanUsername);
+      }
+      return await this.fetchChannelDirect(cleanUsername);
+    } catch (err) {
+      ErrorHandler.log("SponsorApiService.fetchChannelInfo", err);
+      return this.createFallbackChannel(cleanUsername);
+    }
+  }
 
-        static async fetchChannelDirect(username) {
-          const chat = await ApiClient.request("getChat", {
-            chat_id: `@${username}`,
-          });
+  static async fetchChannelFromServer(username) {
+    const result = await ApiClient.request("sponsors/channel", { username });
+    if (!result.ok) throw new Error("Channel not found");
 
-          if (!chat.ok || !chat.result) throw new Error("Channel not found");
+    const channelData = {
+      username,
+      title: result.data.title || username,
+      photo: result.data.photo || AppAssets.sponsor,
+    };
 
-          let photoUrl = AppAssets.sponsor;
+    this.setCachedChannel(username, channelData);
+    return channelData;
+  }
 
-          if (chat.result.photo?.big_file_id) {
-            const file = await ApiClient.request("getFile", {
-              file_id: chat.result.photo.big_file_id,
+  static async fetchChannelDirect(username) {
+    const chat = await ApiClient.request("getChat", { chat_id: `@${username}` });
+    if (!chat.ok || !chat.result) throw new Error("Channel not found");
+
+    let photoUrl = AppAssets.sponsor;
+
+    if (chat.result.photo?.big_file_id) {
+      const file = await ApiClient.request("getFile", {
+        file_id: chat.result.photo.big_file_id,
+      });
+
+      if (file.ok && file.result?.file_path) {
+        const botToken = AppConfig.BOT_API_URL.split("/bot")[1];
+        photoUrl = `https://api.telegram.org/file/bot${botToken}/${file.result.file_path}`;
+      }
+    }
+
+    const channelData = {
+      username,
+      title: chat.result.title || username,
+      photo: photoUrl,
+    };
+
+    this.setCachedChannel(username, channelData);
+    return channelData;
+  }
+
+  static createFallbackChannel(username) {
+    return {
+      username,
+      title: username,
+      photo: AppAssets.sponsor,
+    };
+  }
+
+  static async checkSubscription(username) {
+    const userId = TelegramWebApp.userId;
+    if (!userId) return false;
+
+    const cleanUsername = username.replace(/^@/, "").trim();
+    const cacheKey = `${userId}_${cleanUsername}`;
+    const cached = this.getCachedSubscription(cacheKey);
+    if (cached !== undefined) return cached;
+
+    try {
+      if (AppConfig.API_MODE === "server") {
+        return await this.checkSubscriptionFromServer(cleanUsername, cacheKey);
+      }
+      return await this.checkSubscriptionDirect(cleanUsername, userId, cacheKey);
+    } catch (err) {
+      ErrorHandler.log("SponsorApiService.checkSubscription", err);
+      this.setCachedSubscription(cacheKey, false);
+      return false;
+    }
+  }
+
+  static async checkSubscriptionFromServer(username, cacheKey) {
+    const result = await ApiClient.request("sponsors/check", { username });
+    const isSubscribed = result.ok && result.subscribed === true;
+    this.setCachedSubscription(cacheKey, isSubscribed);
+    return isSubscribed;
+  }
+
+  static async checkSubscriptionDirect(username, userId, cacheKey) {
+    const member = await ApiClient.request("getChatMember", {
+      chat_id: `@${username}`,
+      user_id: userId,
+    });
+
+    if (!member.ok || !member.result) {
+      this.setCachedSubscription(cacheKey, false);
+      return false;
+    }
+
+    const subscribedStatuses = ["creator", "administrator", "member"];
+    const isSubscribed = subscribedStatuses.includes(member.result.status);
+    this.setCachedSubscription(cacheKey, isSubscribed);
+    return isSubscribed;
+  }
+
+  static async fetchAllSponsorsWithStatus() {
+    const sponsors = this.getSponsors();
+    if (sponsors.length === 0) return [];
+
+    try {
+      if (AppConfig.API_MODE === "server") {
+        const result = await ApiClient.request("sponsors/list");
+
+        if (result.ok && Array.isArray(result.data)) {
+          const userId = TelegramWebApp.userId;
+          result.data.forEach((sponsor) => {
+            this.setCachedChannel(sponsor.username, {
+              username: sponsor.username,
+              title: sponsor.title,
+              photo: sponsor.photo,
             });
 
-            if (file.ok && file.result?.file_path) {
-              const botToken = AppConfig.BOT_API_URL.split("/bot")[1];
-              photoUrl = `https://api.telegram.org/file/bot${botToken}/${file.result.file_path}`;
+            if (userId) {
+              this.setCachedSubscription(`${userId}_${sponsor.username}`, sponsor.subscribed);
             }
-          }
-
-          const channelData = {
-            username,
-            title: chat.result.title || username,
-            photo: photoUrl,
-          };
-
-          this.channelCache.set(username, channelData);
-          return channelData;
-        }
-
-        static createFallbackChannel(username) {
-          return {
-            username,
-            title: username,
-            photo: AppAssets.sponsor,
-          };
-        }
-
-        static async checkSubscription(username) {
-          const userId = TelegramWebApp.userId;
-          if (!userId) return false;
-
-          const cleanUsername = username.replace(/^@/, "").trim();
-          const cacheKey = `${userId}_${cleanUsername}`;
-          const cached = this.subscriptionCache.get(cacheKey);
-          if (cached !== undefined) return cached;
-
-          try {
-            if (AppConfig.API_MODE === "server") {
-              return await this.checkSubscriptionFromServer(
-                cleanUsername,
-                cacheKey,
-              );
-            }
-            return await this.checkSubscriptionDirect(
-              cleanUsername,
-              userId,
-              cacheKey,
-            );
-          } catch (err) {
-            ErrorHandler.log("SponsorApiService.checkSubscription", err);
-            this.subscriptionCache.set(cacheKey, false);
-            return false;
-          }
-        }
-
-        static async checkSubscriptionFromServer(username, cacheKey) {
-          const result = await ApiClient.request("sponsors/check", {
-            username,
-          });
-          const isSubscribed = result.ok && result.subscribed === true;
-          this.subscriptionCache.set(cacheKey, isSubscribed);
-          return isSubscribed;
-        }
-
-        static async checkSubscriptionDirect(username, userId, cacheKey) {
-          const member = await ApiClient.request("getChatMember", {
-            chat_id: `@${username}`,
-            user_id: userId,
           });
 
-          if (!member.ok || !member.result) {
-            this.subscriptionCache.set(cacheKey, false);
-            return false;
-          }
-
-          const subscribedStatuses = ["creator", "administrator", "member"];
-          const isSubscribed = subscribedStatuses.includes(
-            member.result.status,
-          );
-          this.subscriptionCache.set(cacheKey, isSubscribed);
-          return isSubscribed;
-        }
-
-        static async fetchAllSponsorsWithStatus() {
-          const sponsors = this.getSponsors();
-          if (sponsors.length === 0) return [];
-
-          try {
-            if (AppConfig.API_MODE === "server") {
-              const result = await ApiClient.request("sponsors/list");
-
-              if (result.ok && Array.isArray(result.data)) {
-                result.data.forEach((sponsor) => {
-                  this.channelCache.set(sponsor.username, {
-                    username: sponsor.username,
-                    title: sponsor.title,
-                    photo: sponsor.photo,
-                  });
-
-                  const userId = TelegramWebApp.userId;
-                  if (userId) {
-                    this.subscriptionCache.set(
-                      `${userId}_${sponsor.username}`,
-                      sponsor.subscribed,
-                    );
-                  }
-                });
-
-                return result.data;
-              }
-            }
-
-            return await Promise.all(
-              sponsors.map(async (username) => {
-                const channel = await this.fetchChannelInfo(username);
-                const subscribed = await this.checkSubscription(username);
-                return { ...channel, subscribed };
-              }),
-            );
-          } catch (err) {
-            ErrorHandler.log(
-              "SponsorApiService.fetchAllSponsorsWithStatus",
-              err,
-            );
-            return [];
-          }
-        }
-
-        static clearSubscriptionCache() {
-          this.subscriptionCache.clear();
-        }
-
-        static getChannelUrl(username) {
-          return `https://t.me/${username.replace(/^@/, "").trim()}`;
+          return result.data;
         }
       }
+
+      return await Promise.all(
+        sponsors.map(async (username) => {
+          const channel = await this.fetchChannelInfo(username);
+          const subscribed = await this.checkSubscription(username);
+          return { ...channel, subscribed };
+        }),
+      );
+    } catch (err) {
+      ErrorHandler.log("SponsorApiService.fetchAllSponsorsWithStatus", err);
+      return [];
+    }
+  }
+
+  static clearSubscriptionCache() {
+    this.subscriptionCache.clear();
+    for (const key of this.cacheTimestamps.keys()) {
+      if (key.startsWith("sub_")) {
+        this.cacheTimestamps.delete(key);
+      }
+    }
+  }
+
+  static getChannelUrl(username) {
+    return `https://t.me/${username.replace(/^@/, "").trim()}`;
+  }
+}
 
       class VideoPlatform {
         constructor(config) {
@@ -1378,19 +1395,18 @@
           const qualitySuffix = quality ? `_${quality}` : "";
           return `${this.name.toLowerCase()}_${id}${qualitySuffix}.mp4`;
         }
-
-        getShareParam(video, url) {
-          try {
-            const id = video?.id || this.extractId(url);
-            if (id) return `${this.name.toLowerCase()}_${id}`;
-            return btoa(unescape(encodeURIComponent(url))).replace(
-              /[+/=]/g,
-              (c) => ({ "+": "-", "/": "_" })[c] || "",
-            );
-          } catch {
-            return null;
-          }
-        }
+        
+getShareParam(video, url) {
+  try {
+    const id = video?.id || this.extractId(url);
+    if (id) return `${this.name.toLowerCase()}_${id}`;
+    const utf8Bytes = new TextEncoder().encode(url);
+    const binaryString = String.fromCharCode(...utf8Bytes);
+    return btoa(binaryString).replace(/[+/=]/g, (c) => ({ "+": "-", "/": "_" })[c] || "");
+  } catch {
+    return null;
+  }
+}
 
         buildUrlFromId(id) {
           try {
@@ -1422,37 +1438,44 @@
           return this.platforms;
         }
 
-        static parseStartParam(param) {
-          if (!param) return null;
+static parseStartParam(param) {
+  if (!param) return null;
 
-          try {
-            for (const platform of this.platforms) {
-              const prefix = `${platform.name.toLowerCase()}_`;
-              if (param.startsWith(prefix)) {
-                const id = param.slice(prefix.length);
-                if (id) {
-                  return {
-                    platform: platform.name,
-                    id,
-                    url: platform.buildUrlFromId(id),
-                  };
-                }
-              }
-            }
-
-            const decoded = atob(param.replace(/-/g, "+").replace(/_/g, "/"));
-            if (decoded.startsWith("http")) {
-              const platform = this.detect(decoded);
-              if (platform) {
-                return { platform: platform.name, id: null, url: decoded };
-              }
-            }
-          } catch (err) {
-            ErrorHandler.log("PlatformRegistry.parseStartParam", err);
-          }
-
-          return null;
+  try {
+    for (const platform of this.platforms) {
+      const prefix = `${platform.name.toLowerCase()}_`;
+      if (param.startsWith(prefix)) {
+        const id = param.slice(prefix.length);
+        if (id) {
+          return {
+            platform: platform.name,
+            id,
+            url: platform.buildUrlFromId(id),
+          };
         }
+      }
+    }
+
+    let base64 = param.replace(/-/g, "+").replace(/_/g, "/");
+    const padLength = (4 - (base64.length % 4)) % 4;
+    base64 += "=".repeat(padLength);
+    
+    const binaryString = atob(base64);
+    const bytes = Uint8Array.from(binaryString, c => c.charCodeAt(0));
+    const decoded = new TextDecoder().decode(bytes);
+    
+    if (decoded.startsWith("http")) {
+      const platform = this.detect(decoded);
+      if (platform) {
+        return { platform: platform.name, id: null, url: decoded };
+      }
+    }
+  } catch (err) {
+    ErrorHandler.log("PlatformRegistry.parseStartParam", err);
+  }
+
+  return null;
+}
       }
 
       PlatformRegistry.register({
@@ -1521,423 +1544,463 @@
 
           const json = await response.json();
           if (json.code !== 0) throw new Error("Видео не найдено");
-
-          const data = json.data;
-          data.hdPlay = data.hdplay || null;
-          data.sdPlay = data.play;
-          data.hasHD = Boolean(data.hdplay);
-          data.currentQuality = hdParam === 1 && data.hasHD ? "hd" : "sd";
-
+          
+  const data = json.data;
+  
+  if (!data.play) {
+    throw new Error("Видео недоступно");
+  }
+  
+  data.hdPlay = data.hdplay || null;
+  data.hasHD = Boolean(data.hdplay);
+  data.currentQuality = hdParam === 1 && data.hasHD ? "hd" : "sd";
+  
           return data;
         },
       });
 
       document.addEventListener("alpine:init", () => {
-        Alpine.data("ClipperApp", () => ({
-          url: "",
-          platform: null,
-          isLoading: false,
-          progress: 0,
-          video: null,
-          error: null,
-          history: HistoryStorage.getAll(),
-          sponsorsList: [],
-          sponsorsLoading: true,
-          progressTimer: null,
-          selectedQuality: "hd",
+  Alpine.data("ClipperApp", () => ({
+    url: "",
+    platform: null,
+    isLoading: false,
+    progress: 0,
+    video: null,
+    error: null,
+    history: HistoryStorage.getAll(),
+    sponsorsList: [],
+    sponsorsLoading: true,
+    progressTimer: null,
+    selectedQuality: "hd",
+    featurePromptTimer: null,
+    isRefreshing: false,
+    downloadAbortController: null,
 
-          get statusText() {
-            if (this.isLoading) return "Загрузка видео...";
-            if (this.error) return "Попробуйте другую ссылку";
-            if (this.video) return "Видео готово к сохранению";
-            if (this.platform) return this.platform.name;
-            return "Сохраняйте видео легко и быстро";
-          },
+    get statusText() {
+      if (this.isLoading) return "Загрузка видео...";
+      if (this.error) return "Попробуйте другую ссылку";
+      if (this.video) return "Видео готово к сохранению";
+      if (this.platform) return this.platform.name;
+      return "Сохраняйте видео легко и быстро";
+    },
 
-          get loadingText() {
-            if (this.progress < 30) return "Подключение к серверу...";
-            if (this.progress < 60) return "Получение видео...";
-            if (this.progress < 90) return "Обработка данных...";
-            return "Почти готово...";
-          },
+    get loadingText() {
+      if (this.progress < 30) return "Подключение к серверу...";
+      if (this.progress < 60) return "Получение видео...";
+      if (this.progress < 90) return "Обработка данных...";
+      return "Почти готово...";
+    },
 
-          get visibleStats() {
-            if (!this.platform?.stats || !this.video) return [];
-            return this.platform.stats.filter(
-              (s) => this.video[s.key] != null && this.video[s.key] > 0,
-            );
-          },
+    get visibleStats() {
+      if (!this.platform?.stats || !this.video) return [];
+      return this.platform.stats.filter(
+        (s) => this.video[s.key] != null && this.video[s.key] > 0,
+      );
+    },
 
-          get unsubscribedSponsors() {
-            return this.sponsorsList.filter((s) => !s.subscribed);
-          },
+    get unsubscribedSponsors() {
+      return this.sponsorsList.filter((s) => !s.subscribed);
+    },
 
-          get hasUnsubscribedSponsors() {
-            return this.unsubscribedSponsors.length > 0;
-          },
+    get hasUnsubscribedSponsors() {
+      return this.unsubscribedSponsors.length > 0;
+    },
 
-          get sponsorsCount() {
-            return AppConfig.SPONSORS.length;
-          },
+    get sponsorsCount() {
+      return AppConfig.SPONSORS.length;
+    },
 
-          get hasMultipleQualities() {
-            return this.platform?.supportsQuality && this.video?.hasHD;
-          },
+    get hasMultipleQualities() {
+      return this.platform?.supportsQuality === true && this.video?.hasHD === true;
+    },
 
-          get availableQualities() {
-  if (!this.video?.hasHD) {
-    return this.platform.qualities.filter(q => q.key === "sd");
-  }
-  return this.platform.qualities;
-}
+    get availableQualities() {
+      if (!this.platform?.qualities) return [];
+      if (!this.video) return this.platform.qualities;
+      if (this.video.hasHD !== true) {
+        return this.platform.qualities.filter((q) => q.key === "sd");
+      }
+      return this.platform.qualities;
+    },
 
-          get currentQualityLabel() {
-            if (!this.video) return "";
-            return this.selectedQuality === "hd" ? "HD" : "SD";
-          },
+    get currentQualityLabel() {
+      if (!this.video) return "";
+      return this.selectedQuality === "hd" && this.video.hasHD ? "HD" : "SD";
+    },
 
-          get currentVideoUrl() {
-            if (!this.video) return null;
-            return this.selectedQuality === "hd" && this.video.hdPlay
-              ? this.video.hdPlay
-              : this.video.sdPlay || this.video.play;
-          },
+    get currentVideoUrl() {
+      if (!this.video?.play) return null;
+      if (this.selectedQuality === "hd" && this.video.hdPlay) {
+        return this.video.hdPlay;
+      }
+      return this.video.play;
+    },
 
-          init() {
-            TelegramWebApp.initialize();
-            this.handleStartParam();
-            this.loadSponsors();
-            this.promptTelegramFeatures();
-          },
+    init() {
+      TelegramWebApp.initialize();
+      this.handleStartParam();
+      this.loadSponsors();
+      this.promptTelegramFeatures();
+    },
 
-          promptTelegramFeatures() {
-            setTimeout(() => {
-              if (TelegramWebApp.canRequestWriteAccess) {
-                TelegramWebApp.requestWriteAccess();
-              }
-            }, 2000);
-          },
+    destroy() {
+      this.stopProgress();
+      if (this.featurePromptTimer) {
+        clearTimeout(this.featurePromptTimer);
+        this.featurePromptTimer = null;
+      }
+      if (this.downloadAbortController) {
+        this.downloadAbortController.abort();
+        this.downloadAbortController = null;
+      }
+    },
 
-          async loadSponsors() {
-            const sponsors = SponsorApiService.getSponsors();
-            if (sponsors.length === 0) {
-              this.sponsorsLoading = false;
-              return;
-            }
+    promptTelegramFeatures() {
+      this.featurePromptTimer = setTimeout(() => {
+        if (TelegramWebApp.canRequestWriteAccess) {
+          TelegramWebApp.requestWriteAccess();
+        }
+        this.featurePromptTimer = null;
+      }, 2000);
+    },
 
-            try {
-              this.sponsorsList =
-                await SponsorApiService.fetchAllSponsorsWithStatus();
-            } catch (err) {
-              ErrorHandler.log("loadSponsors", err);
-              this.sponsorsList = [];
-            } finally {
-              this.sponsorsLoading = false;
-            }
-          },
+    async loadSponsors() {
+      const sponsors = SponsorApiService.getSponsors();
+      if (sponsors.length === 0) {
+        this.sponsorsLoading = false;
+        return;
+      }
 
-          async refreshSubscriptions() {
-            SponsorApiService.clearSubscriptionCache();
-            this.sponsorsLoading = true;
-            TelegramWebApp.hapticImpact("light");
-            await this.loadSponsors();
-          },
+      try {
+        this.sponsorsList = await SponsorApiService.fetchAllSponsorsWithStatus();
+      } catch (err) {
+        ErrorHandler.log("loadSponsors", err);
+        this.sponsorsList = [];
+      } finally {
+        this.sponsorsLoading = false;
+      }
+    },
 
-          openSponsor(username) {
-            TelegramWebApp.hapticImpact("light");
-            AnalyticsService.trackSponsorClick(username);
-            TelegramWebApp.openTelegramLink(
-              SponsorApiService.getChannelUrl(username),
-            );
-          },
+    async refreshSubscriptions() {
+      if (this.isRefreshing) return;
+      this.isRefreshing = true;
+      SponsorApiService.clearSubscriptionCache();
+      this.sponsorsLoading = true;
+      TelegramWebApp.hapticImpact("light");
+      try {
+        await this.loadSponsors();
+      } finally {
+        this.isRefreshing = false;
+      }
+    },
 
-          handleStartParam() {
-            const param = TelegramWebApp.startParam;
-            if (!param) return;
+    openSponsor(username) {
+      TelegramWebApp.hapticImpact("light");
+      AnalyticsService.trackSponsorClick(username);
+      TelegramWebApp.openTelegramLink(SponsorApiService.getChannelUrl(username));
+    },
 
-            const parsed = PlatformRegistry.parseStartParam(param);
-            if (!parsed) {
-              this.setError("Неверная ссылка");
-              return;
-            }
+    handleStartParam() {
+      const param = TelegramWebApp.startParam;
+      if (!param) return;
 
-            const platform = PlatformRegistry.get(parsed.platform);
-            if (!platform) {
-              this.setError("Платформа не поддерживается");
-              return;
-            }
+      const parsed = PlatformRegistry.parseStartParam(param);
+      if (!parsed) {
+        this.setError("Неверная ссылка");
+        return;
+      }
 
-            const url = parsed.url || platform.buildUrlFromId(parsed.id);
-            if (url) {
-              this.url = url;
-              this.platform = platform;
-              this.$nextTick(() => this.download());
-            } else {
-              this.setError("Не удалось восстановить ссылку");
-            }
-          },
+      const platform = PlatformRegistry.get(parsed.platform);
+      if (!platform) {
+        this.setError("Платформа не поддерживается");
+        return;
+      }
 
-          detect() {
-            this.error = null;
+      const url = parsed.url || platform.buildUrlFromId(parsed.id);
+      if (url) {
+        this.url = url;
+        this.platform = platform;
+        this.$nextTick(() => this.download());
+      } else {
+        this.setError("Не удалось восстановить ссылку");
+      }
+    },
 
-            if (!this.url?.trim()) {
-              this.platform = null;
-              this.video = null;
-              return;
-            }
+    detect() {
+      this.error = null;
 
-            if (!UrlValidator.isValid(this.url)) {
-              this.platform = null;
-              this.video = null;
-              return;
-            }
+      if (!this.url?.trim()) {
+        this.platform = null;
+        this.video = null;
+        this.selectedQuality = "hd";
+        return;
+      }
 
-            const detected = PlatformRegistry.detect(this.url);
-            if (detected) {
-              this.platform = detected;
-              TelegramWebApp.hapticImpact("light");
-            } else {
-              this.platform = null;
-              this.video = null;
-            }
-          },
+      if (!UrlValidator.isValid(this.url)) {
+        this.platform = null;
+        this.video = null;
+        this.selectedQuality = "hd";
+        return;
+      }
 
-          clear() {
-            this.url = "";
-            this.platform = null;
-            this.video = null;
-            this.error = null;
-            this.selectedQuality = "hd";
-            TelegramWebApp.hapticImpact("light");
-          },
+      const detected = PlatformRegistry.detect(this.url);
+      if (detected) {
+        if (this.platform?.name !== detected.name) {
+          this.selectedQuality = "hd";
+        }
+        this.platform = detected;
+        TelegramWebApp.hapticImpact("light");
+      } else {
+        this.platform = null;
+        this.video = null;
+        this.selectedQuality = "hd";
+      }
+    },
 
-          setError(message) {
-            this.error = message;
-            TelegramWebApp.hapticNotification("error");
-            AnalyticsService.trackError("app", message);
-          },
+    clear() {
+      this.url = "";
+      this.platform = null;
+      this.video = null;
+      this.error = null;
+      this.selectedQuality = "hd";
+      TelegramWebApp.hapticImpact("light");
+    },
 
-          scrollToError() {
-            this.$nextTick(() => {
-              const errorEl = this.$refs.errorSection;
-              if (errorEl) {
-                errorEl.scrollIntoView({ behavior: "smooth", block: "center" });
-              }
-            });
-          },
+    setError(message) {
+      this.error = message;
+      TelegramWebApp.hapticNotification("error");
+      AnalyticsService.trackError("app", message);
+    },
 
-          startProgress() {
-            this.stopProgress();
-            this.progressTimer = setInterval(() => {
-              const step =
-                Math.floor(
-                  Math.random() *
-                    (AppConfig.PROGRESS_STEP_MAX -
-                      AppConfig.PROGRESS_STEP_MIN +
-                      1),
-                ) + AppConfig.PROGRESS_STEP_MIN;
-              this.progress = Math.min(
-                this.progress + step,
-                AppConfig.PROGRESS_LIMIT,
-              );
-            }, AppConfig.PROGRESS_INTERVAL);
-          },
-
-          stopProgress() {
-            if (this.progressTimer) {
-              clearInterval(this.progressTimer);
-              this.progressTimer = null;
-            }
-          },
-
-          selectQuality(quality) {
-            if (quality === "hd" && !this.video?.hasHD) return;
-  if (this.selectedQuality === quality) return;
-  this.selectedQuality = quality;
-
-            TelegramWebApp.hapticImpact("light");
-            AnalyticsService.trackQualityChange(quality);
-            this.saveToHistory();
-          },
-
-          saveToHistory() {
-            if (!this.video || !this.platform) return;
-
-            HistoryStorage.add({
-              id: this.video.id || `${this.platform.name}_${Date.now()}`,
-              cover: this.video.cover,
-              author:
-                this.video.author?.nickname ||
-                this.video.author?.unique_id ||
-                "Неизвестный автор",
-              url: this.url,
-              platform: this.platform.name,
-              quality: this.selectedQuality,
-            });
-            this.history = HistoryStorage.getAll();
-          },
-
-          async download() {
-            if (!this.platform || this.isLoading) return;
-
-            if (this.hasUnsubscribedSponsors) {
-  await this.refreshSubscriptions();
-}
-
-            if (this.hasUnsubscribedSponsors) {
-              this.setError("Подпишитесь на спонсоров для загрузки видео");
-              this.$nextTick(() => {
-                const sponsorEl = this.$refs.sponsorSection;
-                if (sponsorEl) {
-                  sponsorEl.scrollIntoView({
-                    behavior: "smooth",
-                    block: "center",
-                  });
-                }
-              });
-              return;
-            }
-
-            this.$refs.input?.blur();
-            this.isLoading = true;
-            this.progress = 0;
-            this.error = null;
-            this.video = null;
-            TelegramWebApp.hapticImpact("medium");
-
-            this.startProgress();
-
-            try {
-              this.video = await this.platform.fetchVideo(
-                this.url,
-                this.selectedQuality,
-              );
-              this.progress = 100;
-
-              if (!this.video.hasHD) {
-  this.selectedQuality = "sd";
-} else if (this.video.currentQuality) {
-  this.selectedQuality = this.video.currentQuality;
-}
-
-              this.saveToHistory();
-              TelegramWebApp.hapticNotification("success");
-              AnalyticsService.trackDownload(
-                this.platform.name,
-                this.selectedQuality,
-              );
-            } catch (err) {
-              this.setError(ErrorHandler.getMessage(err));
-            } finally {
-              this.stopProgress();
-              this.isLoading = false;
-            }
-          },
-
-          saveVideo() {
-            const videoUrl = this.currentVideoUrl;
-            if (!videoUrl) {
-              this.setError("Видео недоступно");
-              return;
-            }
-
-            const filename = this.platform.getFilename(
-              this.video,
-              this.selectedQuality,
-            );
-            const success = TelegramWebApp.downloadFile(videoUrl, filename);
-
-            if (success) {
-              TelegramWebApp.hapticNotification("success");
-              AnalyticsService.trackDownload(
-                this.platform.name,
-                this.selectedQuality,
-              );
-            } else {
-              this.setError("Скачивание доступно только в мобильном Telegram");
-            }
-          },
-
-          shareStory() {
-            const videoUrl = this.currentVideoUrl;
-            if (!videoUrl) {
-              this.setError("Видео недоступно");
-              return;
-            }
-
-            let text = `Сохранено через @${AppConfig.BOT_USERNAME}`;
-            if (this.video.title?.trim()) {
-              text = `${this.video.title.trim()}\n\n${text}`;
-            }
-
-            const success = TelegramWebApp.shareToStory(videoUrl, text);
-
-            if (success) {
-              TelegramWebApp.hapticNotification("success");
-              AnalyticsService.trackShare("story", this.platform.name);
-            } else {
-              this.setError("Истории доступны только в мобильном Telegram");
-            }
-          },
-
-          shareLink() {
-            if (!this.platform || !this.video) {
-              this.setError("Нет данных для ссылки");
-              return;
-            }
-
-            const param = this.platform.getShareParam(this.video, this.url);
-            if (!param) {
-              this.setError("Не удалось создать ссылку");
-              return;
-            }
-
-            const shareUrl = `https://t.me/${AppConfig.BOT_USERNAME}/?startapp=${param}`;
-            const shareText = `Сохрани видео через @${AppConfig.BOT_USERNAME}`;
-
-            TelegramWebApp.shareUrl(shareUrl, shareText);
-            TelegramWebApp.hapticNotification("success");
-            AnalyticsService.trackShare("link", this.platform.name);
-          },
-
-          openAuthorProfile() {
-            TelegramWebApp.hapticImpact("light");
-            if (!this.platform || !this.video?.author) return;
-
-            const url = this.platform.getAuthorUrl(this.video.author);
-            if (url) {
-              TelegramWebApp.openExternalLink(url);
-            }
-          },
-
-          loadFromHistory(item) {
-            if (!item?.url || !item?.platform) {
-              this.setError("Некорректные данные");
-              return;
-            }
-
-            this.url = item.url;
-            this.platform = PlatformRegistry.get(item.platform);
-
-            if (item.quality) {
-              this.selectedQuality = item.quality.toLowerCase();
-            }
-
-            if (this.platform) {
-              TelegramWebApp.hapticImpact("light");
-              this.download();
-            } else {
-              this.setError("Платформа не поддерживается");
-            }
-          },
-
-          clearHistory() {
-            HistoryStorage.clear();
-            this.history = [];
-            TelegramWebApp.hapticImpact("medium");
-          },
-        }));
+    scrollToError() {
+      this.$nextTick(() => {
+        const errorEl = document.querySelector('[x-ref="errorSection"]');
+        if (errorEl) {
+          errorEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
       });
+    },
+
+    scrollToSponsors() {
+      this.$nextTick(() => {
+        const sponsorEl = document.querySelector('[x-ref="sponsorSection"]');
+        if (sponsorEl) {
+          sponsorEl.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      });
+    },
+
+    startProgress() {
+      this.stopProgress();
+      this.progressTimer = setInterval(() => {
+        const step =
+          Math.floor(
+            Math.random() *
+              (AppConfig.PROGRESS_STEP_MAX - AppConfig.PROGRESS_STEP_MIN + 1),
+          ) + AppConfig.PROGRESS_STEP_MIN;
+        this.progress = Math.min(this.progress + step, AppConfig.PROGRESS_LIMIT);
+      }, AppConfig.PROGRESS_INTERVAL);
+    },
+
+    stopProgress() {
+      if (this.progressTimer) {
+        clearInterval(this.progressTimer);
+        this.progressTimer = null;
+      }
+    },
+
+    selectQuality(quality) {
+      if (!this.video || !this.platform) return;
+      if (quality === "hd" && !this.video.hasHD) return;
+      if (this.selectedQuality === quality) return;
+      
+      this.selectedQuality = quality;
+      TelegramWebApp.hapticImpact("light");
+      AnalyticsService.trackQualityChange(quality);
+      
+      this.updateHistoryQuality();
+    },
+
+    updateHistoryQuality() {
+      if (!this.video || !this.platform) return;
+
+      const historyId = this.video.id || `${this.platform.name}_${Date.now()}`;
+      const existingHistory = HistoryStorage.getAll();
+      const existingItem = existingHistory.find((item) => item.id === historyId);
+      
+      if (existingItem) {
+        existingItem.quality = this.selectedQuality;
+        try {
+          localStorage.setItem(AppConfig.HISTORY_KEY, JSON.stringify(existingHistory));
+          this.history = existingHistory;
+        } catch (err) {
+          ErrorHandler.log("updateHistoryQuality", err);
+        }
+      }
+    },
+
+    saveToHistory() {
+      if (!this.video || !this.platform) return;
+
+      HistoryStorage.add({
+        id: this.video.id || `${this.platform.name}_${Date.now()}`,
+        cover: this.video.cover,
+        author:
+          this.video.author?.nickname ||
+          this.video.author?.unique_id ||
+          "Неизвестный автор",
+        url: this.url,
+        platform: this.platform.name,
+        quality: this.selectedQuality,
+      });
+      this.history = HistoryStorage.getAll();
+    },
+
+    async download() {
+      if (!this.platform || this.isLoading) return;
+
+      this.isLoading = true;
+
+      if (this.hasUnsubscribedSponsors) {
+        await this.refreshSubscriptions();
+      }
+
+      if (this.hasUnsubscribedSponsors) {
+        this.isLoading = false;
+        this.setError("Подпишитесь на спонсоров для загрузки видео");
+        this.scrollToSponsors();
+        return;
+      }
+
+      this.$refs.input?.blur();
+      this.progress = 0;
+      this.error = null;
+      this.video = null;
+      TelegramWebApp.hapticImpact("medium");
+
+      this.startProgress();
+
+      try {
+        this.video = await this.platform.fetchVideo(this.url, this.selectedQuality);
+        this.progress = 100;
+
+        if (!this.video.hasHD) {
+          this.selectedQuality = "sd";
+        } else if (this.video.currentQuality) {
+          this.selectedQuality = this.video.currentQuality;
+        }
+
+        this.saveToHistory();
+        TelegramWebApp.hapticNotification("success");
+        AnalyticsService.trackDownload(this.platform.name, this.selectedQuality);
+      } catch (err) {
+        this.setError(ErrorHandler.getMessage(err));
+      } finally {
+        this.stopProgress();
+        this.isLoading = false;
+      }
+    },
+
+    saveVideo() {
+      const videoUrl = this.currentVideoUrl;
+      if (!videoUrl) {
+        this.setError("Видео недоступно");
+        return;
+      }
+
+      const filename = this.platform.getFilename(this.video, this.selectedQuality);
+      const success = TelegramWebApp.downloadFile(videoUrl, filename);
+
+      if (success) {
+        TelegramWebApp.hapticNotification("success");
+        AnalyticsService.trackDownload(this.platform.name, this.selectedQuality);
+      } else {
+        this.setError("Скачивание доступно только в мобильном Telegram");
+      }
+    },
+
+    shareStory() {
+      const videoUrl = this.currentVideoUrl;
+      if (!videoUrl) {
+        this.setError("Видео недоступно");
+        return;
+      }
+
+      let text = `Сохранено через @${AppConfig.BOT_USERNAME}`;
+      if (this.video.title?.trim()) {
+        text = `${this.video.title.trim()}\n\n${text}`;
+      }
+
+      const success = TelegramWebApp.shareToStory(videoUrl, text);
+
+      if (success) {
+        TelegramWebApp.hapticNotification("success");
+        AnalyticsService.trackShare("story", this.platform.name);
+      } else {
+        this.setError("Истории доступны только в мобильном Telegram");
+      }
+    },
+
+    shareLink() {
+      if (!this.platform || !this.video) {
+        this.setError("Нет данных для ссылки");
+        return;
+      }
+
+      const param = this.platform.getShareParam(this.video, this.url);
+      if (!param) {
+        this.setError("Не удалось создать ссылку");
+        return;
+      }
+
+      const shareUrl = `https://t.me/${AppConfig.BOT_USERNAME}/?startapp=${param}`;
+      const shareText = `Сохрани видео через @${AppConfig.BOT_USERNAME}`;
+
+      TelegramWebApp.shareUrl(shareUrl, shareText);
+      TelegramWebApp.hapticNotification("success");
+      AnalyticsService.trackShare("link", this.platform.name);
+    },
+
+    openAuthorProfile() {
+      TelegramWebApp.hapticImpact("light");
+      if (!this.platform || !this.video?.author) return;
+
+      const url = this.platform.getAuthorUrl(this.video.author);
+      if (url) {
+        TelegramWebApp.openExternalLink(url);
+      }
+    },
+
+    loadFromHistory(item) {
+      if (!item?.url || !item?.platform) {
+        this.setError("Некорректные данные");
+        return;
+      }
+
+      this.url = item.url;
+      this.platform = PlatformRegistry.get(item.platform);
+
+      if (item.quality && typeof item.quality === "string") {
+        this.selectedQuality = item.quality.toLowerCase();
+      } else {
+        this.selectedQuality = "hd";
+      }
+
+      if (this.platform) {
+        TelegramWebApp.hapticImpact("light");
+        this.download();
+      } else {
+        this.setError("Платформа не поддерживается");
+      }
+    },
+
+    clearHistory() {
+      HistoryStorage.clear();
+      this.history = [];
+      TelegramWebApp.hapticImpact("medium");
+    },
+  }));
+});
     </script>
   </body>
 </html>
