@@ -74,17 +74,6 @@
         outline: none;
       }
 
-      .press {
-        transition:
-          transform 80ms ease,
-          opacity 80ms ease;
-      }
-
-      .press:active {
-        transform: scale(0.97);
-        opacity: 0.8;
-      }
-
       @keyframes fadeIn {
         from {
           opacity: 0;
@@ -109,14 +98,6 @@
         animation: fadeIn 0.4s cubic-bezier(0.25, 1, 0.5, 1) both;
       }
 
-      .no-scrollbar {
-        scrollbar-width: none;
-      }
-
-      .no-scrollbar::-webkit-scrollbar {
-        display: none;
-      }
-
       .skeleton {
         background: linear-gradient(
           90deg,
@@ -127,22 +108,10 @@
         background-size: 200% 100%;
         animation: shimmer 1.5s infinite;
       }
-
-      .sponsor-card {
-        transition:
-          transform 80ms ease,
-          opacity 80ms ease,
-          box-shadow 200ms ease;
-      }
-
-      .sponsor-card:active {
-        transform: scale(0.97);
-        opacity: 0.8;
-      }
     </style>
   </head>
   <body
-    x-data="App"
+    x-data="ClipperApp"
     class="flex min-h-dvh flex-col select-none bg-bg text-text"
   >
     <main
@@ -294,7 +263,7 @@
   </section>
 </template>
 
-      <template x-if="video && !loading">
+      <template x-if="video && !isLoading">
   <section class="fade mt-6 space-y-4">
     <div
       class="overflow-hidden rounded-2xl border border-border bg-surface"
@@ -531,7 +500,7 @@
   </section>
 </template>
 
-      <template x-if="!loading && !video">
+      <template x-if="!isLoading && !video">
   <section
     x-ref="sponsorSection"
     x-show="sponsorsLoading || unsubscribedSponsors.length > 0"
