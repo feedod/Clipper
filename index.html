@@ -2156,10 +2156,8 @@
             this.downloadAbortController = new AbortController();
 
             this.isLoading = true;
-
-            if (this.hasUnsubscribedSponsors) {
-              await this.refreshSubscriptions();
-            }
+            
+            await this.refreshSubscriptions();
 
             if (this.hasUnsubscribedSponsors) {
               this.isLoading = false;
