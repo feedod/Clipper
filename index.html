@@ -2157,35 +2157,13 @@
 
             this.isLoading = true;
 
-async download() {
-  if (!this.platform || this.isLoading) return;
-  if (!this.url?.trim()) return;
+            while (this.sponsorsLoading) {
+              await new Promise(r => setTimeout(r, 50));
+            }
 
-  if (this.downloadAbortController) {
-    this.downloadAbortController.abort();
-  }
-  this.downloadAbortController = new AbortController();
-
-  this.isLoading = true;
-
-  if (this.sponsorsLoading) {
-    await new Promise((resolve) => {
-      const check = setInterval(() => {
-        if (!this.sponsorsLoading) {
-          clearInterval(check);
-          resolve();
-        }
-      }, 50);
-      setTimeout(() => {
-        clearInterval(check);
-        resolve();
-      }, 5000);
-    });
-  }
-
-  if (this.hasUnsubscribedSponsors || (this.sponsorsList.length === 0 && AppConfig.SPONSORS.length > 0)) {
-    await this.refreshSubscriptions();
-  }
+            if (this.hasUnsubscribedSponsors) {
+              await this.refreshSubscriptions();
+            }
 
             if (this.hasUnsubscribedSponsors) {
               this.isLoading = false;
