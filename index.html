@@ -1392,11 +1392,21 @@
         
         static readClipboard(callback) {
   try {
-    if (this.instance?.readTextFromClipboard) {
-      this.instance.readTextFromClipboard(callback);
+    const tg = this.instance;
+    if (tg && typeof tg.readTextFromClipboard === 'function') {
+      tg.readTextFromClipboard((text) => {
+        callback(text || null);
+      });
       return true;
     }
-    navigator.clipboard?.readText().then(callback).catch(() => callback(null));
+    
+    if (navigator.clipboard && navigator.clipboard.readText) {
+      navigator.clipboard.readText()
+        .then((text) => callback(text || null))
+        .catch(() => callback(null));
+    } else {
+      callback(null);
+    }
     return false;
   } catch (err) {
     ErrorHandler.log("TelegramWebApp.readClipboard", err);
@@ -2432,14 +2442,19 @@
           },
           
           pasteFromClipboard() {
+  const self = this;
   TelegramWebApp.hapticImpact("light");
   
   TelegramWebApp.readClipboard((text) => {
-    if (text) {
-      this.url = text.trim();
-      this.detect();
-      this.saveToCloudDebounced();
+    if (text && text.trim()) {
+      self.url = text.trim();
+      self.$nextTick(() => {
+        self.detect();
+        self.saveToCloudDebounced();
+      });
       TelegramWebApp.hapticNotification("success");
+    } else {
+      TelegramWebApp.hapticNotification("error");
     }
   });
 },
