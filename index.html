@@ -2157,7 +2157,7 @@
 
             this.isLoading = true;
             
-            await this.refreshSubscriptions();
+            await this.loadSponsors();
 
             if (this.hasUnsubscribedSponsors) {
               this.isLoading = false;
