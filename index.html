@@ -276,52 +276,26 @@
           </div>
 
           <div class="grid grid-cols-2 gap-2">
-            <button
-              @click="syncFromCloud"
-              :disabled="isSyncing || !cloudClipboard"
-              class="flex h-11 items-center justify-center gap-2 rounded-xl bg-text font-semibold text-white transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80 disabled:opacity-40"
-            >
-              <svg
-                class="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M7.5 7.5h-.75A2.25 2.25 0 0 0 4.5 9.75v7.5a2.25 2.25 0 0 0 2.25 2.25h7.5a2.25 2.25 0 0 0 2.25-2.25v-7.5a2.25 2.25 0 0 0-2.25-2.25h-.75m-6 3.75 3 3m0 0 3-3m-3 3V1.5m6 9h.75a2.25 2.25 0 0 1 2.25 2.25v7.5a2.25 2.25 0 0 1-2.25 2.25h-7.5a2.25 2.25 0 0 1-2.25-2.25v-.75"
-                />
-              </svg>
-              <span>Заменить</span>
-            </button>
+  <button
+    @click="syncFromCloud"
+    :disabled="isSyncing || !cloudClipboard"
+    class="flex h-11 items-center justify-center rounded-xl bg-text font-semibold text-white transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80 disabled:opacity-40"
+  >
+    <span>Заменить</span>
+  </button>
 
-            <button
-              @click="appendFromCloud"
-              :disabled="isSyncing || !cloudClipboard"
-              class="flex h-11 items-center justify-center gap-2 rounded-xl border border-border bg-bg font-semibold text-text transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80 disabled:opacity-40"
-            >
-              <svg
-                class="h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M12 4.5v15m7.5-7.5h-15"
-                />
-              </svg>
-              <span>Добавить</span>
-            </button>
-          </div>
+  <button
+    @click="appendFromCloud"
+    :disabled="isSyncing || !cloudClipboard"
+    class="flex h-11 items-center justify-center rounded-xl border border-border bg-bg font-semibold text-text transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80 disabled:opacity-40"
+  >
+    <span>Добавить</span>
+  </button>
+</div>
 
-          <p class="text-xs text-center text-muted">
-            Синхронизация между устройствами (до 50 символов)
-          </p>
+<p class="text-xs text-center text-muted">
+  Синхронизация между устройствами
+</p>
         </div>
 
         <button
