@@ -221,6 +221,7 @@
         <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 0 0 4.5 4.5H18a3.75 3.75 0 0 0 1.332-7.257 3 3 0 0 0-3.758-3.848 5.25 5.25 0 0 0-10.233 2.33A4.502 4.502 0 0 0 2.25 15Z" />
       </svg>
       <span>В облаке</span>
+      <span class="text-xs font-normal text-muted" x-text="cloudClipboard.length + '/50'"></span>
     </div>
     <button
       @click="loadCloudClipboard"
@@ -266,7 +267,7 @@
   </div>
 
   <p class="text-xs text-center text-muted">
-    Синхронизация между устройствами
+    Синхронизация между устройствами (до 50 символов)
   </p>
 </div>
 
@@ -734,114 +735,118 @@
       </template>
 
       <template x-if="!isLoading && !video">
-        <section class="fade mt-8" style="animation-delay: 100ms">
-          <div class="mb-4 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <svg
-                class="h-5 w-5 text-muted"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.5"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                />
-              </svg>
-              <h2 class="font-semibold text-text">Недавние видео</h2>
-            </div>
-            <button
-              x-show="history.length > 0"
-              @click="clearHistory"
-              class="text-sm text-muted transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80"
-            >
-              Очистить
-            </button>
-          </div>
+  <section class="fade mt-8" style="animation-delay: 100ms">
+    <div class="mb-4 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <svg
+          class="h-5 w-5 text-muted"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+          />
+        </svg>
+        <h2 class="font-semibold text-text">Недавние видео</h2>
+      </div>
+      <button
+        x-show="history.length > 0"
+        @click="clearHistory"
+        class="text-sm text-muted transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80"
+      >
+        Очистить
+      </button>
+    </div>
 
-          <template x-if="history.length === 0">
+    <p class="mb-4 text-sm text-muted">
+      Синхронизируются между всеми вашими устройствами
+    </p>
+
+    <template x-if="history.length === 0">
+      <div
+        class="rounded-2xl border border-border bg-surface p-6 text-center"
+      >
+        <div
+          class="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-border"
+        >
+          <svg
+            class="h-7 w-7 text-muted"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z"
+            />
+          </svg>
+        </div>
+        <p class="font-semibold text-text">История пуста</p>
+        <p class="mt-1 text-sm text-muted">
+          Сохраните видео, чтобы оно появилось здесь
+        </p>
+      </div>
+    </template>
+
+    <template x-if="history.length > 0">
+      <div
+        class="-mx-5 flex gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden"
+      >
+        <template x-for="item in history" :key="item.id">
+          <button
+            @click="loadFromHistory(item)"
+            class="w-[88px] shrink-0 transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80"
+          >
             <div
-              class="rounded-2xl border border-border bg-surface p-6 text-center"
+              class="relative mb-2 h-[120px] w-[88px] overflow-hidden rounded-xl border border-border"
             >
+              <img
+                :src="item.cover"
+                @error="if ($event.target.src !== AppAssets.cover) $event.target.src = AppAssets.cover"
+                class="h-full w-full object-cover"
+                loading="lazy"
+              />
               <div
-                class="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-border"
+                class="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/60 to-transparent"
+              ></div>
+              <div
+                class="absolute bottom-2 left-2 grid h-5 w-5 place-items-center rounded-full bg-white"
               >
                 <svg
-                  class="h-7 w-7 text-muted"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.5"
+                  class="h-3 w-3"
+                  :style="{ color: PlatformRegistry.get(item.platform)?.colors?.icon }"
                   viewBox="0 0 24 24"
+                  fill="currentColor"
                 >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z"
-                  />
+                  <path :d="PlatformRegistry.get(item.platform)?.icon" />
                 </svg>
               </div>
-              <p class="font-semibold text-text">История пуста</p>
-              <p class="mt-1 text-sm text-muted">
-                Сохраните видео, чтобы оно появилось здесь
-              </p>
+              <div
+                x-show="item.quality"
+                class="absolute bottom-2 right-2 flex items-center"
+              >
+                <span
+                  class="text-[9px] font-semibold tracking-wide leading-none text-white drop-shadow-sm"
+                  x-text="item.quality?.toUpperCase()"
+                ></span>
+              </div>
             </div>
-          </template>
-
-          <template x-if="history.length > 0">
-            <div
-              class="-mx-5 flex gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden"
-            >
-              <template x-for="item in history" :key="item.id">
-                <button
-                  @click="loadFromHistory(item)"
-                  class="w-[88px] shrink-0 transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80"
-                >
-                  <div
-                    class="relative mb-2 h-[120px] w-[88px] overflow-hidden rounded-xl border border-border"
-                  >
-                    <img
-                      :src="item.cover"
-                      @error="if ($event.target.src !== AppAssets.cover) $event.target.src = AppAssets.cover"
-                      class="h-full w-full object-cover"
-                      loading="lazy"
-                    />
-                    <div
-                      class="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/60 to-transparent"
-                    ></div>
-                    <div
-                      class="absolute bottom-2 left-2 grid h-5 w-5 place-items-center rounded-full bg-white"
-                    >
-                      <svg
-                        class="h-3 w-3"
-                        :style="{ color: PlatformRegistry.get(item.platform)?.colors?.icon }"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                      >
-                        <path :d="PlatformRegistry.get(item.platform)?.icon" />
-                      </svg>
-                    </div>
-                    <div
-                      x-show="item.quality"
-                      class="absolute bottom-2 right-2 flex items-center"
-                    >
-                      <span
-                        class="text-[9px] font-semibold tracking-wide leading-none text-white drop-shadow-sm"
-                        x-text="item.quality?.toUpperCase()"
-                      ></span>
-                    </div>
-                  </div>
-                  <p
-                    class="truncate text-left text-xs text-muted"
-                    x-text="item.author"
-                  ></p>
-                </button>
-              </template>
-            </div>
-          </template>
-        </section>
-      </template>
+            <p
+              class="truncate text-left text-xs text-muted"
+              x-text="item.author"
+            ></p>
+          </button>
+        </template>
+      </div>
+    </template>
+  </section>
+</template>
 
       <footer
         class="fade mt-auto pt-12"
@@ -1057,6 +1062,7 @@
       class ClipboardSync {
   static CLIPBOARD_KEY = "clipper_clipboard";
   static SAVE_DEBOUNCE = 500;
+  static MAX_LENGTH = 50;
   static saveTimer = null;
 
   static get cloudStorage() {
@@ -1082,9 +1088,14 @@
     });
   }
 
+  static truncate(value) {
+    if (!value) return "";
+    return value.slice(0, this.MAX_LENGTH);
+  }
+
   static async set(value) {
     const storage = this.cloudStorage;
-    const data = value || "";
+    const data = this.truncate(value || "");
 
     if (!storage) {
       localStorage.setItem(this.CLIPBOARD_KEY, data);
@@ -1292,6 +1303,23 @@
             return false;
           }
         }
+        
+        static showConfirm(message, callback) {
+  try {
+    if (this.instance?.showConfirm) {
+      this.instance.showConfirm(message, callback);
+      return true;
+    }
+    const result = confirm(message);
+    callback(result);
+    return true;
+  } catch (err) {
+    ErrorHandler.log("TelegramWebApp.showConfirm", err);
+    const result = confirm(message);
+    callback(result);
+    return false;
+  }
+}
 
         static requestWriteAccess() {
           try {
@@ -2084,8 +2112,10 @@ async saveToCloud() {
 },
 
 saveToCloudDebounced() {
-  ClipboardSync.setDebounced(this.url?.trim() || "");
-  this.cloudClipboard = this.url?.trim() || "";
+  const value = this.url?.trim() || "";
+  const truncated = ClipboardSync.truncate(value);
+  ClipboardSync.setDebounced(truncated);
+  this.cloudClipboard = truncated;
 },
 
 async syncFromCloud() {
@@ -2643,10 +2673,17 @@ async toggleSyncPanel() {
           },
 
           async clearHistory() {
-            await HistoryStorage.clear();
-            this.history = [];
-            TelegramWebApp.hapticImpact("medium");
-          },
+  TelegramWebApp.showConfirm(
+    "Вы уверены, что хотите очистить историю?",
+    async (confirmed) => {
+      if (confirmed) {
+        await HistoryStorage.clear();
+        this.history = [];
+        TelegramWebApp.hapticImpact("medium");
+      }
+    }
+  );
+},
         }));
       });
     </script>
