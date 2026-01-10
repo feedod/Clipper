@@ -2443,18 +2443,33 @@
           
           pasteFromClipboard() {
   const self = this;
+  const input = this.$refs.input;
+  
+  console.log("pasteFromClipboard called");
   TelegramWebApp.hapticImpact("light");
   
   TelegramWebApp.readClipboard((text) => {
+    console.log("Clipboard text:", text);
+    
     if (text && text.trim()) {
-      self.url = text.trim();
-      self.$nextTick(() => {
+      const trimmed = text.trim();
+      console.log("Setting url to:", trimmed);
+      
+      if (input) {
+        input.value = trimmed;
+        console.log("Input value set");
+      }
+      
+      self.url = trimmed;
+      console.log("self.url =", self.url);
+      
+      setTimeout(() => {
         self.detect();
         self.saveToCloudDebounced();
-      });
-      TelegramWebApp.hapticNotification("success");
+        TelegramWebApp.hapticNotification("success");
+      }, 50);
     } else {
-      TelegramWebApp.hapticNotification("error");
+      console.log("No text in clipboard");
     }
   });
 },
