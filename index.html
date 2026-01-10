@@ -146,7 +146,7 @@
             type="url"
             x-ref="input"
             x-model="url"
-            @input.debounce.100ms="detect"
+            @input.debounce.300ms="detect"
             @paste="$nextTick(() => detect())"
             @keydown.enter.prevent="download"
             :disabled="isLoading"
@@ -271,14 +271,15 @@
           >
             <div class="relative h-[56dvh] w-full bg-black">
               <video
-                :key="selectedQuality"
-                :src="currentVideoUrl"
-                :poster="video.cover"
-                class="absolute inset-0 h-full w-full object-contain"
-                controls
-                playsinline
-                webkit-playsinline
-              ></video>
+  x-ref="videoPlayer"
+  :src="currentVideoUrl"
+  :poster="video.cover"
+  @loadeddata="$el.currentTime = 0"
+  class="absolute inset-0 h-full w-full object-contain"
+  controls
+  playsinline
+  webkit-playsinline
+></video>
               <div
                 class="absolute left-3 top-3 flex items-center gap-1.5 rounded-lg bg-white/95 px-2.5 py-1.5 shadow-sm"
               >
@@ -329,10 +330,11 @@
             @click="openAuthorProfile"
             class="flex w-full items-center gap-3 rounded-2xl border border-border bg-surface p-4 text-left transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80"
           >
+          
             <img
               :src="video.author?.avatar"
               :alt="video.author?.nickname"
-              @error="$event.target.src = AppAssets.avatar"
+              @error="if ($event.target.src !== AppAssets.avatar) $event.target.src = AppAssets.avatar"
               class="h-12 w-12 rounded-full border border-border object-cover"
             />
             <div class="min-w-0 flex-1">
@@ -436,14 +438,57 @@
           </template>
 
           <div class="grid grid-cols-2 gap-3 pt-2">
-            <button
-  @click="saveVideo"
-  :disabled="!currentVideoUrl"
-  :style="{ backgroundColor: platform?.colors?.save }"
-  class="flex h-14 items-center justify-center gap-2 rounded-2xl font-semibold text-white transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80 disabled:opacity-40"
+  <button
+    @click="saveVideo"
+    :disabled="!currentVideoUrl"
+    :style="{ backgroundColor: platform?.colors?.save }"
+    class="flex h-14 items-center justify-center gap-2 rounded-2xl font-semibold text-white transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80 disabled:opacity-40 disabled:cursor-not-allowed"
+  >
+    <svg
+      class="h-5 w-5"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      viewBox="0 0 24 24"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"
+      />
+    </svg>
+    <span>Сохранить</span>
+  </button>
+  <button
+    @click="shareStory"
+    :disabled="!currentVideoUrl"
+    :style="{ backgroundColor: platform?.colors?.story }"
+    class="flex h-14 items-center justify-center gap-2 rounded-2xl font-semibold text-white transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80 disabled:opacity-40 disabled:cursor-not-allowed"
+  >
+    <svg
+      class="h-5 w-5"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      viewBox="0 0 24 24"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+      />
+    </svg>
+    <span>В историю</span>
+  </button>
+</div>
+
+<button
+  @click="shareLink"
+  :disabled="!video || !platform"
+  class="flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl border border-border bg-surface font-semibold text-text transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80 disabled:opacity-40 disabled:cursor-not-allowed"
 >
   <svg
-    class="h-5 w-5"
+    class="h-5 w-5 text-muted"
     fill="none"
     stroke="currentColor"
     stroke-width="2"
@@ -452,52 +497,11 @@
     <path
       stroke-linecap="round"
       stroke-linejoin="round"
-      d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"
+      d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"
     />
   </svg>
-  <span>Сохранить</span>
+  <span>Поделиться ссылкой</span>
 </button>
-            <button
-              @click="shareStory"
-              :style="{ backgroundColor: platform?.colors?.story }"
-              class="flex h-14 items-center justify-center gap-2 rounded-2xl font-semibold text-white transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80"
-            >
-              <svg
-                class="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                />
-              </svg>
-              <span>В историю</span>
-            </button>
-          </div>
-
-          <button
-            @click="shareLink"
-            class="flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl border border-border bg-surface font-semibold text-text transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80"
-          >
-            <svg
-              class="h-5 w-5 text-muted"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"
-              />
-            </svg>
-            <span>Поделиться ссылкой</span>
-          </button>
         </section>
       </template>
 
@@ -565,10 +569,11 @@
                   @click="openSponsor(sponsor.username)"
                   class="flex flex-col items-center gap-3 rounded-2xl border border-border bg-surface p-4 text-center transition-all duration-75 ease-out active:scale-[0.97] active:opacity-80"
                 >
+                
                   <img
                     :src="sponsor.photo"
                     :alt="sponsor.title"
-                    @error="$event.target.src = AppAssets.sponsor"
+                    @error="if ($event.target.src !== AppAssets.sponsor) $event.target.src = AppAssets.sponsor"
                     class="h-14 w-14 rounded-full border-2 border-border object-cover"
                   />
                   <div class="w-full min-w-0">
@@ -679,7 +684,7 @@
                   >
                     <img
                       :src="item.cover"
-                      @error="$event.target.src = AppAssets.cover"
+                      @error="if ($event.target.src !== AppAssets.cover) $event.target.src = AppAssets.cover"
                       class="h-full w-full object-cover"
                       loading="lazy"
                     />
@@ -825,37 +830,48 @@
       }
 
       class HistoryStorage {
-        static getAll() {
-          try {
-            return (
-              JSON.parse(localStorage.getItem(AppConfig.HISTORY_KEY)) || []
-            );
-          } catch {
-            return [];
-          }
-        }
+  static getAll() {
+    try {
+      return JSON.parse(localStorage.getItem(AppConfig.HISTORY_KEY)) || [];
+    } catch {
+      return [];
+    }
+  }
 
-        static add(item) {
-          try {
-            const list = this.getAll().filter((i) => i.id !== item.id);
-            list.unshift(item);
-            localStorage.setItem(
-              AppConfig.HISTORY_KEY,
-              JSON.stringify(list.slice(0, AppConfig.HISTORY_MAX)),
-            );
-          } catch (err) {
-            ErrorHandler.log("HistoryStorage.add", err);
-          }
-        }
+  static add(item) {
+    try {
+      const list = this.getAll().filter((i) => i.id !== item.id);
+      list.unshift(item);
+      localStorage.setItem(
+        AppConfig.HISTORY_KEY,
+        JSON.stringify(list.slice(0, AppConfig.HISTORY_MAX))
+      );
+    } catch (err) {
+      ErrorHandler.log("HistoryStorage.add", err);
+    }
+  }
 
-        static clear() {
-          try {
-            localStorage.removeItem(AppConfig.HISTORY_KEY);
-          } catch (err) {
-            ErrorHandler.log("HistoryStorage.clear", err);
-          }
-        }
+  static updateQuality(id, quality) {
+    try {
+      const list = this.getAll();
+      const item = list.find((i) => i.id === id);
+      if (item) {
+        item.quality = quality;
+        localStorage.setItem(AppConfig.HISTORY_KEY, JSON.stringify(list));
       }
+    } catch (err) {
+      ErrorHandler.log("HistoryStorage.updateQuality", err);
+    }
+  }
+
+  static clear() {
+    try {
+      localStorage.removeItem(AppConfig.HISTORY_KEY);
+    } catch (err) {
+      ErrorHandler.log("HistoryStorage.clear", err);
+    }
+  }
+}
 
       class ErrorHandler {
         static log(context, error) {
@@ -1438,35 +1454,43 @@ getShareParam(video, url) {
         }
 
 static parseStartParam(param) {
-  if (!param) return null;
+  if (!param || typeof param !== 'string') return null;
 
   try {
     for (const platform of this.platforms) {
       const prefix = `${platform.name.toLowerCase()}_`;
       if (param.startsWith(prefix)) {
         const id = param.slice(prefix.length);
-        if (id) {
-          return {
-            platform: platform.name,
-            id,
-            url: platform.buildUrlFromId(id),
-          };
+        if (id && /^\d+$/.test(id)) {
+          const url = platform.buildUrlFromId(id);
+          if (url) {
+            return {
+              platform: platform.name,
+              id,
+              url,
+            };
+          }
         }
       }
     }
 
-    let base64 = param.replace(/-/g, "+").replace(/_/g, "/");
-    const padLength = (4 - (base64.length % 4)) % 4;
-    base64 += "=".repeat(padLength);
-    
-    const binaryString = atob(base64);
-    const bytes = Uint8Array.from(binaryString, c => c.charCodeAt(0));
-    const decoded = new TextDecoder().decode(bytes);
-    
-    if (decoded.startsWith("http")) {
-      const platform = this.detect(decoded);
-      if (platform) {
-        return { platform: platform.name, id: null, url: decoded };
+    if (param.length > 10) {
+      let base64 = param.replace(/-/g, "+").replace(/_/g, "/");
+      const padLength = (4 - (base64.length % 4)) % 4;
+      base64 += "=".repeat(padLength);
+      
+      try {
+        const binaryString = atob(base64);
+        const bytes = Uint8Array.from(binaryString, c => c.charCodeAt(0));
+        const decoded = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+        
+        if (decoded.startsWith("http") && UrlValidator.isValid(decoded)) {
+          const platform = this.detect(decoded);
+          if (platform) {
+            return { platform: platform.name, id: null, url: decoded };
+          }
+        }
+      } catch {
       }
     }
   } catch (err) {
@@ -1531,22 +1555,26 @@ static parseStartParam(param) {
           return `https://www.tiktok.com/@_/video/${id}`;
         },
         async _fetch(url, signal, quality = "hd") {
-          const hdParam = quality === "hd" ? 1 : 0;
-          const response = await fetch("https://www.tikwm.com/api/", {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({ url, hd: hdParam }),
-            signal,
-          });
+  if (!url || typeof url !== 'string') {
+    throw new Error("Некорректная ссылка");
+  }
 
-          if (!response.ok) throw new Error("Ошибка сети");
+  const hdParam = quality === "hd" ? 1 : 0;
+  const response = await fetch("https://www.tikwm.com/api/", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ url: url.trim(), hd: hdParam }),
+    signal,
+  });
 
-          const json = await response.json();
-          if (json.code !== 0) throw new Error("Видео не найдено");
-          
+  if (!response.ok) throw new Error("Ошибка сети");
+
+  const json = await response.json();
+  if (json.code !== 0) throw new Error(json.msg || "Видео не найдено");
+  
   const data = json.data;
   
-  if (!data.play) {
+  if (!data || !data.play) {
     throw new Error("Видео недоступно");
   }
   
@@ -1554,8 +1582,8 @@ static parseStartParam(param) {
   data.hasHD = Boolean(data.hdplay);
   data.currentQuality = hdParam === 1 && data.hasHD ? "hd" : "sd";
   
-          return data;
-        },
+  return data;
+},
       });
 
       document.addEventListener("alpine:init", () => {
@@ -1643,16 +1671,26 @@ static parseStartParam(param) {
     },
 
     destroy() {
-      this.stopProgress();
-      if (this.featurePromptTimer) {
-        clearTimeout(this.featurePromptTimer);
-        this.featurePromptTimer = null;
-      }
-      if (this.downloadAbortController) {
-        this.downloadAbortController.abort();
-        this.downloadAbortController = null;
-      }
-    },
+  try {
+    this.stopProgress();
+    
+    if (this.featurePromptTimer) {
+      clearTimeout(this.featurePromptTimer);
+      this.featurePromptTimer = null;
+    }
+    
+    if (this.downloadAbortController) {
+      this.downloadAbortController.abort();
+      this.downloadAbortController = null;
+    }
+    
+    this.isLoading = false;
+    this.isRefreshing = false;
+    this.sponsorsLoading = false;
+  } catch (err) {
+    ErrorHandler.log("destroy", err);
+  }
+},
 
     promptTelegramFeatures() {
       this.featurePromptTimer = setTimeout(() => {
@@ -1681,17 +1719,27 @@ static parseStartParam(param) {
     },
 
     async refreshSubscriptions() {
-      if (this.isRefreshing) return;
-      this.isRefreshing = true;
-      SponsorApiService.clearSubscriptionCache();
-      this.sponsorsLoading = true;
-      TelegramWebApp.hapticImpact("light");
-      try {
-        await this.loadSponsors();
-      } finally {
-        this.isRefreshing = false;
-      }
-    },
+  if (this.isRefreshing || this.sponsorsLoading) return;
+  
+  this.isRefreshing = true;
+  this.sponsorsLoading = true;
+  SponsorApiService.clearSubscriptionCache();
+  TelegramWebApp.hapticImpact("light");
+  
+  try {
+    const sponsors = SponsorApiService.getSponsors();
+    if (sponsors.length === 0) {
+      this.sponsorsList = [];
+      return;
+    }
+    this.sponsorsList = await SponsorApiService.fetchAllSponsorsWithStatus();
+  } catch (err) {
+    ErrorHandler.log("refreshSubscriptions", err);
+  } finally {
+    this.sponsorsLoading = false;
+    this.isRefreshing = false;
+  }
+},
 
     openSponsor(username) {
       TelegramWebApp.hapticImpact("light");
@@ -1821,22 +1869,12 @@ static parseStartParam(param) {
     },
 
     updateHistoryQuality() {
-      if (!this.video || !this.platform) return;
+  if (!this.video || !this.platform) return;
 
-      const historyId = this.video.id || `${this.platform.name}_${Date.now()}`;
-      const existingHistory = HistoryStorage.getAll();
-      const existingItem = existingHistory.find((item) => item.id === historyId);
-      
-      if (existingItem) {
-        existingItem.quality = this.selectedQuality;
-        try {
-          localStorage.setItem(AppConfig.HISTORY_KEY, JSON.stringify(existingHistory));
-          this.history = existingHistory;
-        } catch (err) {
-          ErrorHandler.log("updateHistoryQuality", err);
-        }
-      }
-    },
+  const historyId = this.video.id || `${this.platform.name}_${Date.now()}`;
+  HistoryStorage.updateQuality(historyId, this.selectedQuality);
+  this.history = HistoryStorage.getAll();
+},
 
     saveToHistory() {
       if (!this.video || !this.platform) return;
@@ -1856,49 +1894,63 @@ static parseStartParam(param) {
     },
 
     async download() {
-      if (!this.platform || this.isLoading) return;
+  if (!this.platform || this.isLoading) return;
+  if (!this.url?.trim()) return;
 
-      this.isLoading = true;
+  if (this.downloadAbortController) {
+    this.downloadAbortController.abort();
+  }
+  this.downloadAbortController = new AbortController();
 
-      if (this.hasUnsubscribedSponsors) {
-        await this.refreshSubscriptions();
-      }
+  this.isLoading = true;
 
-      if (this.hasUnsubscribedSponsors) {
-        this.isLoading = false;
-        this.setError("Подпишитесь на спонсоров для загрузки видео");
-        this.scrollToSponsors();
-        return;
-      }
+  if (this.hasUnsubscribedSponsors) {
+    await this.refreshSubscriptions();
+  }
 
-      this.$refs.input?.blur();
-      this.progress = 0;
-      this.error = null;
-      this.video = null;
-      TelegramWebApp.hapticImpact("medium");
+  if (this.hasUnsubscribedSponsors) {
+    this.isLoading = false;
+    this.downloadAbortController = null;
+    this.setError("Подпишитесь на спонсоров для загрузки видео");
+    this.scrollToSponsors();
+    return;
+  }
 
-      this.startProgress();
+  this.$refs.input?.blur();
+  this.progress = 0;
+  this.error = null;
+  this.video = null;
+  TelegramWebApp.hapticImpact("medium");
 
-      try {
-        this.video = await this.platform.fetchVideo(this.url, this.selectedQuality);
-        this.progress = 100;
+  this.startProgress();
 
-        if (!this.video.hasHD) {
-          this.selectedQuality = "sd";
-        } else if (this.video.currentQuality) {
-          this.selectedQuality = this.video.currentQuality;
-        }
+  try {
+    this.video = await this.platform.fetchVideo(
+      this.url, 
+      this.selectedQuality,
+      this.downloadAbortController.signal
+    );
+    this.progress = 100;
 
-        this.saveToHistory();
-        TelegramWebApp.hapticNotification("success");
-        AnalyticsService.trackDownload(this.platform.name, this.selectedQuality);
-      } catch (err) {
-        this.setError(ErrorHandler.getMessage(err));
-      } finally {
-        this.stopProgress();
-        this.isLoading = false;
-      }
-    },
+    if (!this.video.hasHD) {
+      this.selectedQuality = "sd";
+    } else if (this.video.currentQuality) {
+      this.selectedQuality = this.video.currentQuality;
+    }
+
+    this.saveToHistory();
+    TelegramWebApp.hapticNotification("success");
+    AnalyticsService.trackDownload(this.platform.name, this.selectedQuality);
+  } catch (err) {
+    if (err.name !== 'AbortError') {
+      this.setError(ErrorHandler.getMessage(err));
+    }
+  } finally {
+    this.stopProgress();
+    this.isLoading = false;
+    this.downloadAbortController = null;
+  }
+},
 
     saveVideo() {
   if (!this.video || this.isLoading || !this.platform) {
@@ -1922,26 +1974,30 @@ static parseStartParam(param) {
 },
 
     shareStory() {
-      const videoUrl = this.currentVideoUrl;
-      if (!videoUrl) {
-        this.setError("Видео недоступно");
-        return;
-      }
+  if (!this.video || !this.platform) {
+    return;
+  }
 
-      let text = `Сохранено через @${AppConfig.BOT_USERNAME}`;
-      if (this.video.title?.trim()) {
-        text = `${this.video.title.trim()}\n\n${text}`;
-      }
+  const videoUrl = this.currentVideoUrl;
+  if (!videoUrl) {
+    this.setError("Видео недоступно");
+    return;
+  }
 
-      const success = TelegramWebApp.shareToStory(videoUrl, text);
+  let text = `Сохранено через @${AppConfig.BOT_USERNAME}`;
+  if (this.video.title?.trim()) {
+    text = `${this.video.title.trim()}\n\n${text}`;
+  }
 
-      if (success) {
-        TelegramWebApp.hapticNotification("success");
-        AnalyticsService.trackShare("story", this.platform.name);
-      } else {
-        this.setError("Истории доступны только в мобильном Telegram");
-      }
-    },
+  const success = TelegramWebApp.shareToStory(videoUrl, text);
+
+  if (success) {
+    TelegramWebApp.hapticNotification("success");
+    AnalyticsService.trackShare("story", this.platform.name);
+  } else {
+    this.setError("Истории доступны только в мобильном Telegram");
+  }
+},
 
     shareLink() {
       if (!this.platform || !this.video) {
@@ -1974,27 +2030,28 @@ static parseStartParam(param) {
     },
 
     loadFromHistory(item) {
-      if (!item?.url || !item?.platform) {
-        this.setError("Некорректные данные");
-        return;
-      }
+  if (!item?.url || !item?.platform) {
+    this.setError("Некорректные данные");
+    return;
+  }
 
-      this.url = item.url;
-      this.platform = PlatformRegistry.get(item.platform);
+  this.url = item.url;
+  this.platform = PlatformRegistry.get(item.platform);
 
-      if (item.quality && typeof item.quality === "string") {
-        this.selectedQuality = item.quality.toLowerCase();
-      } else {
-        this.selectedQuality = "hd";
-      }
+  const validQualities = ["hd", "sd"];
+  if (item.quality && typeof item.quality === "string" && validQualities.includes(item.quality.toLowerCase())) {
+    this.selectedQuality = item.quality.toLowerCase();
+  } else {
+    this.selectedQuality = "hd";
+  }
 
-      if (this.platform) {
-        TelegramWebApp.hapticImpact("light");
-        this.download();
-      } else {
-        this.setError("Платформа не поддерживается");
-      }
-    },
+  if (this.platform) {
+    TelegramWebApp.hapticImpact("light");
+    this.download();
+  } else {
+    this.setError("Платформа не поддерживается");
+  }
+},
 
     clearHistory() {
       HistoryStorage.clear();
