@@ -1364,7 +1364,8 @@
           );
 
           try {
-            const data = await this._fetch(url, controller.signal, quality);
+            const q = this.supportsQuality ? quality : "sd";
+            const data = await this._fetch(url, controller.signal, q);
             if (!data?.play) throw new Error("Видео недоступно");
             return data;
           } finally {
@@ -1584,9 +1585,11 @@
           },
 
           get availableQualities() {
-            if (!this.platform?.qualities) return [];
-            return this.platform.qualities;
-          },
+  if (!this.video?.hasHD) {
+    return this.platform.qualities.filter(q => q.key === "sd");
+  }
+  return this.platform.qualities;
+}
 
           get currentQualityLabel() {
             if (!this.video) return "";
@@ -1748,8 +1751,10 @@
           },
 
           selectQuality(quality) {
-            if (this.selectedQuality === quality) return;
-            this.selectedQuality = quality;
+            if (quality === "hd" && !this.video?.hasHD) return;
+  if (this.selectedQuality === quality) return;
+  this.selectedQuality = quality;
+
             TelegramWebApp.hapticImpact("light");
             AnalyticsService.trackQualityChange(quality);
             this.saveToHistory();
@@ -1759,7 +1764,7 @@
             if (!this.video || !this.platform) return;
 
             HistoryStorage.add({
-              id: this.video.id || Date.now(),
+              id: this.video.id || `${this.platform.name}_${Date.now()}`,
               cover: this.video.cover,
               author:
                 this.video.author?.nickname ||
@@ -1775,7 +1780,9 @@
           async download() {
             if (!this.platform || this.isLoading) return;
 
-            await this.refreshSubscriptions();
+            if (this.hasUnsubscribedSponsors) {
+  await this.refreshSubscriptions();
+}
 
             if (this.hasUnsubscribedSponsors) {
               this.setError("Подпишитесь на спонсоров для загрузки видео");
@@ -1807,9 +1814,11 @@
               );
               this.progress = 100;
 
-              if (this.video.currentQuality) {
-                this.selectedQuality = this.video.currentQuality;
-              }
+              if (!this.video.hasHD) {
+  this.selectedQuality = "sd";
+} else if (this.video.currentQuality) {
+  this.selectedQuality = this.video.currentQuality;
+}
 
               this.saveToHistory();
               TelegramWebApp.hapticNotification("success");
