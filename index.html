@@ -1391,24 +1391,40 @@
         }
         
         static readClipboard(callback) {
+  console.log("readClipboard called");
+  
   try {
     const tg = this.instance;
+    console.log("Telegram instance:", !!tg);
+    console.log("readTextFromClipboard exists:", typeof tg?.readTextFromClipboard);
+    
     if (tg && typeof tg.readTextFromClipboard === 'function') {
+      console.log("Using Telegram API");
       tg.readTextFromClipboard((text) => {
+        console.log("Telegram callback, text:", text);
         callback(text || null);
       });
       return true;
     }
     
+    console.log("Using navigator.clipboard");
     if (navigator.clipboard && navigator.clipboard.readText) {
       navigator.clipboard.readText()
-        .then((text) => callback(text || null))
-        .catch(() => callback(null));
+        .then((text) => {
+          console.log("Navigator success:", text);
+          callback(text || null);
+        })
+        .catch((err) => {
+          console.log("Navigator error:", err);
+          callback(null);
+        });
     } else {
+      console.log("No clipboard API available");
       callback(null);
     }
     return false;
   } catch (err) {
+    console.log("readClipboard error:", err);
     ErrorHandler.log("TelegramWebApp.readClipboard", err);
     callback(null);
     return false;
